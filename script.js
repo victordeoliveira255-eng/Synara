@@ -62,6 +62,14 @@ function getRecentContext() {
   return conversationHistory.slice(-6).map(m => `${m.sender.toUpperCase()}: ${m.message}`).join('\n');
 }
 
+function getRecentMessages(limit = 12) {
+  // Retorna um array de mensagens no formato { role, content } para few-shot/chat
+  return conversationHistory.slice(-limit).map(m => ({
+    role: m.sender === 'user' ? 'user' : 'assistant',
+    content: m.message
+  }));
+}
+
 function updateChatSummary() {
   const subjects = getSavedSubjects();
   const goals = getSavedGoals();
@@ -207,6 +215,7 @@ async function getApiResponse(message) {
         message,
         subject: currentSubject,
         history: getRecentContext(),
+        messageHistory: getRecentMessages(),
         subjects: user?.subjects?.map(subject => subject.name) || [],
         goals: user?.goals?.map(goal => goal.text) || []
       })
