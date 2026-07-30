@@ -181,6 +181,26 @@ app.post('/api/chat', async (req, res) => {
     return res.status(400).json({ error: 'Mensagem inválida' });
   }
 
+  // Clarification flow: if message seems ambiguous, ask a quick clarifying question
+  const isAmbiguous = (text) => {
+    if (!text) return true;
+    const t = text.trim();
+    if (t.length < 20) return true;
+    if (/tudo sobre|tudo|me explica tudo|resuma tudo/.test(t.toLowerCase())) return true;
+    return false;
+  };
+
+  const { clarification, originalMessage } = req.body;
+  if (!clarification && isAmbiguous(message)) {
+    return res.json({ clarify: true, question: 'Você prefere um resumo rápido, uma explicação passo a passo ou um exercício prático?' });
+  }
+
+  // If the client provided a clarification, merge it into the question
+  let effectiveMessage = message;
+  if (clarification && originalMessage) {
+    effectiveMessage = `${originalMessage}\n\nEsclarecimento do usuário: ${clarification}`;
+  }
+
   if (!openai) {
     return res.json({ reply: fallbackResponse(message, subject) });
   }
@@ -208,7 +228,7 @@ app.post('/api/chat', async (req, res) => {
       subjects && subjects.length ? `Matérias do estudante: ${subjects.join(', ')}` : null,
       goals && goals.length ? `Metas do dia: ${goals.join(' | ')}` : 'Sem metas registradas no momento.',
       historySummary || null,
-      `Pergunta: ${message}`,
+      `Pergunta: ${effectiveMessage}`,
       fewShot
     ].filter(Boolean).join('\n\n');
 
@@ -228,6 +248,27 @@ app.post('/api/chat', async (req, res) => {
   } catch (error) {
     console.error('OpenAI error:', error);
     res.json({ reply: fallbackResponse(message, subject) });
+  }
+});
+
+// Endpoint para gerar exercício programaticamente
+app.post('/api/generate-exercise', async (req, res) => {
+  const { userEmail, subject, topic, difficulty = 'médio' } = req.body;
+  if (!subject && !topic) return res.status(400).json({ error: 'Faltam parâmetros (subject/topic)' });
+  try {
+    if (!openai) {
+      // fallback simples
+      const exercise = `Exercício (${subject || topic}, ${difficulty}):\n1) Explique o conceito-chave em 3 frases.\n2) Resolva um problema prático relacionado.\nResposta esperada: passos e resultado.`;
+      return res.json({ exercise });
+    }
+
+    const prompt = `Gere 1 exercício prático sobre ${topic || subject}, nível ${difficulty}. Inclua enunciado claro, passos para resolver e a solução explicada.`;
+    const response = await openai.responses.create({ model: 'gpt-4.1-mini', input: prompt, temperature: 0.6 });
+    const exercise = response.output_text || (response.output || []).flatMap(i => i?.content || []).map(c => c?.text || '').join(' ');
+    res.json({ exercise });
+  } catch (err) {
+    console.error('Generate exercise error:', err);
+    res.status(500).json({ error: 'Erro ao gerar exercício' });
   }
 });
 

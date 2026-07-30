@@ -7,6 +7,8 @@ const newSubjectInput = document.getElementById('newSubject');
 const currentSubjectLabel = document.getElementById('currentSubjectLabel');
 let currentSubject = 'Geral';
 let conversationHistory = [];
+let awaitingClarification = false;
+let pendingOriginalMessage = null;
 
 function getSavedSubjects() {
   return auth.getCurrentUser()?.subjects?.map(subject => subject.name) || [];
@@ -227,19 +229,27 @@ async function getApiResponse(message) {
     } catch (e) {
       console.warn('RAG query failed', e);
     }
+    const bodyObj = {
+      message,
+      subject: currentSubject,
+      history: getRecentContext(),
+      messageHistory: getRecentMessages(),
+      knowledge,
+      userEmail,
+      subjects: user?.subjects?.map(subject => subject.name) || [],
+      goals: user?.goals?.map(goal => goal.text) || []
+    };
+
+    // If this message is a clarification to a prior ambiguous request, include original
+    if (pendingOriginalMessage) {
+      bodyObj.clarification = message;
+      bodyObj.originalMessage = pendingOriginalMessage;
+    }
+
     const response = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        message,
-        subject: currentSubject,
-        history: getRecentContext(),
-        messageHistory: getRecentMessages(),
-        knowledge,
-        userEmail,
-        subjects: user?.subjects?.map(subject => subject.name) || [],
-        goals: user?.goals?.map(goal => goal.text) || []
-      })
+      body: JSON.stringify(bodyObj)
     });
 
     if (!response.ok) {
@@ -247,7 +257,11 @@ async function getApiResponse(message) {
     }
 
     const data = await response.json();
-    return data.reply || fallbackResponse(message, currentSubject);
+    // If server asks for clarification
+    if (data && data.clarify) {
+      return { clarify: true, question: data.question };
+    }
+    return { text: data.reply || fallbackResponse(message, currentSubject) };
   } catch (error) {
     console.warn('API unavailable, using local fallback', error);
     return fallbackResponse(message, currentSubject);
@@ -315,12 +329,52 @@ async function sendUserMessage(event) {
   chatInput.disabled = true;
 
   appendMessage('bot', 'Pensando...');
-  const botMessage = await getApiResponse(userMessage);
-  addToHistory('bot', botMessage);
+  // If we are awaiting a clarification answer, check if user asked for an exercise
+  if (awaitingClarification) {
+    const low = userMessage.toLowerCase();
+    if (/exercic|exercício|exercicio|pratic/.test(low)) {
+      // call generate-exercise
+      try {
+        const resp = await fetch('/api/generate-exercise', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userEmail: auth.getCurrentUser()?.email, subject: currentSubject, topic: pendingOriginalMessage || currentSubject })
+        });
+        const jd = await resp.json();
+        const exerciseText = jd.exercise || jd.error || 'Não foi possível gerar o exercício.';
+        addToHistory('bot', exerciseText);
+        const lastBotMessage = [...chatMessages.querySelectorAll('.chat-message.bot')].pop();
+        if (lastBotMessage) lastBotMessage.querySelector('.chat-bubble').textContent = exerciseText;
+      } catch (e) {
+        const err = 'Erro ao gerar exercício.';
+        addToHistory('bot', err);
+        const lastBotMessage = [...chatMessages.querySelectorAll('.chat-message.bot')].pop();
+        if (lastBotMessage) lastBotMessage.querySelector('.chat-bubble').textContent = err;
+      }
+      awaitingClarification = false;
+      pendingOriginalMessage = null;
+      chatInput.disabled = false;
+      chatInput.focus();
+      return;
+    }
+  }
+
+  const botResponse = await getApiResponse(userMessage);
 
   const lastBotMessage = [...chatMessages.querySelectorAll('.chat-message.bot')].pop();
-  if (lastBotMessage) {
-    lastBotMessage.querySelector('.chat-bubble').textContent = botMessage;
+
+  if (botResponse?.clarify) {
+    // Server asks for clarification
+    if (lastBotMessage) lastBotMessage.querySelector('.chat-bubble').textContent = botResponse.question;
+    awaitingClarification = true;
+    pendingOriginalMessage = userMessage;
+    addToHistory('bot', botResponse.question);
+  } else {
+    const replyText = (botResponse && botResponse.text) ? botResponse.text : (typeof botResponse === 'string' ? botResponse : fallbackResponse(userMessage, currentSubject));
+    if (lastBotMessage) lastBotMessage.querySelector('.chat-bubble').textContent = replyText;
+    addToHistory('bot', replyText);
+    awaitingClarification = false;
+    pendingOriginalMessage = null;
   }
 
   chatInput.disabled = false;
