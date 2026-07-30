@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login | SYNARA</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="index.html">
+      <img class="brand-icon" src="Imagens/icon 2.0.png" alt="SYNARA Icon">
+      <span class="brand-text"><strong>SYNARA</strong><small>Bem-estar & Aprendizado</small></span>
+    </a>
+    <nav class="nav-links">
+      <a href="index.html">Início</a>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="login.html">Entrar</a>
+    </nav>
+    <a href="dashboard.html" class="cta-header">Ver painel</a>
+  </header>
+
+  <main class="page-content auth-page">
+    <section class="section auth-section">
+      <div class="section-header auth-header">
+        <span class="eyebrow">Acesso rápido</span>
+        <h2>Login e cadastro em um só lugar</h2>
+        <p>Entre ou crie sua conta SYNARA lado a lado, sem precisar mudar de página.</p>
+      </div>
+      <div class="auth-layout">
+        <div class="auth-grid">
+          <div class="auth-card">
+            <div class="auth-panel-head">
+              <span class="eyebrow">Já tem conta?</span>
+              <h3>Entrar</h3>
+              <p>Use seu e-mail e senha para acessar o painel, as metas e a mentora IA.</p>
+            </div>
+            <form class="auth-form" id="loginForm">
+              <div class="form-field">
+                <label for="loginEmail">E-mail</label>
+                <input id="loginEmail" type="email" placeholder="seu@exemplo.com" required />
+              </div>
+              <div class="form-field">
+                <label for="loginPassword">Senha</label>
+                <input id="loginPassword" type="password" placeholder="••••••••" required />
+              </div>
+              <button type="submit" class="button-primary">Entrar</button>
+              <p class="form-error" id="loginError"></p>
+            </form>
+          </div>
+
+          <div class="auth-card auth-card-secondary">
+            <div class="auth-panel-head">
+              <span class="eyebrow">Novo no SYNARA?</span>
+              <h3>Cadastrar</h3>
+              <p>Crie sua conta gratuitamente e comece a usar o plano de estudos inteligente.</p>
+            </div>
+            <form class="auth-form" id="registerForm">
+              <div class="form-field">
+                <label for="registerName">Nome completo</label>
+                <input id="registerName" type="text" placeholder="Seu nome" required />
+              </div>
+              <div class="form-field">
+                <label for="registerEmail">E-mail</label>
+                <input id="registerEmail" type="email" placeholder="seu@exemplo.com" required />
+              </div>
+              <div class="form-field">
+                <label for="registerPassword">Senha</label>
+                <input id="registerPassword" type="password" placeholder="••••••••" required />
+              </div>
+              <button type="submit" class="button-primary">Cadastrar</button>
+              <p class="form-error" id="registerError"></p>
+            </form>
+          </div>
+        </div>
+
+        <aside class="auth-aside">
+          <h3>O que você ganha</h3>
+          <ul class="aside-list">
+            <li>Entrada rápida para o painel de estudo.</li>
+            <li>Cadastro completo com metas e perfil personalizado.</li>
+            <li>Mentoria por IA para foco, rotina e bem-estar.</li>
+            <li>Histórico de progresso e objetivos sincronizados.</li>
+          </ul>
+          <div class="auth-stats">
+            <div class="stat-card">
+              <strong>95%</strong>
+              <span>dos estudantes recomendam a plataforma</span>
+            </div>
+            <div class="stat-card">
+              <strong>1 minuto</strong>
+              <span>para criar sua conta e começar</span>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div>
+        <div class="footer-top">
+          <img class="footer-icon" src="Imagens/icon 2.0.png" alt="SYNARA icon">
+          <div>
+            <strong>SYNARA</strong>
+            <p class="footer-tagline">Transformando aprendizagem com tecnologia humanizada.</p>
+          </div>
+        </div>
+        <p class="footer-description">Acesse seu espaço de estudos, prioridades e equilíbrio mental com a plataforma SYNARA.</p>
+      </div>
+      <div>
+        <h3>Links rápidos</h3>
+        <a href="index.html">Início</a>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="login.html">Entrar</a>
+      </div>
+      <div>
+        <h3>Contato</h3>
+        <a href="mailto:synaraeducationltda@gmail.com">synaraeducationltda@gmail.com</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <small>© 2026 SYNARA | Bem-estar & Aprendizado. Todos os direitos reservados.</small>
+      <small>Design pensado para educação, tecnologia e saúde mental.</small>
+    </div>
+  </footer>
+
+  <script src="auth.js"></script>
+  <script>
+    const loginForm = document.getElementById('loginForm');
+    const registerForm = document.getElementById('registerForm');
+    const loginError = document.getElementById('loginError');
+    const registerError = document.getElementById('registerError');
+
+    if (auth.getCurrentUser()) {
+      window.location.href = 'dashboard.html';
+    }
+
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      loginError.style.display = 'none';
+
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value.trim();
+      const result = auth.login(email, password);
+
+      if (result.success) {
+        window.location.href = 'dashboard.html';
+      } else {
+        loginError.textContent = result.message;
+        loginError.style.display = 'block';
+      }
+    });
+
+    registerForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      registerError.style.display = 'none';
+
+      const name = document.getElementById('registerName').value.trim();
+      const email = document.getElementById('registerEmail').value.trim();
+      const password = document.getElementById('registerPassword').value.trim();
+      const result = auth.register(email, password, name);
+
+      if (result.success) {
+        auth.login(email, password);
+        window.location.href = 'dashboard.html';
+      } else {
+        registerError.textContent = result.message;
+        registerError.style.display = 'block';
+      }
+    });
+  </script>
+</body>
+</html>

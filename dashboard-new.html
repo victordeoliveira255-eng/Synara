@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard | SYNARA</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .add-subject-form, .add-goal-form {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      border-radius: 24px;
+      background: rgba(0, 91, 127, 0.07);
+    }
+
+    .add-subject-form input, .add-goal-form input {
+      flex: 1;
+      border-radius: 16px;
+      border: 1px solid rgba(0, 91, 127, 0.15);
+      padding: 0.8rem 1rem;
+      outline: none;
+    }
+
+    .add-subject-form button, .add-goal-form button {
+      padding: 0.8rem 1.6rem;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: white;
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .subject-item, .goal-item {
+      padding: 1rem;
+      border-radius: 20px;
+      background: #ffffff;
+      border: 1px solid rgba(0, 91, 127, 0.08);
+      margin-bottom: 0.8rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .subject-item-info {
+      flex: 1;
+    }
+
+    .subject-item strong {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: var(--primary);
+    }
+
+    .subject-item-remove, .goal-item-remove {
+      padding: 0.5rem 1rem;
+      background: #f5f5f5;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      color: #e74c3c;
+      font-weight: 600;
+    }
+
+    .user-greeting {
+      margin-bottom: 2rem;
+      padding: 1.5rem;
+      border-radius: 28px;
+      background: linear-gradient(135deg, rgba(0, 91, 127, 0.1), rgba(0, 207, 200, 0.1));
+    }
+
+    .user-greeting h2 {
+      margin: 0 0 0.5rem;
+    }
+
+    .logout-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.7rem 1.4rem;
+      background: #e74c3c;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 600;
+      margin-top: 0.8rem;
+    }
+
+    .logout-btn:hover {
+      background: #c0392b;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 2rem;
+      color: var(--muted);
+    }
+
+    .empty-state p {
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="index.html">
+      <img class="brand-icon" src="Imagens/icon 2.0.png" alt="SYNARA Icon">
+      <span class="brand-text"><strong>SYNARA</strong><small>Bem-estar & Aprendizado</small></span>
+    </a>
+    <nav class="nav-links">
+      <a href="index.html">Início</a>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="#" id="logoutLink">Sair</a>
+    </nav>
+    <a href="#" id="logoutBtn" class="cta-header">Sair</a>
+  </header>
+
+  <main class="page-content">
+    <div class="user-greeting">
+      <h2 id="userGreeting">Bem-vindo!</h2>
+      <button class="logout-btn" id="logoutButton">Fazer logout</button>
+    </div>
+
+    <section class="section">
+      <div class="section-header">
+        <h2>Minhas matérias</h2>
+        <p>Adicione as matérias que você está estudando e acompanhe o progresso.</p>
+      </div>
+
+      <div class="add-subject-form">
+        <input type="text" id="subjectInput" placeholder="Nome da matéria (ex: Matemática)">
+        <input type="number" id="targetHoursInput" placeholder="Horas alvo" min="0">
+        <button id="addSubjectBtn">Adicionar</button>
+      </div>
+
+      <div id="subjectsList">
+        <div class="empty-state">
+          <p>Nenhuma matéria adicionada ainda. Comece adicionando uma!</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-alt">
+      <div class="section-header">
+        <h2>Metas de hoje</h2>
+        <p>Organize seus objetivos para hoje e acompanhe o progresso.</p>
+      </div>
+
+      <div class="add-goal-form">
+        <input type="text" id="goalInput" placeholder="Sua meta para hoje (ex: Revisar álgebra)">
+        <button id="addGoalBtn">Adicionar meta</button>
+      </div>
+
+      <div id="goalsList">
+        <div class="empty-state">
+          <p>Nenhuma meta adicionada. Defina suas metas para ficar mais focado!</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <h2>Seu progresso</h2>
+        <p>Acompanhe o andamento dos seus estudos.</p>
+      </div>
+
+      <div class="dashboard-grid">
+        <article class="status-card">
+          <strong>Progresso geral</strong>
+          <div class="status-list">
+            <div>
+              <span>Matérias</span>
+              <strong id="subjectCount">0</strong>
+            </div>
+            <div>
+              <span>Metas para hoje</span>
+              <strong id="goalCount">0</strong>
+            </div>
+            <div>
+              <span>Metas concluídas</span>
+              <strong id="completedGoals">0</strong>
+            </div>
+          </div>
+          <div class="progress-label">
+            <span>Progresso total</span>
+            <strong id="progressPercent">0%</strong>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-bar-inner" id="progressBar"></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section section-alt" id="ia-chat">
+      <div class="section-header">
+        <h2>Chat com sua mentora</h2>
+        <p>Pergunte algo sobre suas matérias ou organize melhor seus estudos.</p>
+      </div>
+      <div class="chat-layout">
+        <div class="chat-preview">
+          <div class="chat-header">Mentora SYNARA</div>
+          <div class="chat-messages" id="chatMessages">
+            <div class="chat-message bot"><div class="chat-bubble">Olá! Vi que você está estudando. Como posso ajudar?</div></div>
+          </div>
+          <form class="chat-form" id="chatForm">
+            <input id="chatInput" type="text" placeholder="Pergunte algo..." aria-label="Mensagem para a SYNARA" />
+            <button type="submit">Enviar</button>
+          </form>
+        </div>
+        <aside class="chat-help">
+          <h3>Dicas rápidas</h3>
+          <ul>
+            <li>Peça ajuda para revisar</li>
+            <li>Peça um cronograma</li>
+            <li>Peça dicas de foco</li>
+            <li>Pergunte sobre estratégias</li>
+          </ul>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div>
+        <div class="footer-top">
+          <img class="footer-icon" src="Imagens/icon 2.0.png" alt="SYNARA icon">
+          <div>
+            <strong>SYNARA</strong>
+            <p class="footer-tagline">Transformando aprendizagem com tecnologia humanizada.</p>
+          </div>
+        </div>
+        <p class="footer-description">Sua plataforma inteligente de estudos com IA.</p>
+      </div>
+      <div>
+        <h3>Links</h3>
+        <a href="index.html">Início</a>
+        <a href="login.html">Entrar novamente</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <small>© 2026 SYNARA | Bem-estar & Aprendizado. Todos os direitos reservados.</small>
+    </div>
+  </footer>
+
+  <script src="auth.js"></script>
+  <script src="script.js"></script>
+  <script>
+    const user = auth.getCurrentUser();
+    
+    // Redirecionar se não estiver logado
+    if (!user) {
+      window.location.href = 'login.html';
+    }
+
+    const userGreeting = document.getElementById('userGreeting');
+    const subjectInput = document.getElementById('subjectInput');
+    const targetHoursInput = document.getElementById('targetHoursInput');
+    const addSubjectBtn = document.getElementById('addSubjectBtn');
+    const subjectsList = document.getElementById('subjectsList');
+    const goalInput = document.getElementById('goalInput');
+    const addGoalBtn = document.getElementById('addGoalBtn');
+    const goalsList = document.getElementById('goalsList');
+    const logoutButton = document.getElementById('logoutButton');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const logoutLink = document.getElementById('logoutLink');
+
+    // Saudação personalizada
+    userGreeting.textContent = `Bem-vindo, ${user.name}!`;
+
+    // Renderizar matérias
+    function renderSubjects() {
+      if (user.subjects.length === 0) {
+        subjectsList.innerHTML = '<div class="empty-state"><p>Nenhuma matéria adicionada ainda. Comece adicionando uma!</p></div>';
+        return;
+      }
+
+      subjectsList.innerHTML = user.subjects.map(subject => `
+        <div class="subject-item">
+          <div class="subject-item-info">
+            <strong>${subject.name}</strong>
+            <small>Progresso: ${subject.completedHours}/${subject.targetHours} horas (${subject.progress}%)</small>
+          </div>
+          <button class="subject-item-remove" data-id="${subject.id}">Remover</button>
+        </div>
+      `).join('');
+
+      // Adicionar listeners para remover
+      document.querySelectorAll('.subject-item-remove').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = parseInt(btn.dataset.id);
+          auth.removeSubject(id);
+          location.reload();
+        });
+      });
+    }
+
+    // Renderizar metas
+    function renderGoals() {
+      if (user.goals.length === 0) {
+        goalsList.innerHTML = '<div class="empty-state"><p>Nenhuma meta adicionada. Defina suas metas para ficar mais focado!</p></div>';
+        return;
+      }
+
+      goalsList.innerHTML = user.goals.map(goal => `
+        <div class="goal-item" style="${goal.completed ? 'opacity: 0.6;' : ''}">
+          <div style="flex: 1;">
+            <input type="checkbox" ${goal.completed ? 'checked' : ''} data-id="${goal.id}" class="goal-checkbox" style="margin-right: 0.8rem;">
+            <span style="${goal.completed ? 'text-decoration: line-through;' : ''}">${goal.text}</span>
+          </div>
+          <button class="goal-item-remove" data-id="${goal.id}">Remover</button>
+        </div>
+      `).join('');
+
+      // Adicionar listeners
+      document.querySelectorAll('.goal-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', () => {
+          const id = parseInt(checkbox.dataset.id);
+          auth.completeGoal(id);
+          location.reload();
+        });
+      });
+
+      document.querySelectorAll('.goal-item-remove').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = parseInt(btn.dataset.id);
+          auth.removeGoal(id);
+          location.reload();
+        });
+      });
+    }
+
+    // Atualizar estatísticas
+    function updateStats() {
+      document.getElementById('subjectCount').textContent = user.subjects.length;
+      document.getElementById('goalCount').textContent = user.goals.length;
+      document.getElementById('completedGoals').textContent = user.goals.filter(g => g.completed).length;
+      const progress = auth.getDailyProgress();
+      document.getElementById('progressPercent').textContent = progress + '%';
+      document.getElementById('progressBar').style.width = progress + '%';
+    }
+
+    // Adicionar matéria
+    addSubjectBtn.addEventListener('click', () => {
+      const name = subjectInput.value.trim();
+      const hours = parseInt(targetHoursInput.value) || 0;
+
+      if (name) {
+        auth.addSubject(name, hours);
+        subjectInput.value = '';
+        targetHoursInput.value = '';
+        location.reload();
+      }
+    });
+
+    // Adicionar meta
+    addGoalBtn.addEventListener('click', () => {
+      const text = goalInput.value.trim();
+      if (text) {
+        auth.addGoal(text);
+        goalInput.value = '';
+        location.reload();
+      }
+    });
+
+    // Logout
+    [logoutButton, logoutBtn, logoutLink].forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        auth.logout();
+        window.location.href = 'login.html';
+      });
+    });
+
+    // Renderizar tudo ao carregar
+    renderSubjects();
+    renderGoals();
+    updateStats();
+  </script>
+</body>
+</html>

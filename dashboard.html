@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard | SYNARA</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .user-greeting {
+      margin-bottom: 2.5rem;
+      padding: 1.8rem 2rem;
+      border-radius: 32px;
+      background: linear-gradient(135deg, rgba(0, 91, 127, 0.12), rgba(0, 207, 200, 0.12));
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 1.5rem;
+      align-items: center;
+    }
+
+    .user-greeting h2 {
+      margin: 0;
+      font-size: clamp(1.9rem, 2.5vw, 2.7rem);
+    }
+
+    .user-greeting p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    .logout-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.95rem 1.5rem;
+      background: #e74c3c;
+      color: white;
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+      font-weight: 700;
+      box-shadow: 0 14px 30px rgba(231, 76, 60, 0.18);
+    }
+
+    .logout-btn:hover {
+      background: #c0392b;
+    }
+
+    body {
+      background: #eef4fb;
+      color: #22303f;
+    }
+
+    .panel-card {
+      padding: 2rem;
+      border-radius: 32px;
+      background: #ffffff;
+      border: 1px solid rgba(0, 91, 127, 0.08);
+      box-shadow: 0 18px 45px rgba(23, 61, 94, 0.08);
+      margin-bottom: 2rem;
+    }
+
+    .page-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2.5rem 2.5rem 4rem;
+    }
+
+    .dashboard-top-grid {
+      display: grid;
+      grid-template-columns: 1.7fr 0.9fr;
+      gap: 1.8rem;
+      align-items: start;
+    }
+
+    .card-main {
+      display: grid;
+      gap: 1.8rem;
+    }
+
+    .card-main .panel-card-header {
+      margin-bottom: 1.2rem;
+    }
+
+    .chat-card {
+      display: grid;
+      gap: 1.2rem;
+      background: #f7fbff;
+      padding: 1.6rem;
+      border-radius: 28px;
+      border: 1px solid rgba(0, 91, 127, 0.08);
+    }
+
+    .progress-sidebar {
+      background: #f9fdff;
+      padding: 1.8rem;
+      border-radius: 32px;
+      border: 1px solid rgba(0, 91, 127, 0.09);
+      box-shadow: 0 14px 30px rgba(23, 61, 94, 0.06);
+    }
+
+    .dashboard-header h2 {
+      margin-bottom: 0.5rem;
+      font-size: 2.3rem;
+    }
+
+    .dashboard-header p {
+      max-width: 720px;
+      color: #4b6378;
+    }
+
+    .summary-cards {
+      display: grid;
+      gap: 1rem;
+      margin-bottom: 1.4rem;
+    }
+
+    .summary-card {
+      padding: 1.15rem 1.3rem;
+      border-radius: 24px;
+      background: #ffffff;
+      border: 1px solid rgba(0, 91, 127, 0.08);
+      color: #22303f;
+    }
+
+    .summary-card strong {
+      display: block;
+      margin-bottom: 0.55rem;
+      color: #0f3854;
+      font-size: 1rem;
+    }
+
+    .progress-summary {
+      display: grid;
+      gap: 1rem;
+      padding: 1rem;
+      border-radius: 24px;
+      background: #ffffff;
+      border: 1px solid rgba(0, 91, 127, 0.08);
+      margin-bottom: 1.4rem;
+    }
+
+    .progress-summary span {
+      color: #5f7687;
+      font-size: 0.95rem;
+    }
+
+    .progress-box-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      color: #132840;
+    }
+
+    .chat-header-teal {
+      display: flex;
+      gap: 1rem;
+      padding: 1.2rem 1.4rem;
+      background: linear-gradient(135deg, #0a7e94, #00a8b8);
+      border-radius: 20px;
+      margin-bottom: 1rem;
+      align-items: center;
+    }
+
+    .chat-header-title {
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 1.05rem;
+      display: block;
+    }
+
+    .chat-subject-tag-light {
+      color: #d1f5f8;
+      font-size: 0.9rem;
+      display: block;
+      margin-top: 0.2rem;
+      font-weight: 400;
+    }
+
+    .chat-subject-tag-light strong {
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    .subject-selection-button {
+      background: rgba(0, 207, 200, 0.14);
+      color: #0b3e52;
+      border: 1px solid rgba(0, 207, 200, 0.18);
+    }
+
+    .subject-selection-button.active,
+    .subject-selection-button:hover {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+    }
+
+    .chat-message.bot .chat-bubble {
+      background: #ffffff;
+      color: #203348;
+    }
+
+    .chat-message.user .chat-bubble {
+      background: #00cfc8;
+      color: #00363f;
+    }
+
+    .chat-form input {
+      background: #ffffff;
+      color: #203348;
+      border-color: rgba(0, 91, 127, 0.18);
+    }
+
+    .chat-form button {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: #ffffff;
+    }
+
+    .section-header p,
+    .subject-add-note,
+    .chat-note,
+    .chat-subject-tag,
+    .progress-summary span {
+      color: #4a6779;
+    }
+
+    .chat-header-inline {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      align-items: flex-start;
+      padding-bottom: 0.25rem;
+      border-bottom: 1px solid rgba(0, 91, 127, 0.08);
+    }
+
+    .chat-header-teal {
+      display: flex;
+      gap: 1rem;
+      padding: 1.2rem 1.4rem;
+      background: linear-gradient(135deg, #0a7e94, #00a8b8);
+      border-radius: 20px;
+      margin-bottom: 1rem;
+      align-items: center;
+    }
+
+    .chat-header-title {
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 1.05rem;
+      display: block;
+    }
+
+    .chat-subject-tag-light {
+      color: #d1f5f8;
+      font-size: 0.9rem;
+      display: block;
+      margin-top: 0.2rem;
+      font-weight: 400;
+    }
+
+    .chat-subject-tag-light strong {
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    .subject-selection {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.85rem;
+      padding-bottom: 0.35rem;
+      border-bottom: 1px solid rgba(0, 91, 127, 0.08);
+      margin-bottom: 1rem;
+    }
+
+    .goals-input-layout {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      padding: 1.15rem;
+      border-radius: 24px;
+      background: rgba(0, 91, 127, 0.06);
+      border: 1px solid rgba(0, 91, 127, 0.08);
+      align-items: center;
+    }
+
+    .goals-input-layout input {
+      border-radius: 16px;
+      border: 1px solid rgba(0, 91, 127, 0.15);
+      padding: 1rem 1.2rem;
+      outline: none;
+      background: #ffffff;
+      color: #203348;
+    }
+
+    .goals-input-layout button {
+      padding: 1rem 1.6rem;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: white;
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+      font-weight: 700;
+      box-shadow: 0 14px 30px rgba(0, 91, 127, 0.16);
+    }
+
+    .goals-help-text {
+      grid-column: 1 / -1;
+      margin: 0;
+      color: #7b8fa0;
+      font-size: 0.95rem;
+      text-align: right;
+    }
+
+    .goal-item {
+      padding: 1.25rem 1.35rem;
+      border-radius: 24px;
+      background: #ffffff;
+      border: 1px solid rgba(0, 91, 127, 0.08);
+      box-shadow: 0 6px 20px rgba(23, 61, 94, 0.06);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .goal-item input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+    }
+
+    .goal-item span {
+      flex: 1;
+      color: #203348;
+    }
+
+    .goal-item-remove {
+      padding: 0.6rem 1rem;
+      background: #f5f5f5;
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      color: #34495e;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .goal-item-remove:hover {
+      background: rgba(0, 91, 127, 0.1);
+    }
+
+
+    .panel-card:last-child {
+      margin-bottom: 0;
+    }
+
+    .panel-card-header {
+      margin-bottom: 1.5rem;
+    }
+
+    .panel-card-header h3 {
+      margin: 0 0 0.5rem;
+      font-size: 1.7rem;
+    }
+
+    .panel-card-header p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .add-subject-form,
+    .add-goal-form {
+      display: grid;
+      grid-template-columns: 1.8fr 1fr auto;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      padding: 1.15rem;
+      border-radius: 24px;
+      background: rgba(0, 91, 127, 0.06);
+      border: 1px solid rgba(0, 91, 127, 0.08);
+    }
+
+    .add-subject-form input,
+    .add-goal-form input {
+      flex: 1;
+      border-radius: 16px;
+      border: 1px solid rgba(0, 91, 127, 0.15);
+      padding: 1rem 1.2rem;
+      outline: none;
+      background: #ffffff;
+    }
+
+    .add-subject-form button,
+    .add-goal-form button {
+      padding: 1rem 1.6rem;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: white;
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+      font-weight: 700;
+      box-shadow: 0 14px 30px rgba(0, 91, 127, 0.16);
+    }
+
+    .subject-list,
+    .goal-list {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .subject-item,
+    .goal-item,
+    .subject-card,
+    .goal-card {
+      padding: 1.25rem 1.35rem;
+      border-radius: 24px;
+      background: #ffffff;
+      border: 1px solid rgba(0, 91, 127, 0.08);
+      box-shadow: 0 14px 30px rgba(18, 42, 65, 0.06);
+      display: grid;
+      gap: 0.95rem;
+    }
+
+    .subject-item strong,
+    .goal-item strong,
+    .subject-card strong,
+    .goal-card strong {
+      display: block;
+      font-size: 1.05rem;
+      color: var(--primary);
+      margin-bottom: 0.35rem;
+    }
+
+    .subject-item-info {
+      display: grid;
+      gap: 0.5rem;
+    }
+
+    .subject-card p,
+    .goal-card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .subject-card .subject-meta,
+    .goal-card .goal-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .progress-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.8rem;
+      border-radius: 999px;
+      background: rgba(0, 207, 200, 0.12);
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .progress-bar-mini {
+      height: 10px;
+      width: 100%;
+      border-radius: 999px;
+      background: rgba(0, 91, 127, 0.12);
+      overflow: hidden;
+      margin-top: 0.75rem;
+    }
+
+    .progress-bar-mini-inner {
+      height: 100%;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+    }
+
+    .subject-card-actions,
+    .goal-card-actions {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .subject-item-remove,
+    .goal-item-remove,
+    .small-button {
+      padding: 0.7rem 1rem;
+      background: #f5f5f5;
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      color: #34495e;
+      font-weight: 700;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .subject-item-remove:hover,
+    .goal-item-remove:hover,
+    .small-button:hover {
+      transform: translateY(-1px);
+      background: rgba(0, 91, 127, 0.1);
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1.5rem;
+      align-items: stretch;
+    }
+
+    .status-card {
+      grid-column: span 3;
+    }
+
+    .status-card strong {
+      margin-bottom: 1.25rem;
+    }
+
+    .status-list {
+      display: grid;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .status-list > div {
+      padding: 1rem 1.1rem;
+      border-radius: 22px;
+      background: #f7fbff;
+    }
+
+    .status-list strong {
+      font-size: 1.3rem;
+    }
+
+    .chat-layout {
+      display: grid;
+      grid-template-columns: 1.75fr 1fr;
+      gap: 1.5rem;
+      align-items: stretch;
+    }
+
+    .chat-preview {
+      display: flex;
+      flex-direction: column;
+      min-height: 540px;
+      background: #ffffff;
+      border: 1px solid rgba(0, 91, 127, 0.08);
+      border-radius: 34px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .chat-header {
+      padding: 1.6rem 1.6rem 1.4rem;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: #ffffff;
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .chat-header small {
+      color: rgba(255,255,255,0.82);
+      font-size: 0.95rem;
+      font-weight: 400;
+    }
+
+    .chat-messages {
+      padding: 1.5rem;
+      display: grid;
+      gap: 1rem;
+      overflow-y: auto;
+      flex: 1;
+      background: #f6fbff;
+    }
+
+    .chat-message {
+      display: flex;
+    }
+
+    .chat-message.user {
+      justify-content: flex-end;
+    }
+
+    .chat-bubble {
+      max-width: 72%;
+      padding: 1rem 1.2rem;
+      border-radius: 22px;
+      line-height: 1.6;
+      box-shadow: 0 10px 24px rgba(18, 42, 65, 0.08);
+    }
+
+    .chat-message.user .chat-bubble {
+      background: #00cfc8;
+      color: #00363f;
+      border-bottom-right-radius: 6px;
+    }
+
+    .chat-message.bot .chat-bubble {
+      background: #ffffff;
+      color: #1f3040;
+      border-bottom-left-radius: 6px;
+    }
+
+    .chat-form {
+      display: flex;
+      gap: 1rem;
+      padding: 1.1rem 1.5rem 1.5rem;
+      background: var(--surface);
+      border-top: 1px solid rgba(0, 91, 127, 0.08);
+    }
+
+    .chat-form input {
+      flex: 1;
+      border-radius: 999px;
+      border: 1px solid rgba(0, 91, 127, 0.18);
+      padding: 1rem 1.3rem;
+      outline: none;
+      background: #ffffff;
+      color: #1f3040;
+    }
+
+    .chat-form button {
+      border: 0;
+      border-radius: 999px;
+      padding: 1rem 1.6rem;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: #ffffff;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .chat-help {
+      padding: 1.9rem 1.8rem;
+      border-radius: 32px;
+      background: linear-gradient(180deg, #f8fdff, #eff9ff);
+      border: 1px solid rgba(0, 207, 200, 0.15);
+      display: grid;
+      gap: 1rem;
+    }
+
+    .chat-help h3 {
+      margin: 0;
+    }
+
+    .chat-help p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .chat-tips {
+      display: grid;
+      gap: 0.85rem;
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .chat-tips li {
+      padding: 0.95rem 1rem;
+      border-radius: 22px;
+      background: #ffffff;
+      border: 1px solid rgba(0, 91, 127, 0.08);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .chat-note {
+      padding: 1rem 1.1rem;
+      border-radius: 22px;
+      background: rgba(0, 207, 200, 0.12);
+      color: var(--text);
+      font-size: 0.95rem;
+      line-height: 1.7;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 2rem;
+      color: var(--muted);
+      border: 1px dashed rgba(0, 91, 127, 0.2);
+      border-radius: 24px;
+      background: rgba(247, 251, 255, 0.9);
+    }
+
+    .empty-state p {
+      margin: 0;
+    }
+
+    @media (max-width: 960px) {
+      .user-greeting,
+      .chat-layout,
+      .dashboard-grid,
+      .dashboard-top-grid,
+      .panel-card-horizontal,
+      .add-subject-form,
+      .add-goal-form {
+        grid-template-columns: 1fr;
+      }
+
+      .chat-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .user-greeting {
+        grid-template-columns: 1fr;
+      }
+
+      .add-subject-form,
+      .add-goal-form {
+        grid-template-columns: 1fr;
+      }
+
+      .chat-form {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="index.html">
+      <img class="brand-icon" src="Imagens/icon 2.0.png" alt="SYNARA Icon">
+      <span class="brand-text"><strong>SYNARA</strong><small>Bem-estar & Aprendizado</small></span>
+    </a>
+    <nav class="nav-links">
+      <a href="index.html">Início</a>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="#" id="logoutLink">Sair</a>
+    </nav>
+    <a href="#" id="logoutBtn" class="cta-header">Sair</a>
+  </header>
+
+  <main class="page-content">
+    <div class="user-greeting">
+      <h2 id="userGreeting">Bem-vindo!</h2>
+      <button class="logout-btn" id="logoutButton">Fazer logout</button>
+    </div>
+
+    <section class="section dashboard-top">
+      <div class="section-header dashboard-header">
+        <h2>Minhas matérias</h2>
+        <p>Organize suas matérias e converse com a mentora em um painel mais limpo e fácil de usar.</p>
+      </div>
+
+      <div class="dashboard-top-grid">
+        <div class="card-main panel-card">
+          <div class="panel-card-header">
+            <h3>Adicionar matéria e chat</h3>
+            <p>Defina rapidamente suas disciplinas e converse com a mentora especializada em cada uma.</p>
+          </div>
+          <div class="add-subject-form">
+            <input type="text" id="subjectInput" placeholder="Nome da matéria (ex: Matemática)">
+            <input type="number" id="targetHoursInput" placeholder="Horas alvo" min="0">
+            <button id="addSubjectBtn">Adicionar</button>
+          </div>
+          <div id="subjectsList" class="subject-list">
+            <div class="empty-state">
+              <p>Nenhuma matéria adicionada ainda. Comece adicionando sua primeira matéria.</p>
+            </div>
+          </div>
+
+          <div class="chat-card">
+            <div class="chat-header-teal">
+              <div>
+                <span class="chat-header-title">Mentora SYNARA</span>
+                <small class="chat-subject-tag-light">Matéria atual: <strong id="currentSubjectLabel">Geral</strong></small>
+              </div>
+            </div>
+            <div class="subject-selection">
+              <button class="subject-selection-button button-secondary active" data-subject="Geral">Geral</button>
+              <button class="subject-selection-button button-secondary" data-subject="Português">Português</button>
+              <button class="subject-selection-button button-secondary" data-subject="Matemática">Matemática</button>
+              <button class="subject-selection-button button-secondary" data-subject="Física">Física</button>
+              <button class="subject-selection-button button-secondary" data-subject="Química">Química</button>
+              <button class="subject-selection-button button-secondary" data-subject="Biologia">Biologia</button>
+              <button class="subject-selection-button button-secondary" data-subject="Artes">Artes</button>
+            </div>
+            <form class="subject-add-form" id="subjectAddForm">
+              <label for="newSubject">Adicionar outra matéria</label>
+              <div class="subject-add-controls">
+                <input id="newSubject" type="text" placeholder="Digite o nome da matéria" />
+                <button type="submit" class="button-primary">Adicionar</button>
+              </div>
+              <p class="subject-add-note">A matéria adicionada ficará disponível para seleção rápida e chat personalizado.</p>
+            </form>
+            <div class="chat-messages" id="chatMessages">
+              <div class="chat-message bot"><div class="chat-bubble">Olá! Vi que você está estudando. Como posso ajudar?</div></div>
+            </div>
+            <form class="chat-form" id="chatForm">
+              <input id="chatInput" type="text" placeholder="Pergunte algo..." aria-label="Mensagem para a SYNARA" />
+              <button type="submit">Enviar</button>
+            </form>
+          </div>
+        </div>
+
+        <aside class="progress-sidebar">
+          <div class="panel-card-header">
+            <h3>Seu progresso</h3>
+            <p>Veja seu desempenho e acompanhe metas importantes com clareza.</p>
+          </div>
+          <div class="summary-cards">
+            <div class="summary-card">
+              <strong>Mais consistente</strong>
+              <p>Estude com pequenos passos e mantenha sua rotina sempre ativa.</p>
+            </div>
+            <div class="summary-card">
+              <strong>Ritmo diário</strong>
+              <p>Equilibre teoria e prática para que o aprendizado avance com constância.</p>
+            </div>
+          </div>
+          <div class="progress-box">
+            <div class="progress-box-header">
+              <span>Progresso geral</span>
+              <strong id="progressPercent">0%</strong>
+            </div>
+            <div class="progress-summary">
+              <div>
+                <span>Matérias</span>
+                <strong id="subjectCount">0</strong>
+              </div>
+              <div>
+                <span>Metas para hoje</span>
+                <strong id="goalCount">0</strong>
+              </div>
+              <div>
+                <span>Metas concluídas</span>
+                <strong id="completedGoals">0</strong>
+              </div>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-bar-inner" id="progressBar"></div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section section-alt goals-section">
+      <div class="section-header">
+        <h2>Metas de hoje</h2>
+        <p>Defina objetivos claros e marque o que já foi concluído.</p>
+      </div>
+
+      <div class="panel-card">
+        <div class="panel-card-header">
+          <h3>Adicionar meta</h3>
+          <p>Registre metas curtas que ajudam a manter o foco durante a sessão.</p>
+        </div>
+        <div class="goals-input-layout">
+          <input type="text" id="goalInput" placeholder="Sua meta para hoje (ex: Revisar álgebra)">
+          <button id="addGoalBtn">Adicionar meta</button>
+          <p class="goals-help-text">Nenhuma meta adicionada. Defina suas metas para ficar mais focado!</p>
+        </div>
+        <div id="goalsList" class="goal-list">
+          <div class="empty-state">
+            <p>Nenhuma meta adicionada. Defina suas metas para ficar mais focado!</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div>
+        <div class="footer-top">
+          <img class="footer-icon" src="Imagens/icon 2.0.png" alt="SYNARA icon">
+          <div>
+            <strong>SYNARA</strong>
+            <p class="footer-tagline">Transformando aprendizagem com tecnologia humanizada.</p>
+          </div>
+        </div>
+        <p class="footer-description">Sua plataforma inteligente de estudos com IA.</p>
+      </div>
+      <div>
+        <h3>Links</h3>
+        <a href="index.html">Início</a>
+        <a href="login.html">Entrar novamente</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <small>© 2026 SYNARA | Bem-estar & Aprendizado. Todos os direitos reservados.</small>
+    </div>
+  </footer>
+
+  <script src="auth.js"></script>
+  <script src="script.js"></script>
+  <script>
+    const user = auth.getCurrentUser();
+    
+    // Redirecionar se não estiver logado
+    if (!user) {
+      window.location.href = 'login.html';
+    }
+
+    const userGreeting = document.getElementById('userGreeting');
+    const subjectInput = document.getElementById('subjectInput');
+    const targetHoursInput = document.getElementById('targetHoursInput');
+    const addSubjectBtn = document.getElementById('addSubjectBtn');
+    const subjectsList = document.getElementById('subjectsList');
+    const goalInput = document.getElementById('goalInput');
+    const addGoalBtn = document.getElementById('addGoalBtn');
+    const goalsList = document.getElementById('goalsList');
+    const logoutButton = document.getElementById('logoutButton');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const logoutLink = document.getElementById('logoutLink');
+
+    // Saudação personalizada
+    userGreeting.textContent = `Bem-vindo, ${user.name}!`;
+
+    // Renderizar matérias
+    function renderSubjects() {
+      if (user.subjects.length === 0) {
+        subjectsList.innerHTML = '<div class="empty-state"><p>Nenhuma matéria adicionada ainda. Comece adicionando uma!</p></div>';
+        return;
+      }
+
+      subjectsList.innerHTML = user.subjects.map(subject => `
+        <div class="subject-item">
+          <div class="subject-item-info">
+            <strong>${subject.name}</strong>
+            <small>Progresso: ${subject.completedHours}/${subject.targetHours} horas (${subject.progress}%)</small>
+          </div>
+          <button class="subject-item-remove" data-id="${subject.id}">Remover</button>
+        </div>
+      `).join('');
+
+      // Adicionar listeners para remover
+      document.querySelectorAll('.subject-item-remove').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = parseInt(btn.dataset.id);
+          auth.removeSubject(id);
+          location.reload();
+        });
+      });
+    }
+
+    // Renderizar metas
+    function renderGoals() {
+      if (user.goals.length === 0) {
+        goalsList.innerHTML = '<div class="empty-state"><p>Nenhuma meta adicionada. Defina suas metas para ficar mais focado!</p></div>';
+        return;
+      }
+
+      goalsList.innerHTML = user.goals.map(goal => `
+        <div class="goal-item" style="${goal.completed ? 'opacity: 0.6;' : ''}">
+          <div style="flex: 1;">
+            <input type="checkbox" ${goal.completed ? 'checked' : ''} data-id="${goal.id}" class="goal-checkbox" style="margin-right: 0.8rem;">
+            <span style="${goal.completed ? 'text-decoration: line-through;' : ''}">${goal.text}</span>
+          </div>
+          <button class="goal-item-remove" data-id="${goal.id}">Remover</button>
+        </div>
+      `).join('');
+
+      // Adicionar listeners
+      document.querySelectorAll('.goal-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', () => {
+          const id = parseInt(checkbox.dataset.id);
+          auth.completeGoal(id);
+          location.reload();
+        });
+      });
+
+      document.querySelectorAll('.goal-item-remove').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = parseInt(btn.dataset.id);
+          auth.removeGoal(id);
+          location.reload();
+        });
+      });
+    }
+
+    // Atualizar estatísticas
+    function updateStats() {
+      document.getElementById('subjectCount').textContent = user.subjects.length;
+      document.getElementById('goalCount').textContent = user.goals.length;
+      document.getElementById('completedGoals').textContent = user.goals.filter(g => g.completed).length;
+      const progress = auth.getDailyProgress();
+      document.getElementById('progressPercent').textContent = progress + '%';
+      document.getElementById('progressBar').style.width = progress + '%';
+    }
+
+    // Adicionar matéria
+    addSubjectBtn.addEventListener('click', () => {
+      const name = subjectInput.value.trim();
+      const hours = parseInt(targetHoursInput.value) || 0;
+
+      if (name) {
+        auth.addSubject(name, hours);
+        subjectInput.value = '';
+        targetHoursInput.value = '';
+        location.reload();
+      }
+    });
+
+    // Adicionar meta
+    addGoalBtn.addEventListener('click', () => {
+      const text = goalInput.value.trim();
+      if (text) {
+        auth.addGoal(text);
+        goalInput.value = '';
+        location.reload();
+      }
+    });
+
+    // Logout
+    [logoutButton, logoutBtn, logoutLink].forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        auth.logout();
+        window.location.href = 'login.html';
+      });
+    });
+
+    // Renderizar tudo ao carregar
+    renderSubjects();
+    renderGoals();
+    updateStats();
+  </script>
+</body>
+</html>
