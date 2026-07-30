@@ -480,3 +480,22 @@ window.addEventListener('scroll', () => {
     header.style.boxShadow = 'none';
   }
 });
+
+// Progress sidebar toggle: expand/collapse when clicking the small collapsed card
+const progressSidebar = document.getElementById('progressSidebar');
+const progressToggle = document.getElementById('progressToggle');
+if (progressToggle && progressSidebar) {
+  progressToggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    progressSidebar.classList.toggle('collapsed');
+    const open = !progressSidebar.classList.contains('collapsed');
+    progressToggle.textContent = open ? 'Fechar' : 'Abrir';
+  });
+  // clicking the collapsed sidebar opens it
+  progressSidebar.addEventListener('click', (e) => {
+    if (progressSidebar.classList.contains('collapsed')) {
+      progressSidebar.classList.remove('collapsed');
+      progressToggle.textContent = 'Fechar';
+    }
+  });
+}

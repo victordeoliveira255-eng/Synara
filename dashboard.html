@@ -321,6 +321,15 @@
       margin-bottom: 1rem;
     }
 
+    /* Hide subject selection to make chat a single unified conversation (ChatGPT-like) */
+    .subject-selection,
+    .add-subject-form,
+    .subject-card,
+    .subject-item,
+    #subjectAddForm {
+      display: none !important;
+    }
+
     .goals-input-layout {
       display: grid;
       grid-template-columns: 1fr auto;
@@ -617,13 +626,39 @@
       background: #f7fbff;
     }
 
+    /* Collapsible progress sidebar styles */
+    .progress-sidebar {
+      position: fixed;
+      right: 28px;
+      top: 140px;
+      width: 320px;
+      max-width: 36vw;
+      transition: width 0.22s ease, transform 0.22s ease, opacity 0.22s;
+      z-index: 60;
+    }
+    .progress-sidebar.collapsed {
+      width: 64px;
+      padding: 0.6rem;
+      overflow: hidden;
+      border-radius: 14px;
+      cursor: pointer;
+    }
+    .progress-sidebar.collapsed .panel-card-header p,
+    .progress-sidebar.collapsed .summary-cards,
+    .progress-sidebar.collapsed .progress-box,
+    .progress-sidebar.collapsed .progress-bar {
+      display: none !important;
+    }
+    .progress-sidebar.collapsed .panel-card-header h3 { font-size: 0.85rem; }
+    .small-button { padding: 0.5rem 0.75rem; border-radius: 10px; background: #f4f9fb; border: 1px solid rgba(0,91,127,0.08); cursor: pointer; }
+
     .status-list strong {
       font-size: 1.3rem;
     }
 
     .chat-layout {
       display: grid;
-      grid-template-columns: 1.75fr 1fr;
+      grid-template-columns: 1fr;
       gap: 1.5rem;
       align-items: stretch;
     }
@@ -631,12 +666,13 @@
     .chat-preview {
       display: flex;
       flex-direction: column;
-      min-height: 540px;
+      min-height: 760px;
       background: #ffffff;
       border: 1px solid rgba(0, 91, 127, 0.08);
       border-radius: 34px;
       box-shadow: var(--shadow);
       overflow: hidden;
+      padding: 0;
     }
 
     .chat-header {
@@ -656,9 +692,9 @@
     }
 
     .chat-messages {
-      padding: 1.5rem;
+      padding: 2.2rem;
       display: grid;
-      gap: 1rem;
+      gap: 1.2rem;
       overflow-y: auto;
       flex: 1;
       background: #f6fbff;
@@ -673,11 +709,12 @@
     }
 
     .chat-bubble {
-      max-width: 72%;
-      padding: 1rem 1.2rem;
+      max-width: 82%;
+      padding: 1.1rem 1.4rem;
       border-radius: 22px;
-      line-height: 1.6;
-      box-shadow: 0 10px 24px rgba(18, 42, 65, 0.08);
+      line-height: 1.75;
+      font-size: 1.02rem;
+      box-shadow: 0 12px 30px rgba(18, 42, 65, 0.08);
     }
 
     .chat-message.user .chat-bubble {
@@ -695,7 +732,7 @@
     .chat-form {
       display: flex;
       gap: 1rem;
-      padding: 1.1rem 1.5rem 1.5rem;
+      padding: 1.6rem 1.8rem 1.8rem;
       background: var(--surface);
       border-top: 1px solid rgba(0, 91, 127, 0.08);
     }
@@ -915,9 +952,12 @@
           </div>
         </div>
 
-        <aside class="progress-sidebar">
+        <aside class="progress-sidebar collapsed" id="progressSidebar">
           <div class="panel-card-header">
-            <h3>Seu progresso</h3>
+            <div style="display:flex;align-items:center;gap:8px;justify-content:space-between;">
+              <h3 style="margin:0;">Seu progresso</h3>
+              <button id="progressToggle" class="small-button" aria-label="Alternar painel">Abrir</button>
+            </div>
             <p>Veja seu desempenho e acompanhe metas importantes com clareza.</p>
           </div>
           <div class="summary-cards">
