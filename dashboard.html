@@ -251,6 +251,8 @@
     }
 
     .quick-action:hover { opacity: 0.95; }
+    .quick-action svg { width: 18px; height: 18px; margin-right: 0.6rem; vertical-align: middle; fill: currentColor; }
+    .quick-action { display: inline-flex; align-items: center; }
 
     .section-header p,
     .subject-add-note,
@@ -881,10 +883,22 @@
                 <button type="submit">Enviar</button>
               </div>
               <div class="quick-actions" id="quickActions">
-                <button type="button" class="quick-action" data-action="explain">Explique sobre</button>
-                <button type="button" class="quick-action" data-action="summary">Criar resumo</button>
-                <button type="button" class="quick-action" data-action="question">Gerar questão</button>
-                <button type="button" class="quick-action" data-action="tips">Dicas de estudo</button>
+                <button type="button" class="quick-action" data-action="explain">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3l8 4v8l-8 4-8-4V7l8-4zm0 2.18L6 7.5v7l6 3 6-3v-7l-6-2.32z"></path></svg>
+                  Explique sobre
+                </button>
+                <button type="button" class="quick-action" data-action="summary">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 5h18v2H3V5zm0 6h18v2H3v-2zm0 6h12v2H3v-2z"></path></svg>
+                  Criar resumo
+                </button>
+                <button type="button" class="quick-action" data-action="question">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-2h2v2zm1.07-7.75l-.9.92A2 2 0 0012 12v1h-2v-1c0-1 .45-1.5 1.17-2.23l1.24-1.26A1.5 1.5 0 0011 5.5V5h2v.5c0 .28.11.53.29.71l1.78 1.79c.37.36.61.86.61 1.45 0 .73-.29 1.25-.91 1.7z"></path></svg>
+                  Gerar questão
+                </button>
+                <button type="button" class="quick-action" data-action="tips">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M9 21h6v-1.5H9V21zm3-19C7.48 2 4 5.48 4 10c0 2.5 1.22 4.72 3 6.16V18h10v-1.84c1.78-1.44 3-3.66 3-6.16 0-4.52-3.48-8-8-8zM11 6h2v5h-2V6z"></path></svg>
+                  Dicas de estudo
+                </button>
               </div>
             </form>
           </div>

@@ -405,12 +405,10 @@ document.addEventListener('click', (e) => {
       text = '';
   }
   if (!text) return;
-  // prefills input then sends automatically
+  // prefills input so the user can edit or press enviar
   chatInput.value = text;
-  // small timeout so user can cancel/edit if needed
-  setTimeout(() => {
-    sendMessageText(text);
-  }, 180);
+  chatInput.focus();
+  try { chatInput.setSelectionRange(chatInput.value.length, chatInput.value.length); } catch (e) {}
 });
 
 async function sendMessageText(text) {
