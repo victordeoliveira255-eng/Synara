@@ -382,6 +382,65 @@ async function sendUserMessage(event) {
 }
 
 chatForm?.addEventListener('submit', sendUserMessage);
+// Quick action buttons: click to prefill and send a contextual prompt, or allow user to edit before sending
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest && e.target.closest('.quick-action');
+  if (!btn) return;
+  const action = btn.dataset.action;
+  let text = '';
+  switch (action) {
+    case 'explain':
+      text = `Explique sobre ${currentSubject}`;
+      break;
+    case 'summary':
+      text = `Faça um resumo curto sobre ${currentSubject}`;
+      break;
+    case 'question':
+      text = `Gere uma questão prática sobre ${currentSubject}`;
+      break;
+    case 'tips':
+      text = `Me dê dicas de estudo para ${currentSubject}`;
+      break;
+    default:
+      text = '';
+  }
+  if (!text) return;
+  // prefills input then sends automatically
+  chatInput.value = text;
+  // small timeout so user can cancel/edit if needed
+  setTimeout(() => {
+    sendMessageText(text);
+  }, 180);
+});
+
+async function sendMessageText(text) {
+  if (!text || !text.trim()) return;
+  appendMessage('user', text);
+  addToHistory('user', text);
+  chatInput.value = '';
+  chatInput.disabled = true;
+
+  appendMessage('bot', 'Pensando...');
+  const botResponse = await getApiResponse(text);
+
+  const lastBotMessage = [...chatMessages.querySelectorAll('.chat-message.bot')].pop();
+
+  if (botResponse?.clarify) {
+    if (lastBotMessage) lastBotMessage.querySelector('.chat-bubble').textContent = botResponse.question;
+    awaitingClarification = true;
+    pendingOriginalMessage = text;
+    addToHistory('bot', botResponse.question);
+  } else {
+    const replyText = (botResponse && botResponse.text) ? botResponse.text : (typeof botResponse === 'string' ? botResponse : fallbackResponse(text, currentSubject));
+    if (lastBotMessage) lastBotMessage.querySelector('.chat-bubble').textContent = replyText;
+    addToHistory('bot', replyText);
+    awaitingClarification = false;
+    pendingOriginalMessage = null;
+  }
+
+  chatInput.disabled = false;
+  chatInput.focus();
+}
 scrollLinks.forEach((link) => {
   link.addEventListener('click', scrollToSection);
 });

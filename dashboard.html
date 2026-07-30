@@ -218,6 +218,40 @@
       color: #ffffff;
     }
 
+    .chat-input-row {
+      display: flex;
+      gap: 0.8rem;
+      align-items: center;
+    }
+
+    .chat-input-row input#chatInput {
+      flex: 1;
+      padding: 0.9rem 1.2rem;
+      border-radius: 28px;
+      border: 1px solid rgba(0,0,0,0.06);
+      background: #f7fbff;
+      color: #092033;
+    }
+
+    .quick-actions {
+      display: flex;
+      gap: 0.6rem;
+      margin-top: 0.8rem;
+      flex-wrap: wrap;
+    }
+
+    .quick-action {
+      background: rgba(10,126,148,0.08);
+      color: #0b3e52;
+      border: 1px solid rgba(10,126,148,0.12);
+      padding: 0.5rem 0.9rem;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .quick-action:hover { opacity: 0.95; }
+
     .section-header p,
     .subject-add-note,
     .chat-note,
@@ -842,8 +876,16 @@
               <div class="chat-message bot"><div class="chat-bubble">Olá! Vi que você está estudando. Como posso ajudar?</div></div>
             </div>
             <form class="chat-form" id="chatForm">
-              <input id="chatInput" type="text" placeholder="Pergunte algo..." aria-label="Mensagem para a SYNARA" />
-              <button type="submit">Enviar</button>
+              <div class="chat-input-row">
+                <input id="chatInput" type="text" placeholder="Pergunte algo..." aria-label="Mensagem para a SYNARA" />
+                <button type="submit">Enviar</button>
+              </div>
+              <div class="quick-actions" id="quickActions">
+                <button type="button" class="quick-action" data-action="explain">Explique sobre</button>
+                <button type="button" class="quick-action" data-action="summary">Criar resumo</button>
+                <button type="button" class="quick-action" data-action="question">Gerar questão</button>
+                <button type="button" class="quick-action" data-action="tips">Dicas de estudo</button>
+              </div>
             </form>
           </div>
         </div>
