@@ -253,6 +253,17 @@
     .quick-action:hover { opacity: 0.95; }
     .quick-action svg { width: 18px; height: 18px; margin-right: 0.6rem; vertical-align: middle; fill: currentColor; }
     .quick-action { display: inline-flex; align-items: center; }
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(0,0,0,0.08);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      display: inline-block;
+      vertical-align: middle;
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     .section-header p,
     .subject-add-note,
@@ -880,7 +891,7 @@
             <form class="chat-form" id="chatForm">
               <div class="chat-input-row">
                 <input id="chatInput" type="text" placeholder="Pergunte algo..." aria-label="Mensagem para a SYNARA" />
-                <button type="submit">Enviar</button>
+                <button type="submit" id="sendBtn">Enviar <span id="global-spinner" class="spinner" style="display:none; margin-left:8px;"></span></button>
               </div>
               <div class="quick-actions" id="quickActions">
                 <button type="button" class="quick-action" data-action="explain">

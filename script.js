@@ -9,6 +9,17 @@ let currentSubject = 'Geral';
 let conversationHistory = [];
 let awaitingClarification = false;
 let pendingOriginalMessage = null;
+let isLoading = false;
+
+function setLoading(flag) {
+  isLoading = !!flag;
+  const sendBtn = document.getElementById('sendBtn');
+  const quicks = document.querySelectorAll('.quick-action');
+  const spinner = document.getElementById('global-spinner');
+  if (sendBtn) sendBtn.disabled = isLoading;
+  quicks.forEach(b => { if (isLoading) b.setAttribute('disabled','true'); else b.removeAttribute('disabled'); });
+  if (spinner) spinner.style.display = isLoading ? 'inline-block' : 'none';
+}
 
 function getSavedSubjects() {
   return auth.getCurrentUser()?.subjects?.map(subject => subject.name) || [];
@@ -327,6 +338,7 @@ async function sendUserMessage(event) {
   addToHistory('user', userMessage);
   chatInput.value = '';
   chatInput.disabled = true;
+  setLoading(true);
 
   appendMessage('bot', 'Pensando...');
   // If we are awaiting a clarification answer, check if user asked for an exercise
@@ -353,13 +365,20 @@ async function sendUserMessage(event) {
       }
       awaitingClarification = false;
       pendingOriginalMessage = null;
+      setLoading(false);
       chatInput.disabled = false;
       chatInput.focus();
       return;
     }
   }
 
-  const botResponse = await getApiResponse(userMessage);
+  let botResponse;
+  try {
+    botResponse = await getApiResponse(userMessage);
+  } catch (err) {
+    console.error('Chat error', err);
+    botResponse = fallbackResponse(userMessage, currentSubject);
+  }
 
   const lastBotMessage = [...chatMessages.querySelectorAll('.chat-message.bot')].pop();
 
@@ -378,6 +397,7 @@ async function sendUserMessage(event) {
   }
 
   chatInput.disabled = false;
+  setLoading(false);
   chatInput.focus();
 }
 
@@ -406,6 +426,7 @@ document.addEventListener('click', (e) => {
   }
   if (!text) return;
   // prefills input so the user can edit or press enviar
+  if (isLoading) return;
   chatInput.value = text;
   chatInput.focus();
   try { chatInput.setSelectionRange(chatInput.value.length, chatInput.value.length); } catch (e) {}
@@ -417,9 +438,16 @@ async function sendMessageText(text) {
   addToHistory('user', text);
   chatInput.value = '';
   chatInput.disabled = true;
+  setLoading(true);
 
   appendMessage('bot', 'Pensando...');
-  const botResponse = await getApiResponse(text);
+  let botResponse;
+  try {
+    botResponse = await getApiResponse(text);
+  } catch (err) {
+    console.error('Chat error', err);
+    botResponse = fallbackResponse(text, currentSubject);
+  }
 
   const lastBotMessage = [...chatMessages.querySelectorAll('.chat-message.bot')].pop();
 
@@ -437,6 +465,7 @@ async function sendMessageText(text) {
   }
 
   chatInput.disabled = false;
+  setLoading(false);
   chatInput.focus();
 }
 scrollLinks.forEach((link) => {
