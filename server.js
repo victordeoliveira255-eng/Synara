@@ -34,31 +34,40 @@ function fallbackResponse(message) {
 }
 
 app.post('/api/chat', async (req, res) => {
-  const { message } = req.body;
+  const { message, subject, history, subjects, goals } = req.body;
   if (!message || typeof message !== 'string') {
     return res.status(400).json({ error: 'Mensagem inválida' });
   }
 
   if (!openai) {
-    return res.json({ reply: fallbackResponse(message) });
+    return res.json({ reply: fallbackResponse(message, subject) });
   }
 
   try {
+    const systemPrompt = `Você é a mentora de estudos SYNARA. Sua missão é ajudar o aluno a aprender melhor, organizar matérias, criar planos de estudo e responder dúvidas de forma clara, acolhedora e prática. Use linguagem empática, explicações passo a passo, exemplos simples e, sempre que possível, proponha um pequeno plano de estudo baseado nas metas e nas matérias registradas. Se houver metas informadas, recomende próximos passos práticos para atingi-las, incluindo revisão, prática e pausas. Se não houver metas, sugira um plano geral de revisão para a matéria atual.`;
+    const details = [
+      subject ? `Matéria atual: ${subject}` : 'Matéria atual: Geral',
+      subjects && subjects.length ? `Matérias do estudante: ${subjects.join(', ')}` : null,
+      goals && goals.length ? `Metas do dia: ${goals.join(' | ')}` : 'Sem metas registradas no momento.',
+      history ? `Histórico recente: ${history}` : null,
+      `Pergunta: ${message}`
+    ].filter(Boolean).join('\n');
+
     const response = await openai.responses.create({
       model: 'gpt-4.1-mini',
-      input: `Você é um assistente de estudos chamado SYNARA. Responda de forma acolhedora, breve e útil ao pedido do usuário. Usuário: ${message}`
+      input: `${systemPrompt}\n\n${details}`
     });
 
-    const reply = (response.output || [])
+    const reply = response.output_text || (response.output || [])
       .flatMap(item => item?.content || [])
       .map(chunk => chunk?.text || '')
       .filter(Boolean)
-      .join(' ') || fallbackResponse(message);
+      .join(' ') || fallbackResponse(message, subject);
 
     res.json({ reply });
   } catch (error) {
     console.error('OpenAI error:', error);
-    res.json({ reply: fallbackResponse(message) });
+    res.json({ reply: fallbackResponse(message, subject) });
   }
 });
 

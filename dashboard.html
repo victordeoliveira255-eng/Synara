@@ -439,6 +439,39 @@
       gap: 0.5rem;
     }
 
+    .subject-item-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    .subject-item-actions .small-button,
+    .subject-item-actions .subject-item-remove {
+      padding: 0.6rem 0.95rem;
+      background: #f4f9fb;
+      color: #0b3e52;
+      border: 1px solid rgba(0, 91, 127, 0.12);
+      border-radius: 14px;
+      font-size: 0.95rem;
+    }
+
+    .chat-summary-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      margin: 1rem 0 0.8rem;
+      padding: 1rem 1.2rem;
+      border-radius: 20px;
+      background: rgba(10, 126, 148, 0.08);
+      color: #0b3e52;
+      font-size: 0.95rem;
+    }
+
+    .chat-summary-panel p {
+      margin: 0;
+    }
+
     .subject-card p,
     .goal-card p {
       margin: 0;
@@ -793,6 +826,10 @@
               <button class="subject-selection-button button-secondary" data-subject="Biologia">Biologia</button>
               <button class="subject-selection-button button-secondary" data-subject="Artes">Artes</button>
             </div>
+            <div class="chat-summary-panel">
+              <p id="chatSubjectSummary"><strong>Matérias:</strong> Geral</p>
+              <p id="chatGoalSummary"><strong>Metas:</strong> Sem metas definidas</p>
+            </div>
             <form class="subject-add-form" id="subjectAddForm">
               <label for="newSubject">Adicionar outra matéria</label>
               <div class="subject-add-controls">
@@ -940,7 +977,10 @@
             <strong>${subject.name}</strong>
             <small>Progresso: ${subject.completedHours}/${subject.targetHours} horas (${subject.progress}%)</small>
           </div>
-          <button class="subject-item-remove" data-id="${subject.id}">Remover</button>
+          <div class="subject-item-actions">
+            <button class="small-button" type="button" data-subject="${subject.name}">Selecionar</button>
+            <button class="subject-item-remove" type="button" data-id="${subject.id}">Remover</button>
+          </div>
         </div>
       `).join('');
 
@@ -950,6 +990,13 @@
           const id = parseInt(btn.dataset.id);
           auth.removeSubject(id);
           location.reload();
+        });
+      });
+
+      document.querySelectorAll('.subject-item-actions button[data-subject]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          setCurrentSubject(btn.dataset.subject);
+          updateChatSummary();
         });
       });
     }
@@ -1035,6 +1082,13 @@
     renderSubjects();
     renderGoals();
     updateStats();
+    updateChatSummary();
+
+    // Sincroniza seleção de matérias existentes no chat ao carregar a página
+    const current = document.getElementById('currentSubjectLabel');
+    if (current) {
+      setCurrentSubject(current.textContent || 'Geral');
+    }
   </script>
 </body>
 </html>
