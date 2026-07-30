@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import { OpenAI } from 'openai';
 import fs from 'fs';
 import path from 'path';
+import { Pool } from 'pg';
 
 dotenv.config();
 
@@ -26,6 +27,32 @@ try {
 } catch (e) {
   console.warn('Could not read memory store:', e.message);
   memoryStore = {};
+}
+
+// Optional Postgres pool (simple fallback to local file if not configured)
+let pgPool = null;
+const DATABASE_URL = process.env.DATABASE_URL;
+if (DATABASE_URL) {
+  pgPool = new Pool({ connectionString: DATABASE_URL });
+  // ensure table exists
+  (async () => {
+    try {
+      await pgPool.query(
+        `CREATE TABLE IF NOT EXISTS embeddings (
+          id SERIAL PRIMARY KEY,
+          user_email TEXT,
+          content TEXT,
+          embedding JSONB,
+          metadata JSONB,
+          created_at TIMESTAMPTZ DEFAULT now()
+        );`
+      );
+      console.log('Postgres embeddings table ready');
+    } catch (err) {
+      console.error('Error creating embeddings table:', err.message);
+      pgPool = null;
+    }
+  })();
 }
 
 function persistStore() {
@@ -55,11 +82,18 @@ app.post('/api/embeddings/index', async (req, res) => {
   if (!userEmail || !content) return res.status(400).json({ error: 'Missing userEmail or content' });
   try {
     const embedding = await createEmbedding(content);
+    if (pgPool) {
+      const result = await pgPool.query('INSERT INTO embeddings (user_email, content, embedding, metadata) VALUES ($1, $2, $3, $4) RETURNING id, created_at', [userEmail, content, embedding, metadata || {}]);
+      const entry = { id: result.rows[0].id, content, embedding, metadata: metadata || {}, createdAt: result.rows[0].created_at };
+      res.json({ ok: true, entry, source: 'pg' });
+      return;
+    }
+
     const entry = { id: Date.now(), content, embedding, metadata: metadata || {}, createdAt: new Date().toISOString() };
     memoryStore[userEmail] = memoryStore[userEmail] || [];
     memoryStore[userEmail].push(entry);
     persistStore();
-    res.json({ ok: true, entry });
+    res.json({ ok: true, entry, source: 'local' });
   } catch (err) {
     console.error('Indexing error:', err);
     res.status(500).json({ error: 'Indexing failed' });
@@ -71,10 +105,21 @@ app.post('/api/embeddings/query', async (req, res) => {
   if (!userEmail || !query) return res.status(400).json({ error: 'Missing userEmail or query' });
   try {
     const qEmb = await createEmbedding(query);
+
+    if (pgPool) {
+      // fetch all user entries and compute similarity in JS (simple approach)
+      const dbRes = await pgPool.query('SELECT id, content, embedding, metadata FROM embeddings WHERE user_email = $1', [userEmail]);
+      const items = dbRes.rows.map(r => ({ id: r.id, content: r.content, score: cosine(qEmb, r.embedding), metadata: r.metadata }));
+      items.sort((a, b) => b.score - a.score);
+      const top = items.slice(0, topK);
+      res.json({ items: top, source: 'pg' });
+      return;
+    }
+
     const items = (memoryStore[userEmail] || []).map(entry => ({ id: entry.id, content: entry.content, score: cosine(qEmb, entry.embedding), metadata: entry.metadata }));
     items.sort((a, b) => b.score - a.score);
     const top = items.slice(0, topK);
-    res.json({ items: top });
+    res.json({ items: top, source: 'local' });
   } catch (err) {
     console.error('Query error:', err);
     res.status(500).json({ error: 'Query failed' });
