@@ -58,7 +58,8 @@ function addToHistory(sender, message) {
 }
 
 function getRecentContext() {
-  return conversationHistory.slice(-3).map(m => `${m.sender}: ${m.message}`).join('\n');
+  // Envia mais contexto (últimas 6 mensagens) com papel do autor para melhor coesão
+  return conversationHistory.slice(-6).map(m => `${m.sender.toUpperCase()}: ${m.message}`).join('\n');
 }
 
 function updateChatSummary() {

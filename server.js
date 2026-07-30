@@ -13,24 +13,53 @@ app.use(express.static('.'));
 const openAiKey = process.env.OPENAI_API_KEY;
 const openai = openAiKey ? new OpenAI({ apiKey: openAiKey }) : null;
 
-function fallbackResponse(message) {
-  const text = message.toLowerCase();
+function fallbackResponse(message, subject = 'Geral') {
+  // Respostas locais mais variadas e com pequenas sugestões de plano
+  const text = (message || '').toLowerCase();
+  const variations = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
   if (/foco|concentra|distração|atenção/.test(text)) {
-    return 'Para manter o foco, faça blocos de estudo de 25 minutos e revise em intervalos curtos. A SYNARA sugere pausas curtas sempre que o foco cair.';
+    return variations([
+      'Tente blocos de 25 minutos (Pomodoro) com 5 minutos de pausa. Como está seu ambiente de estudo?',
+      'Divida a tarefa em passos de 25 minutos e anote o que fará em cada bloco. Quer que eu monte um cronograma rápido?',
+      'Experimente 3 blocos de 25 minutos focados, depois avalie o progresso. Quer eu sugira o primeiro passo?'
+    ]);
   }
+
   if (/ansiedade|estresse|cansaço/.test(text)) {
-    return 'Quando o estresse aumentar, diminua o ritmo e faça uma pausa consciente. Uma pequena caminhada ou exercício de respiração ajuda a manter sua energia.';
+    return variations([
+      'Respire e faça uma pausa curta de 5–10 minutos; uma caminhada rápida ajuda. Quer que eu sugira um exercício de respiração?',
+      'Reduza a intensidade por um momento e volte com metas menores. Posso sugerir uma tarefa bem curta para recuperar o ritmo.'
+    ]);
   }
+
   if (/plano|rotina|agenda/.test(text)) {
-    return 'Seu plano deve equilibrar revisão e novo conteúdo. Priorize os tópicos mais difíceis e reveja o que já estudou recentemente.';
+    return variations([
+      `Monte um plano curto: revisão (20 min), prática (30 min), revisão rápida (10 min) — adaptação para ${subject}. Quer que eu detalhe?`,
+      `Sugiro priorizar 1 tópico difícil por sessão e 2 tópicos de revisão. Posso gerar um plano de 3 passos para ${subject}.`
+    ]);
   }
+
   if (/revisão|exercício|questão/.test(text)) {
-    return 'Revisar com frequência ajuda a fixar conteúdo. Alterne entre teoria e prática para melhorar retenção.';
+    return variations([
+      'Revisar com questões é ótimo: faça 10 questões focadas no tópico e corrija explicando cada passo.',
+      'Intercale teoria e prática: 20 min teoria + 20 min exercícios. Quer um exercício agora?'
+    ]);
   }
+
   if (/começar|ajuda|o que/.test(text)) {
-    return 'Vamos começar! Diga qual matéria ou tema você quer revisar hoje para eu te ajudar a montar o melhor plano.';
+    return variations([
+      `Vamos começar por ${subject}. Diga um subtema que quer priorizar e eu monto um plano de 3 passos.`,
+      `Diga se prefere revisão ou prática em ${subject} — eu sugiro o primeiro passo.`
+    ]);
   }
-  return 'Ótimo questionamento! A SYNARA sugere criar um objetivo claro para hoje e focar no próximo passo pequeno do seu estudo.';
+
+  // Caso geral: ofereça sugestão de objetivo e um próximo passo
+  return variations([
+    `Boa! Um objetivo claro ajuda: defina 20–40 minutos para focar em um tópico de ${subject} e faça um exercício ao final. Qual tópico você prefere?`,
+    `Ótima pergunta! Posso explicar brevemente ou propor um exercício para ${subject}. O que prefere agora?`,
+    `Vamos focar no próximo passo: escolha um ponto pequeno em ${subject} e praticamos juntos.`
+  ]);
 }
 
 app.post('/api/chat', async (req, res) => {
