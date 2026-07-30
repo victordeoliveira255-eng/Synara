@@ -39,3 +39,14 @@ http://localhost:3000/index.html
 ## Observação
 
 Se não houver chave de API disponível, o chat continuará funcionando com respostas de fallback locais.
+
+## Deploy no Render
+
+1. Crie uma conta no Render e conecte seu GitHub.
+2. No painel do Render clique em **New → Web Service** e selecione este repositório (`victordeoliveira255-eng/Synara`).
+3. Em **Build Command** use: `npm install`
+4. Em **Start Command** use: `npm start`
+5. Adicione a variável de ambiente `OPENAI_API_KEY` com sua chave da OpenAI (se quiser respostas reais).
+6. Salve — o Render fará o deploy automático e fornecerá uma URL pública.
+
+Também é possível usar um arquivo de especificação `render.yaml` (exemplo no repositório) para configurar o serviço automaticamente.

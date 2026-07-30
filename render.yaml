@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: synara-web
+    env: node
+    plan: free
+    buildCommand: "npm install"
+    startCommand: "npm start"
+    branch: main
+    autoDeploy: true
