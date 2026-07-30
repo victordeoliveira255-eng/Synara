@@ -2,9 +2,6 @@ const scrollLinks = document.querySelectorAll('a[href^="#"]');
 const chatMessages = document.getElementById('chatMessages');
 const chatForm = document.getElementById('chatForm');
 const chatInput = document.getElementById('chatInput');
-const subjectAddForm = document.getElementById('subjectAddForm');
-const newSubjectInput = document.getElementById('newSubject');
-const currentSubjectLabel = document.getElementById('currentSubjectLabel');
 let currentSubject = 'Geral';
 let conversationHistory = [];
 let awaitingClarification = false;
@@ -21,46 +18,7 @@ function setLoading(flag) {
   if (spinner) spinner.style.display = isLoading ? 'inline-block' : 'none';
 }
 
-function getSavedSubjects() {
-  return auth.getCurrentUser()?.subjects?.map(subject => subject.name) || [];
-}
-
-function getSavedGoals() {
-  return auth.getCurrentUser()?.goals?.map(goal => goal.text) || [];
-}
-
-function populateSavedSubjects() {
-  const selection = document.querySelector('.subject-selection');
-  if (!selection) return;
-
-  const existingSubjects = new Set(
-    Array.from(selection.querySelectorAll('.subject-selection-button')).map(button => button.dataset.subject)
-  );
-
-  getSavedSubjects().forEach(subjectName => {
-    if (!existingSubjects.has(subjectName)) {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'subject-selection-button button-secondary';
-      button.dataset.subject = subjectName;
-      button.textContent = subjectName;
-      selection.appendChild(button);
-    }
-  });
-}
-
-function attachSubjectSelectionHandlers() {
-  document.body.addEventListener('click', (event) => {
-    const target = event.target;
-    if (target.matches('.subject-selection-button')) {
-      event.preventDefault();
-      setCurrentSubject(target.dataset.subject);
-    }
-  });
-}
-
-attachSubjectSelectionHandlers();
-populateSavedSubjects();
+// Subjects removed: UI simplified to a single chat. Subject management code removed.
 
 // Histórico de conversa para contexto
 function addToHistory(sender, message) {
@@ -83,19 +41,7 @@ function getRecentMessages(limit = 12) {
   }));
 }
 
-function updateChatSummary() {
-  const subjects = getSavedSubjects();
-  const goals = getSavedGoals();
-  const subjectSummary = document.getElementById('chatSubjectSummary');
-  const goalSummary = document.getElementById('chatGoalSummary');
-
-  if (subjectSummary) {
-    subjectSummary.innerHTML = `<strong>Matérias:</strong> ${subjects.length ? subjects.join(', ') : 'Nenhuma matéria adicionada'}`;
-  }
-  if (goalSummary) {
-    goalSummary.innerHTML = `<strong>Metas:</strong> ${goals.length ? goals.join(' | ') : 'Sem metas definidas'}`;
-  }
-}
+// updateChatSummary removed — subjects UI disabled in this version.
 
 function scrollToSection(event) {
   const href = this.getAttribute('href');
@@ -118,10 +64,6 @@ function appendMessage(sender, message) {
   chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
-function selectSubjectFromList(subjectName) {
-  setCurrentSubject(subjectName);
-  appendMessage('bot', `Agora você está conversando sobre ${subjectName}. Como posso ajudar nessa matéria?`);
-}
 
 function fallbackResponse(userMessage, subject = 'Geral') {
   const text = userMessage.toLowerCase();

@@ -1062,134 +1062,17 @@
   <script src="script.js"></script>
   <script>
     const user = auth.getCurrentUser();
-    
-    // Redirecionar se não estiver logado
     if (!user) {
       window.location.href = 'login.html';
     }
-
     const userGreeting = document.getElementById('userGreeting');
-    const subjectInput = document.getElementById('subjectInput');
-    const targetHoursInput = document.getElementById('targetHoursInput');
-    const addSubjectBtn = document.getElementById('addSubjectBtn');
-    const subjectsList = document.getElementById('subjectsList');
-    const goalInput = document.getElementById('goalInput');
-    const addGoalBtn = document.getElementById('addGoalBtn');
-    const goalsList = document.getElementById('goalsList');
     const logoutButton = document.getElementById('logoutButton');
     const logoutBtn = document.getElementById('logoutBtn');
     const logoutLink = document.getElementById('logoutLink');
+    if (userGreeting) userGreeting.textContent = `Olá, ${user.name}!`;
 
-    // Saudação personalizada
-    userGreeting.textContent = `Bem-vindo, ${user.name}!`;
-
-    // Renderizar matérias
-    function renderSubjects() {
-      if (user.subjects.length === 0) {
-        subjectsList.innerHTML = '<div class="empty-state"><p>Nenhuma matéria adicionada ainda. Comece adicionando uma!</p></div>';
-        return;
-      }
-
-      subjectsList.innerHTML = user.subjects.map(subject => `
-        <div class="subject-item">
-          <div class="subject-item-info">
-            <strong>${subject.name}</strong>
-            <small>Progresso: ${subject.completedHours}/${subject.targetHours} horas (${subject.progress}%)</small>
-          </div>
-          <div class="subject-item-actions">
-            <button class="small-button" type="button" data-subject="${subject.name}">Selecionar</button>
-            <button class="subject-item-remove" type="button" data-id="${subject.id}">Remover</button>
-          </div>
-        </div>
-      `).join('');
-
-      // Adicionar listeners para remover
-      document.querySelectorAll('.subject-item-remove').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const id = parseInt(btn.dataset.id);
-          auth.removeSubject(id);
-          location.reload();
-        });
-      });
-
-      document.querySelectorAll('.subject-item-actions button[data-subject]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          setCurrentSubject(btn.dataset.subject);
-          updateChatSummary();
-        });
-      });
-    }
-
-    // Renderizar metas
-    function renderGoals() {
-      if (user.goals.length === 0) {
-        goalsList.innerHTML = '<div class="empty-state"><p>Nenhuma meta adicionada. Defina suas metas para ficar mais focado!</p></div>';
-        return;
-      }
-
-      goalsList.innerHTML = user.goals.map(goal => `
-        <div class="goal-item" style="${goal.completed ? 'opacity: 0.6;' : ''}">
-          <div style="flex: 1;">
-            <input type="checkbox" ${goal.completed ? 'checked' : ''} data-id="${goal.id}" class="goal-checkbox" style="margin-right: 0.8rem;">
-            <span style="${goal.completed ? 'text-decoration: line-through;' : ''}">${goal.text}</span>
-          </div>
-          <button class="goal-item-remove" data-id="${goal.id}">Remover</button>
-        </div>
-      `).join('');
-
-      // Adicionar listeners
-      document.querySelectorAll('.goal-checkbox').forEach(checkbox => {
-        checkbox.addEventListener('change', () => {
-          const id = parseInt(checkbox.dataset.id);
-          auth.completeGoal(id);
-          location.reload();
-        });
-      });
-
-      document.querySelectorAll('.goal-item-remove').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const id = parseInt(btn.dataset.id);
-          auth.removeGoal(id);
-          location.reload();
-        });
-      });
-    }
-
-    // Atualizar estatísticas
-    function updateStats() {
-      document.getElementById('subjectCount').textContent = user.subjects.length;
-      document.getElementById('goalCount').textContent = user.goals.length;
-      document.getElementById('completedGoals').textContent = user.goals.filter(g => g.completed).length;
-      const progress = auth.getDailyProgress();
-      document.getElementById('progressPercent').textContent = progress + '%';
-      document.getElementById('progressBar').style.width = progress + '%';
-    }
-
-    // Adicionar matéria
-    addSubjectBtn.addEventListener('click', () => {
-      const name = subjectInput.value.trim();
-      const hours = parseInt(targetHoursInput.value) || 0;
-
-      if (name) {
-        auth.addSubject(name, hours);
-        subjectInput.value = '';
-        targetHoursInput.value = '';
-        location.reload();
-      }
-    });
-
-    // Adicionar meta
-    addGoalBtn.addEventListener('click', () => {
-      const text = goalInput.value.trim();
-      if (text) {
-        auth.addGoal(text);
-        goalInput.value = '';
-        location.reload();
-      }
-    });
-
-    // Logout
     [logoutButton, logoutBtn, logoutLink].forEach(btn => {
+      if (!btn) return;
       btn.addEventListener('click', (e) => {
         e.preventDefault();
         auth.logout();
@@ -1197,17 +1080,16 @@
       });
     });
 
-    // Renderizar tudo ao carregar
-    renderSubjects();
-    renderGoals();
-    updateStats();
-    updateChatSummary();
-
-    // Sincroniza seleção de matérias existentes no chat ao carregar a página
-    const current = document.getElementById('currentSubjectLabel');
-    if (current) {
-      setCurrentSubject(current.textContent || 'Geral');
-    }
+    // Update simple progress indicators if present
+    const progressPercentEl = document.getElementById('progressPercent');
+    const progressBarEl = document.getElementById('progressBar');
+    const goalCountEl = document.getElementById('goalCount');
+    const completedGoalsEl = document.getElementById('completedGoals');
+    const progress = (typeof auth.getDailyProgress === 'function') ? auth.getDailyProgress() : 0;
+    if (progressPercentEl) progressPercentEl.textContent = progress + '%';
+    if (progressBarEl) progressBarEl.style.width = progress + '%';
+    if (goalCountEl && user.goals) goalCountEl.textContent = user.goals.length;
+    if (completedGoalsEl && user.goals) completedGoalsEl.textContent = user.goals.filter(g => g.completed).length;
   </script>
 </body>
 </html>
