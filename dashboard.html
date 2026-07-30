@@ -179,6 +179,29 @@
       display: block;
     }
 
+    /* Hero center (large input + examples) */
+    .hero-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      padding: 2rem 2.4rem;
+      text-align: center;
+      background: transparent;
+    }
+    .hero-title {
+      margin: 0;
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: var(--primary);
+    }
+    .hero-sub { color: #516975; margin: 0; }
+    .hero-input-area { display:flex; gap:0.8rem; align-items:center; width:100%; max-width:820px; }
+    .hero-input { flex:1; min-height:84px; border-radius:14px; padding:1rem 1.1rem; border:1px solid rgba(10,126,148,0.08); background:#fff; font-size:1rem; color:#123039; resize:vertical; }
+    .hero-send { width:56px; height:56px; border-radius:12px; background:linear-gradient(135deg,#00cfc8,#0aa6b3); border:none; color:white; font-weight:800; font-size:20px; cursor:pointer; box-shadow:0 12px 30px rgba(10,126,148,0.12); }
+    .hero-examples { display:flex; gap:0.75rem; flex-wrap:wrap; justify-content:center; margin-top:0.6rem; }
+    .example-button { padding:0.75rem 1rem; border-radius:12px; background:rgba(10,126,148,0.06); border:1px solid rgba(10,126,148,0.12); color:#0b3e52; font-weight:700; cursor:pointer; }
+
     .chat-subject-tag-light {
       color: #d1f5f8;
       font-size: 0.9rem;
@@ -910,7 +933,21 @@
             <div class="chat-header-teal">
               <div>
                 <span class="chat-header-title">Mentora SYNARA</span>
-                <small class="chat-subject-tag-light">Matéria atual: <strong id="currentSubjectLabel">Geral</strong></small>
+              </div>
+            </div>
+
+            <div class="hero-center" id="heroCenter">
+              <h2 class="hero-title">Olá, ${user?.name || 'Aluno'}</h2>
+              <p class="hero-sub">Pergunte qualquer coisa ou escolha um exemplo abaixo para começar</p>
+              <div class="hero-input-area">
+                <textarea id="heroInput" class="hero-input" placeholder="Explique de um jeito simples sobre..."></textarea>
+                <button id="heroSendBtn" class="hero-send" aria-label="Enviar">↑</button>
+              </div>
+              <div class="hero-examples">
+                <button type="button" class="example-button quick-action" data-action="explain">Explique sobre</button>
+                <button type="button" class="example-button quick-action" data-action="summary">Criar resumo</button>
+                <button type="button" class="example-button quick-action" data-action="question">Gerar questão</button>
+                <button type="button" class="example-button quick-action" data-action="tips">Dicas de estudo</button>
               </div>
             </div>
             <div class="subject-selection">

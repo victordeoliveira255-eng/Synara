@@ -370,9 +370,30 @@ document.addEventListener('click', (e) => {
   // prefills input so the user can edit or press enviar
   if (isLoading) return;
   chatInput.value = text;
+  const heroInput = document.getElementById('heroInput');
+  if (heroInput) heroInput.value = text;
   chatInput.focus();
   try { chatInput.setSelectionRange(chatInput.value.length, chatInput.value.length); } catch (e) {}
 });
+
+// Hero send button: copy hero input to chat input and send
+const heroSendBtn = document.getElementById('heroSendBtn');
+if (heroSendBtn) {
+  heroSendBtn.addEventListener('click', (e) => {
+    const heroInput = document.getElementById('heroInput');
+    if (!heroInput) return;
+    const text = heroInput.value.trim();
+    if (!text) return;
+    // put text in main input for consistency
+    chatInput.value = text;
+    // send via existing helper
+    sendMessageText(text);
+    heroInput.value = '';
+    // hide hero center if desired
+    const heroCenter = document.getElementById('heroCenter');
+    if (heroCenter) heroCenter.style.display = 'none';
+  });
+}
 
 async function sendMessageText(text) {
   if (!text || !text.trim()) return;
