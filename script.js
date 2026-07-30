@@ -208,6 +208,25 @@ function fallbackResponse(userMessage, subject = 'Geral') {
 async function getApiResponse(message) {
   try {
     const user = auth.getCurrentUser();
+    const userEmail = user?.email;
+
+    // Retrieve relevant memories from RAG store
+    let knowledge = [];
+    try {
+      if (userEmail) {
+        const q = await fetch('/api/embeddings/query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userEmail, query: message, topK: 3 })
+        });
+        if (q.ok) {
+          const jd = await q.json();
+          knowledge = jd.items?.map(i => i.content) || [];
+        }
+      }
+    } catch (e) {
+      console.warn('RAG query failed', e);
+    }
     const response = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -216,6 +235,8 @@ async function getApiResponse(message) {
         subject: currentSubject,
         history: getRecentContext(),
         messageHistory: getRecentMessages(),
+        knowledge,
+        userEmail,
         subjects: user?.subjects?.map(subject => subject.name) || [],
         goals: user?.goals?.map(goal => goal.text) || []
       })

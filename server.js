@@ -1,6 +1,8 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import { OpenAI } from 'openai';
+import fs from 'fs';
+import path from 'path';
 
 dotenv.config();
 
@@ -12,6 +14,72 @@ app.use(express.static('.'));
 
 const openAiKey = process.env.OPENAI_API_KEY;
 const openai = openAiKey ? new OpenAI({ apiKey: openAiKey }) : null;
+
+// Simple local vector store (prototype) persisted to memory_store.json
+const STORE_PATH = path.resolve('./memory_store.json');
+let memoryStore = {};
+try {
+  if (fs.existsSync(STORE_PATH)) {
+    const raw = fs.readFileSync(STORE_PATH, 'utf8');
+    memoryStore = raw ? JSON.parse(raw) : {};
+  }
+} catch (e) {
+  console.warn('Could not read memory store:', e.message);
+  memoryStore = {};
+}
+
+function persistStore() {
+  try {
+    fs.writeFileSync(STORE_PATH, JSON.stringify(memoryStore, null, 2));
+  } catch (e) {
+    console.error('Error persisting memory store:', e.message);
+  }
+}
+
+function cosine(a, b) {
+  const dot = a.reduce((s, v, i) => s + v * b[i], 0);
+  const na = Math.sqrt(a.reduce((s, v) => s + v * v, 0));
+  const nb = Math.sqrt(b.reduce((s, v) => s + v * v, 0));
+  if (na === 0 || nb === 0) return 0;
+  return dot / (na * nb);
+}
+
+async function createEmbedding(text) {
+  if (!openai) throw new Error('OpenAI API key not configured');
+  const resp = await openai.embeddings.create({ model: 'text-embedding-3-small', input: text });
+  return resp.data[0].embedding;
+}
+
+app.post('/api/embeddings/index', async (req, res) => {
+  const { userEmail, content, metadata } = req.body;
+  if (!userEmail || !content) return res.status(400).json({ error: 'Missing userEmail or content' });
+  try {
+    const embedding = await createEmbedding(content);
+    const entry = { id: Date.now(), content, embedding, metadata: metadata || {}, createdAt: new Date().toISOString() };
+    memoryStore[userEmail] = memoryStore[userEmail] || [];
+    memoryStore[userEmail].push(entry);
+    persistStore();
+    res.json({ ok: true, entry });
+  } catch (err) {
+    console.error('Indexing error:', err);
+    res.status(500).json({ error: 'Indexing failed' });
+  }
+});
+
+app.post('/api/embeddings/query', async (req, res) => {
+  const { userEmail, query, topK = 3 } = req.body;
+  if (!userEmail || !query) return res.status(400).json({ error: 'Missing userEmail or query' });
+  try {
+    const qEmb = await createEmbedding(query);
+    const items = (memoryStore[userEmail] || []).map(entry => ({ id: entry.id, content: entry.content, score: cosine(qEmb, entry.embedding), metadata: entry.metadata }));
+    items.sort((a, b) => b.score - a.score);
+    const top = items.slice(0, topK);
+    res.json({ items: top });
+  } catch (err) {
+    console.error('Query error:', err);
+    res.status(500).json({ error: 'Query failed' });
+  }
+});
 
 function fallbackResponse(message, subject = 'Geral') {
   // Respostas locais mais variadas e com pequenas sugestões de plano
