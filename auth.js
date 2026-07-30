@@ -100,6 +100,21 @@ class SynaraAuth {
 
     user.subjects.push(subject);
     this.saveUser(user);
+
+    // Tenta indexar a matéria no RAG store (fire-and-forget)
+    try {
+      fetch('/api/embeddings/index', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userEmail: user.email,
+          content: `Matéria: ${subjectName}`,
+          metadata: { type: 'subject', name: subjectName }
+        })
+      }).catch(err => console.warn('Index subject failed', err));
+    } catch (e) {
+      console.warn('Index subject error', e);
+    }
     return subject;
   }
 
@@ -118,6 +133,21 @@ class SynaraAuth {
 
     user.goals.push(goal);
     this.saveUser(user);
+
+    // Tenta indexar a meta no RAG store (fire-and-forget)
+    try {
+      fetch('/api/embeddings/index', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userEmail: user.email,
+          content: `Meta: ${goalText}` + (subject ? ` (Matéria: ${subject})` : ''),
+          metadata: { type: 'goal', subject }
+        })
+      }).catch(err => console.warn('Index goal failed', err));
+    } catch (e) {
+      console.warn('Index goal error', e);
+    }
     return goal;
   }
 
