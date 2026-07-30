@@ -61,16 +61,17 @@
     }
 
     .page-content {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 2.5rem 2.5rem 4rem;
+      max-width: 1100px;
+      margin: 1.8rem auto 3.2rem;
+      padding: 2.2rem 1.6rem 3rem;
     }
 
     .dashboard-top-grid {
       display: grid;
-      grid-template-columns: 1.7fr 0.9fr;
-      gap: 1.8rem;
+      grid-template-columns: 1fr 340px;
+      gap: 1.6rem;
       align-items: start;
+      justify-content: center;
     }
 
     .card-main {
@@ -82,15 +83,16 @@
       margin-bottom: 1.2rem;
     }
 
-    .chat-card {
-      display: grid;
-      gap: 1.2rem;
-      background: #f7fbff;
-      padding: 1.6rem;
-      border-radius: 28px;
-      border: 1px solid rgba(0, 91, 127, 0.08);
-    }
-
+      .chat-form input {
+        flex: 1;
+        border-radius: 999px;
+        border: 1px solid rgba(10,126,148,0.12);
+        padding: 1.05rem 1.25rem;
+        outline: none;
+        background: #f8feff;
+        color: #0f2b34;
+        font-size: 1rem;
+      }
     .progress-sidebar {
       background: #f9fdff;
       padding: 1.8rem;
@@ -100,10 +102,16 @@
     }
 
     .dashboard-header h2 {
-      margin-bottom: 0.5rem;
-      font-size: 2.3rem;
-    }
-
+      .chat-form button {
+        border: 0;
+        border-radius: 999px;
+        padding: 0.95rem 1.4rem;
+        background: linear-gradient(135deg,#00cfc8,#0aa6b3);
+        color: #ffffff;
+        font-weight: 800;
+        cursor: pointer;
+        box-shadow: 0 12px 30px rgba(10,126,148,0.12);
+      }
     .dashboard-header p {
       max-width: 720px;
       color: #4b6378;
@@ -630,11 +638,15 @@
     .progress-sidebar {
       position: fixed;
       right: 28px;
-      top: 140px;
+      top: 120px;
       width: 320px;
-      max-width: 36vw;
+      max-width: 34vw;
       transition: width 0.22s ease, transform 0.22s ease, opacity 0.22s;
       z-index: 60;
+      background: linear-gradient(180deg,#ffffff,#fbfeff);
+      border-radius: 18px;
+      padding: 1rem;
+      box-shadow: 0 18px 40px rgba(10,56,80,0.06);
     }
     .progress-sidebar.collapsed {
       width: 64px;
@@ -666,11 +678,11 @@
     .chat-preview {
       display: flex;
       flex-direction: column;
-      min-height: 760px;
+      min-height: 820px;
       background: #ffffff;
-      border: 1px solid rgba(0, 91, 127, 0.08);
-      border-radius: 34px;
-      box-shadow: var(--shadow);
+      border: 1px solid rgba(0, 91, 127, 0.06);
+      border-radius: 28px;
+      box-shadow: 0 26px 60px rgba(10,56,80,0.06);
       overflow: hidden;
       padding: 0;
     }
@@ -692,12 +704,12 @@
     }
 
     .chat-messages {
-      padding: 2.2rem;
+      padding: 2.6rem;
       display: grid;
-      gap: 1.2rem;
+      gap: 1.25rem;
       overflow-y: auto;
       flex: 1;
-      background: #f6fbff;
+      background: linear-gradient(180deg,#f8fdff 0%, #f6fbff 100%);
     }
 
     .chat-message {
@@ -709,12 +721,12 @@
     }
 
     .chat-bubble {
-      max-width: 82%;
-      padding: 1.1rem 1.4rem;
-      border-radius: 22px;
-      line-height: 1.75;
-      font-size: 1.02rem;
-      box-shadow: 0 12px 30px rgba(18, 42, 65, 0.08);
+      max-width: 78%;
+      padding: 1.15rem 1.4rem;
+      border-radius: 20px;
+      line-height: 1.78;
+      font-size: 1.04rem;
+      box-shadow: 0 14px 30px rgba(18, 42, 65, 0.06);
     }
 
     .chat-message.user .chat-bubble {
