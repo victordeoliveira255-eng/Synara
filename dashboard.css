@@ -17,6 +17,7 @@
 .top-nav-link:hover, .text-button:hover { color: var(--dash-teal); }
 .profile-trigger { display: flex; align-items: center; gap: .55rem; color: var(--dash-text); font-weight: 700; }
 .profile-menu { position: absolute; right: 0; top: calc(100% + .8rem); min-width: 210px; padding: .85rem; background: #fff; border: 1px solid var(--dash-border); border-radius: 12px; box-shadow: var(--dash-shadow); display: grid; gap: .65rem; }
+.profile-menu[hidden] { display: none; }
 .profile-menu span { color: var(--dash-muted); font-size: .8rem; overflow-wrap: anywhere; }
 .profile-menu button { border: 0; background: #edf8f8; color: var(--dash-navy); padding: .65rem; border-radius: 8px; cursor: pointer; text-align: left; }
 .dashboard-layout { display: grid; grid-template-columns: 250px minmax(0, 1fr); max-width: 1480px; margin: 0 auto; }
