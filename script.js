@@ -1,8 +1,8 @@
-const scrollLinks = document.querySelectorAll('a[href^="#"]');
 const chatMessages = document.getElementById('chatMessages');
 const chatForm = document.getElementById('chatForm');
 const chatInput = document.getElementById('chatInput');
-let currentSubject = 'Geral';
+const heroInput = document.getElementById('heroInput');
+const heroSendBtn = document.getElementById('heroSendBtn');
 let conversationHistory = [];
 let awaitingClarification = false;
 let pendingOriginalMessage = null;
@@ -11,16 +11,16 @@ let isLoading = false;
 function setLoading(flag) {
   isLoading = !!flag;
   const sendBtn = document.getElementById('sendBtn');
-  const quicks = document.querySelectorAll('.quick-action');
+  const quickActions = document.querySelectorAll('.quick-action');
   const spinner = document.getElementById('global-spinner');
   if (sendBtn) sendBtn.disabled = isLoading;
-  quicks.forEach(b => { if (isLoading) b.setAttribute('disabled','true'); else b.removeAttribute('disabled'); });
+  quickActions.forEach((button) => {
+    if (isLoading) button.setAttribute('disabled', 'true');
+    else button.removeAttribute('disabled');
+  });
   if (spinner) spinner.style.display = isLoading ? 'inline-block' : 'none';
 }
 
-// Subjects removed: UI simplified to a single chat. Subject management code removed.
-
-// Histórico de conversa para contexto
 function addToHistory(sender, message) {
   conversationHistory.push({ sender, message, time: new Date() });
   if (conversationHistory.length > 10) {
@@ -29,30 +29,17 @@ function addToHistory(sender, message) {
 }
 
 function getRecentContext() {
-  // Envia mais contexto (últimas 6 mensagens) com papel do autor para melhor coesão
-  return conversationHistory.slice(-6).map(m => `${m.sender.toUpperCase()}: ${m.message}`).join('\n');
+  return conversationHistory
+    .slice(-6)
+    .map((m) => `${m.sender.toUpperCase()}: ${m.message}`)
+    .join('\n');
 }
 
 function getRecentMessages(limit = 12) {
-  // Retorna um array de mensagens no formato { role, content } para few-shot/chat
-  return conversationHistory.slice(-limit).map(m => ({
+  return conversationHistory.slice(-limit).map((m) => ({
     role: m.sender === 'user' ? 'user' : 'assistant',
     content: m.message
   }));
-}
-
-// updateChatSummary removed — subjects UI disabled in this version.
-
-function scrollToSection(event) {
-  const href = this.getAttribute('href');
-  if (href === '#') return;
-  event.preventDefault();
-  const target = document.querySelector(href);
-  if (target) {
-    const headerHeight = document.querySelector('.site-header').offsetHeight;
-    const targetPosition = target.offsetTop - headerHeight;
-    window.scrollTo({ top: targetPosition, behavior: 'smooth' });
-  }
 }
 
 function appendMessage(sender, message) {
@@ -64,109 +51,85 @@ function appendMessage(sender, message) {
   chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
-
-function fallbackResponse(userMessage, subject = 'Geral') {
+function fallbackResponse(userMessage) {
   const text = userMessage.toLowerCase();
-  
-  // Respostas contextuais baseadas no histórico
+
   if (/preciso de ajuda|não entendi|me explica|como|qual é a diferença|qual a diferença/.test(text)) {
-    const contextResponses = [
+    const replies = [
       'Claro! Vou explicar de forma simples. Qual é sua dúvida específica?',
       'Sem problema! Posso ajudar você a entender isso melhor. Me diz qual parte ficou confusa.',
       'Vou descomplicar para você! O que exatamente você gostaria de saber?'
     ];
-    return contextResponses[Math.floor(Math.random() * contextResponses.length)];
+    return replies[Math.floor(Math.random() * replies.length)];
   }
 
-  // Literatura e português
-  if (/pré-modernismo|modernistas|manifesto antropófago|romances|realismo|poema|machado de assis|guimarães rosa|lygia f\. telles|reportagem|notícias que impactam|literatura|português/.test(text) || subject === 'Português') {
-    const portugueseResponses = [
-      'Ótimo! Na literatura brasileira, estudamos desde o Realismo até os Modernistas. Qual período ou autor você quer focar?',
-      'Vamos explorar a literatura brasileira! Posso ajudá-lo com análise de textos, autores clássicos ou redação.',
-      'Sobre português e literatura... Posso trabalhar interpretação, ortografia, sintaxe ou obras literárias. Qual é seu foco?'
-    ];
-    return portugueseResponses[Math.floor(Math.random() * portugueseResponses.length)];
-  }
-
-  // Matemática
-  if (/equações|1º grau|2º grau|sistemas lineares|substituição|adição|escalonamento|polinomiais|matemática|conta|número|cálculo|álgebra|geometria/.test(text) || subject === 'Matemática') {
-    const mathResponses = [
+  if (/equações|1º grau|2º grau|sistemas lineares|substituição|adição|escalonamento|polinomiais|matemática|conta|número|cálculo|álgebra|geometria/.test(text)) {
+    const replies = [
       'Matemática é nosso forte! Posso ajudar com equações, sistemas, polinômios e muito mais. Qual tópico você quer dominar?',
       'Vamos resolver isso junto! Preciso saber se é sobre álgebra, geometria, trigonometria ou cálculo.',
       'Equações, gráficos, operações... Diga-me qual conteúdo está dificultando e vou simplificar para você.'
     ];
-    return mathResponses[Math.floor(Math.random() * mathResponses.length)];
+    return replies[Math.floor(Math.random() * replies.length)];
   }
 
-  // Física
-  if (/física|força|energia|movimento|sistema|mecânica|campo|velocidade|aceleração|termodinâmica/.test(text) || subject === 'Física') {
+  if (/física|força|energia|movimento|sistema|mecânica|campo|velocidade|aceleração|termodinâmica/.test(text)) {
     return 'Física é incrível! Posso ajudar com mecânica clássica, termodinâmica, eletromagnetismo e óptica. O que você quer aprender?';
   }
 
-  // Química
-  if (/química|moléculas|reação|elemento|tabela periódica|ácido|base|sal|combustão|oxidação/.test(text) || subject === 'Química') {
+  if (/química|moléculas|reação|elemento|tabela periódica|ácido|base|sal|combustão|oxidação/.test(text)) {
     return 'Química é essencial! Vamos trabalhar com reações químicas, estrutura molecular, estequiometria ou termoquímica. Escolha um!';
   }
 
-  // Biologia
-  if (/biologia|célula|organismo|genes|evolução|ecossistema|reprodução|dna|cromossomo/.test(text) || subject === 'Biologia') {
+  if (/biologia|célula|organismo|genes|evolução|ecossistema|reprodução|dna|cromossomo/.test(text)) {
     return 'Biologia fascinante! Posso explorar citologia, genética, fisiologia, ecologia ou evolução. Qual área te interessa?';
   }
 
-  // Artes
-  if (/artes|pintura|escultura|arte|renascimento|barroco|impressionismo|artista|obra|movimento artístico/.test(text) || subject === 'Artes') {
+  if (/artes|pintura|escultura|arte|renascimento|barroco|impressionismo|artista|obra|movimento artístico/.test(text)) {
     return 'Artes é criatividade! Posso discutir movimentos artísticos, técnicas, artistas históricos ou análise de obras. O que te atrai?';
   }
 
-  // Foco e produtividade
   if (/foco|concentra|distração|atenção|produtiv|cansaço|sono|ritmo de estudo/.test(text)) {
-    const focusResponses = [
-      'Para manter o foco: use blocos de 25 minutos (Pomodoro), elimine distrações, e faça pequenas pausas. Está funcionando para você?',
+    const replies = [
+      'Para manter o foco: use blocos de 25 minutos (Pomodoro), elimine distrações e faça pequenas pausas. Está funcionando para você?',
       'Dica de ouro: estude em um ambiente calmo, desligue notificações e beba água. Como está seu ritmo?',
-      'Concentração é treino! Comece com 15 minutos, aumente gradualmente, e celebre pequenas vitórias.'
+      'Concentração é treino! Comece com 15 minutos, aumente gradualmente e celebre pequenas vitórias.'
     ];
-    return focusResponses[Math.floor(Math.random() * focusResponses.length)];
+    return replies[Math.floor(Math.random() * replies.length)];
   }
 
-  // Emoções e bem-estar
   if (/ansiedade|estresse|cansaço|motivação|desanimo|depressão|medo|preocupado|nervoso/.test(text)) {
-    const emotionalResponses = [
+    const replies = [
       'Respire fundo! Ansiedade é normal antes de provas. Vamos fazer um plano de estudo positivo juntos?',
       'Sua saúde mental é importante. Se o estresse persiste, considere falar com um profissional. Posso ajudar seu cronograma?',
       'Você é capaz! Comece com metas pequenas, celebre cada progresso e descanse bem. Vamos juntos!'
     ];
-    return emotionalResponses[Math.floor(Math.random() * emotionalResponses.length)];
+    return replies[Math.floor(Math.random() * replies.length)];
   }
 
-  // Planejamento e cronograma
   if (/plano|rotina|agenda|cronograma|horário|programa|semana|organiza|estrutura/.test(text)) {
-    return 'Ótimo pensar em organização! Recomendo: divida as matérias, estude 50 min por matéria, pause 10 min. Quer um plano detalhado?';
+    return 'Ótimo pensar em organização! Recomendo: divida as matérias, estude 50 min por matéria e pause 10 min. Quer um plano detalhado?';
   }
 
-  // Metas e objetivos
   if (/meta|objetivo|progresso|resultado|consegui|alcança|sucesso|nota|prova|exame/.test(text)) {
     return 'Metas claras = sucesso! Defina alvos específicos por semana, acompanhe o progresso e ajuste conforme necessário. Qual é sua meta?';
   }
 
-  // Respostas gerais
-  const genericResponses = [
+  const genericReplies = [
     'Ótima pergunta! Posso ajudar de forma mais precisa se você me disser qual matéria estamos abordando.',
     'Entendi! Vou focar em ajudar você. Quer que eu explique melhor ou prefere um exercício prático?',
     'Você está no caminho certo! Continue estudando assim. Tem mais alguma dúvida?',
     'Essa é uma ótima estratégia. A SYNARA recomenda sempre praticar com exercícios depois da teoria.',
     'Vamos aprofundar nesse assunto! Qual aspecto específico você quer dominar?'
   ];
-  
-  return genericResponses[Math.floor(Math.random() * genericResponses.length)];
+  return genericReplies[Math.floor(Math.random() * genericReplies.length)];
 }
 
 async function getApiResponse(message) {
   try {
     const user = auth.getCurrentUser();
     const userEmail = user?.email;
-
-    // Retrieve relevant memories from RAG store
     let knowledge = [];
+
     try {
       if (userEmail) {
         const q = await fetch('/api/embeddings/query', {
@@ -176,24 +139,25 @@ async function getApiResponse(message) {
         });
         if (q.ok) {
           const jd = await q.json();
-          knowledge = jd.items?.map(i => i.content) || [];
+          knowledge = jd.items?.map((item) => item.content) || [];
         }
       }
     } catch (e) {
       console.warn('RAG query failed', e);
     }
+
     const bodyObj = {
       message,
-      subject: currentSubject,
+      subject: window.synaraSubject || 'Geral',
+      subjects: user?.subjects?.map((item) => item.name) || [],
+      ...(window.synaraStudyContext || {}),
       history: getRecentContext(),
       messageHistory: getRecentMessages(),
       knowledge,
       userEmail,
-      subjects: user?.subjects?.map(subject => subject.name) || [],
-      goals: user?.goals?.map(goal => goal.text) || []
+      goals: user?.goals?.map((goal) => goal.text) || []
     };
 
-    // If this message is a clarification to a prior ambiguous request, include original
     if (pendingOriginalMessage) {
       bodyObj.clarification = message;
       bodyObj.originalMessage = pendingOriginalMessage;
@@ -210,89 +174,34 @@ async function getApiResponse(message) {
     }
 
     const data = await response.json();
-    // If server asks for clarification
     if (data && data.clarify) {
       return { clarify: true, question: data.question };
     }
-    return { text: data.reply || fallbackResponse(message, currentSubject) };
+    return { text: data.reply || fallbackResponse(message) };
   } catch (error) {
     console.warn('API unavailable, using local fallback', error);
-    return fallbackResponse(message, currentSubject);
+    return fallbackResponse(message);
   }
 }
 
-function setCurrentSubject(subject) {
-  currentSubject = subject;
-  if (currentSubjectLabel) {
-    currentSubjectLabel.textContent = subject;
-  }
-  document.querySelectorAll('.subject-selection-button, .subject-option').forEach((button) => {
-    button.classList.toggle('active', button.dataset.subject === subject);
-  });
-  updateChatSummary();
-}
-
-subjectAddForm?.addEventListener('submit', (event) => {
-  event.preventDefault();
-  const newSubject = newSubjectInput.value.trim();
-  if (!newSubject) return;
-
-  const subjectName = newSubject.charAt(0).toUpperCase() + newSubject.slice(1);
-  const user = auth.getCurrentUser();
-
-  if (user?.subjects?.some((subject) => subject.name === subjectName)) {
-    setCurrentSubject(subjectName);
-    updateChatSummary();
-    newSubjectInput.value = '';
-    return;
-  }
-
-  auth.addSubject(subjectName);
-
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.className = 'subject-selection-button button-secondary active';
-  button.dataset.subject = subjectName;
-  button.textContent = subjectName;
-  button.addEventListener('click', () => {
-    setCurrentSubject(subjectName);
-  });
-
-  document.querySelector('.subject-selection').appendChild(button);
-  setCurrentSubject(subjectName);
-  updateChatSummary();
-  newSubjectInput.value = '';
-
-  if (typeof renderSubjects === 'function') {
-    renderSubjects();
-  }
-  if (typeof updateStats === 'function') {
-    updateStats();
-  }
-});
-
-async function sendUserMessage(event) {
-  event.preventDefault();
-  const userMessage = chatInput.value.trim();
-  if (!userMessage) return;
-
-  appendMessage('user', userMessage);
-  addToHistory('user', userMessage);
+async function sendChatMessage(text) {
+  if (!text || !text.trim()) return;
+  appendMessage('user', text);
+  addToHistory('user', text);
   chatInput.value = '';
   chatInput.disabled = true;
   setLoading(true);
 
   appendMessage('bot', 'Pensando...');
-  // If we are awaiting a clarification answer, check if user asked for an exercise
+
   if (awaitingClarification) {
-    const low = userMessage.toLowerCase();
+    const low = text.toLowerCase();
     if (/exercic|exercício|exercicio|pratic/.test(low)) {
-      // call generate-exercise
       try {
         const resp = await fetch('/api/generate-exercise', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userEmail: auth.getCurrentUser()?.email, subject: currentSubject, topic: pendingOriginalMessage || currentSubject })
+          body: JSON.stringify({ userEmail: auth.getCurrentUser()?.email, topic: pendingOriginalMessage || text })
         });
         const jd = await resp.json();
         const exerciseText = jd.exercise || jd.error || 'Não foi possível gerar o exercício.';
@@ -316,111 +225,20 @@ async function sendUserMessage(event) {
 
   let botResponse;
   try {
-    botResponse = await getApiResponse(userMessage);
-  } catch (err) {
-    console.error('Chat error', err);
-    botResponse = fallbackResponse(userMessage, currentSubject);
-  }
-
-  const lastBotMessage = [...chatMessages.querySelectorAll('.chat-message.bot')].pop();
-
-  if (botResponse?.clarify) {
-    // Server asks for clarification
-    if (lastBotMessage) lastBotMessage.querySelector('.chat-bubble').textContent = botResponse.question;
-    awaitingClarification = true;
-    pendingOriginalMessage = userMessage;
-    addToHistory('bot', botResponse.question);
-  } else {
-    const replyText = (botResponse && botResponse.text) ? botResponse.text : (typeof botResponse === 'string' ? botResponse : fallbackResponse(userMessage, currentSubject));
-    if (lastBotMessage) lastBotMessage.querySelector('.chat-bubble').textContent = replyText;
-    addToHistory('bot', replyText);
-    awaitingClarification = false;
-    pendingOriginalMessage = null;
-  }
-
-  chatInput.disabled = false;
-  setLoading(false);
-  chatInput.focus();
-}
-
-chatForm?.addEventListener('submit', sendUserMessage);
-// Quick action buttons: click to prefill and send a contextual prompt, or allow user to edit before sending
-document.addEventListener('click', (e) => {
-  const btn = e.target.closest && e.target.closest('.quick-action');
-  if (!btn) return;
-  const action = btn.dataset.action;
-  let text = '';
-  switch (action) {
-    case 'explain':
-      text = `Explique sobre ${currentSubject}`;
-      break;
-    case 'summary':
-      text = `Faça um resumo curto sobre ${currentSubject}`;
-      break;
-    case 'question':
-      text = `Gere uma questão prática sobre ${currentSubject}`;
-      break;
-    case 'tips':
-      text = `Me dê dicas de estudo para ${currentSubject}`;
-      break;
-    default:
-      text = '';
-  }
-  if (!text) return;
-  // prefills input so the user can edit or press enviar
-  if (isLoading) return;
-  chatInput.value = text;
-  const heroInput = document.getElementById('heroInput');
-  if (heroInput) heroInput.value = text;
-  chatInput.focus();
-  try { chatInput.setSelectionRange(chatInput.value.length, chatInput.value.length); } catch (e) {}
-});
-
-// Hero send button: copy hero input to chat input and send
-const heroSendBtn = document.getElementById('heroSendBtn');
-if (heroSendBtn) {
-  heroSendBtn.addEventListener('click', (e) => {
-    const heroInput = document.getElementById('heroInput');
-    if (!heroInput) return;
-    const text = heroInput.value.trim();
-    if (!text) return;
-    // put text in main input for consistency
-    chatInput.value = text;
-    // send via existing helper
-    sendMessageText(text);
-    heroInput.value = '';
-    // hide hero center if desired
-    const heroCenter = document.getElementById('heroCenter');
-    if (heroCenter) heroCenter.style.display = 'none';
-  });
-}
-
-async function sendMessageText(text) {
-  if (!text || !text.trim()) return;
-  appendMessage('user', text);
-  addToHistory('user', text);
-  chatInput.value = '';
-  chatInput.disabled = true;
-  setLoading(true);
-
-  appendMessage('bot', 'Pensando...');
-  let botResponse;
-  try {
     botResponse = await getApiResponse(text);
   } catch (err) {
     console.error('Chat error', err);
-    botResponse = fallbackResponse(text, currentSubject);
+    botResponse = fallbackResponse(text);
   }
 
   const lastBotMessage = [...chatMessages.querySelectorAll('.chat-message.bot')].pop();
-
   if (botResponse?.clarify) {
     if (lastBotMessage) lastBotMessage.querySelector('.chat-bubble').textContent = botResponse.question;
     awaitingClarification = true;
     pendingOriginalMessage = text;
     addToHistory('bot', botResponse.question);
   } else {
-    const replyText = (botResponse && botResponse.text) ? botResponse.text : (typeof botResponse === 'string' ? botResponse : fallbackResponse(text, currentSubject));
+    const replyText = (botResponse && botResponse.text) ? botResponse.text : (typeof botResponse === 'string' ? botResponse : fallbackResponse(text));
     if (lastBotMessage) lastBotMessage.querySelector('.chat-bubble').textContent = replyText;
     addToHistory('bot', replyText);
     awaitingClarification = false;
@@ -431,34 +249,53 @@ async function sendMessageText(text) {
   setLoading(false);
   chatInput.focus();
 }
-scrollLinks.forEach((link) => {
-  link.addEventListener('click', scrollToSection);
-});
 
-window.addEventListener('scroll', () => {
-  const header = document.querySelector('.site-header');
-  if (window.scrollY > 50) {
-    header.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.1)';
-  } else {
-    header.style.boxShadow = 'none';
+function onChatSubmit(event) {
+  event.preventDefault();
+  const value = chatInput.value.trim();
+  if (!value) return;
+  sendChatMessage(value);
+}
+
+chatForm?.addEventListener('submit', onChatSubmit);
+
+document.addEventListener('click', (event) => {
+  const actionButton = event.target.closest && event.target.closest('.quick-action');
+  if (!actionButton) return;
+  if (isLoading) return;
+
+  const action = actionButton.dataset.action;
+  let text = '';
+  switch (action) {
+    case 'explain':
+      text = 'Explique isso para mim.';
+      break;
+    case 'summary':
+      text = 'Faça um resumo curto.';
+      break;
+    case 'question':
+      text = 'Gere uma questão prática.';
+      break;
+    case 'tips':
+      text = 'Dê dicas de estudo.';
+      break;
+    default:
+      text = '';
   }
+  if (!text) return;
+  chatInput.value = text;
+  if (heroInput) heroInput.value = text;
+  chatInput.focus();
+  try { chatInput.setSelectionRange(chatInput.value.length, chatInput.value.length); } catch (e) {}
 });
 
-// Progress sidebar toggle: expand/collapse when clicking the small collapsed card
-const progressSidebar = document.getElementById('progressSidebar');
-const progressToggle = document.getElementById('progressToggle');
-if (progressToggle && progressSidebar) {
-  progressToggle.addEventListener('click', (e) => {
-    e.stopPropagation();
-    progressSidebar.classList.toggle('collapsed');
-    const open = !progressSidebar.classList.contains('collapsed');
-    progressToggle.textContent = open ? 'Fechar' : 'Abrir';
-  });
-  // clicking the collapsed sidebar opens it
-  progressSidebar.addEventListener('click', (e) => {
-    if (progressSidebar.classList.contains('collapsed')) {
-      progressSidebar.classList.remove('collapsed');
-      progressToggle.textContent = 'Fechar';
-    }
+if (heroSendBtn) {
+  heroSendBtn.addEventListener('click', () => {
+    if (!heroInput) return;
+    const text = heroInput.value.trim();
+    if (!text) return;
+    chatInput.value = text;
+    sendChatMessage(text);
+    heroInput.value = '';
   });
 }

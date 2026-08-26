@@ -15,7 +15,21 @@ class SynaraAuth {
   // Obter usuário atual
   getCurrentUser() {
     const user = localStorage.getItem(this.currentUserKey);
-    return user ? JSON.parse(user) : null;
+    if (!user) return null;
+    return this.normalizeUser(JSON.parse(user));
+  }
+
+  normalizeUser(user) {
+    return {
+      ...user,
+      subjects: Array.isArray(user.subjects) ? user.subjects : [],
+      goals: Array.isArray(user.goals) ? user.goals : [],
+      studySessions: Array.isArray(user.studySessions) ? user.studySessions : [],
+      schedule: Array.isArray(user.schedule) ? user.schedule : [],
+      exerciseResults: Array.isArray(user.exerciseResults) ? user.exerciseResults : [],
+      contentStats: user.contentStats && typeof user.contentStats === 'object' ? user.contentStats : {},
+      wellbeing: user.wellbeing || { mood: '', updatedAt: null }
+    };
   }
 
   // Salvar usuário atual
@@ -46,7 +60,12 @@ class SynaraAuth {
       createdAt: new Date().toISOString(),
       subjects: [],
       goals: [],
-      dailyProgress: []
+      dailyProgress: [],
+      studySessions: [],
+      schedule: [],
+      exerciseResults: [],
+      contentStats: {},
+      wellbeing: { mood: '', updatedAt: null }
     };
 
     users[email] = user;
@@ -78,6 +97,7 @@ class SynaraAuth {
 
   // Salvar dados do usuário
   saveUser(user) {
+    user = this.normalizeUser(user);
     const users = this.getAllUsers();
     users[user.email] = user;
     localStorage.setItem(this.storageKey, JSON.stringify(users));
@@ -158,8 +178,11 @@ class SynaraAuth {
 
     const subject = user.subjects.find(s => s.id === subjectId);
     if (subject) {
-      subject.completedHours = newHours;
-      subject.progress = Math.min(100, Math.round((newHours / subject.targetHours) * 100));
+      const hours = Math.max(0, Number(newHours) || 0);
+      subject.completedHours = hours;
+      subject.progress = subject.targetHours > 0
+        ? Math.min(100, Math.round((hours / subject.targetHours) * 100))
+        : 0;
       this.saveUser(user);
       return true;
     }
@@ -173,7 +196,7 @@ class SynaraAuth {
 
     const goal = user.goals.find(g => g.id === goalId);
     if (goal) {
-      goal.completed = true;
+      goal.completed = !goal.completed;
       this.saveUser(user);
       return true;
     }
@@ -198,6 +221,107 @@ class SynaraAuth {
     user.goals = user.goals.filter(g => g.id !== goalId);
     this.saveUser(user);
     return true;
+  }
+
+  editGoal(goalId, text, subject = '') {
+    const user = this.getCurrentUser();
+    const goal = user?.goals.find(item => item.id === goalId);
+    if (!goal || !text.trim()) return false;
+    goal.text = text.trim();
+    goal.subject = subject;
+    this.saveUser(user);
+    return true;
+  }
+
+  recordExercise({ subject, topic, correct, answer = '' }) {
+    const user = this.getCurrentUser();
+    if (!user || !subject || !topic) return false;
+    const key = `${subject}::${topic}`;
+    const stats = user.contentStats[key] || { subject, topic, attempts: 0, correct: 0, errors: [] };
+    stats.attempts += 1;
+    if (correct) stats.correct += 1;
+    if (!correct) stats.errors = [...(stats.errors || []), { answer, createdAt: new Date().toISOString() }].slice(-10);
+    stats.mastery = Math.round((stats.correct / stats.attempts) * 100);
+    user.contentStats[key] = stats;
+    user.exerciseResults.push({ id: Date.now(), subject, topic, correct, answer, createdAt: new Date().toISOString() });
+    this.saveUser(user);
+    return stats;
+  }
+
+  getContentStats(subject, topic) {
+    const user = this.getCurrentUser();
+    return user?.contentStats?.[`${subject}::${topic}`] || { subject, topic, attempts: 0, correct: 0, errors: [], mastery: 0 };
+  }
+
+  editSubject(subjectId, subjectName, targetHours) {
+    const user = this.getCurrentUser();
+    const subject = user?.subjects.find(item => item.id === subjectId);
+    if (!subject || !subjectName.trim()) return false;
+    subject.name = subjectName.trim();
+    subject.targetHours = Math.max(0, Number(targetHours) || 0);
+    this.updateSubjectProgress(subjectId, subject.completedHours);
+    return true;
+  }
+
+  addStudySession(subjectId, minutes, topic = '') {
+    const user = this.getCurrentUser();
+    const subject = user?.subjects.find(item => item.id === subjectId);
+    const duration = Math.max(1, Number(minutes) || 0);
+    if (!user || !subject) return false;
+    const session = {
+      id: Date.now(),
+      subjectId,
+      topic: topic.trim() || 'Sessão de estudo',
+      minutes: duration,
+      completedAt: new Date().toISOString()
+    };
+    user.studySessions.push(session);
+    const completedHours = Number(subject.completedHours || 0) + duration / 60;
+    subject.completedHours = completedHours;
+    subject.progress = subject.targetHours > 0
+      ? Math.min(100, Math.round((completedHours / subject.targetHours) * 100))
+      : 0;
+    this.saveUser(user);
+    return session;
+  }
+
+  addScheduleItem(item) {
+    const user = this.getCurrentUser();
+    if (!user || !item.subjectId || !item.date || !item.time || !item.duration) return false;
+    const scheduleItem = { ...item, id: Date.now(), completed: false };
+    user.schedule.push(scheduleItem);
+    this.saveUser(user);
+    return scheduleItem;
+  }
+
+  toggleScheduleItem(itemId) {
+    const user = this.getCurrentUser();
+    const item = user?.schedule.find(entry => entry.id === itemId);
+    if (!item) return false;
+    item.completed = !item.completed;
+    this.saveUser(user);
+    return true;
+  }
+
+  removeScheduleItem(itemId) {
+    const user = this.getCurrentUser();
+    if (!user) return false;
+    user.schedule = user.schedule.filter(item => item.id !== itemId);
+    this.saveUser(user);
+    return true;
+  }
+
+  setWellbeing(mood) {
+    const user = this.getCurrentUser();
+    if (!user) return false;
+    user.wellbeing = { mood, updatedAt: new Date().toISOString() };
+    this.saveUser(user);
+    return true;
+  }
+
+  getStudyMinutes() {
+    return (this.getCurrentUser()?.studySessions || [])
+      .reduce((total, session) => total + Number(session.minutes || 0), 0);
   }
 
   // Obter progresso total do dia

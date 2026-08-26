@@ -176,7 +176,7 @@ function fallbackResponse(message, subject = 'Geral') {
 }
 
 app.post('/api/chat', async (req, res) => {
-  const { message, subject, history, subjects, goals, messageHistory } = req.body;
+  const { message, subject, history, subjects, goals, messageHistory, mode, topic, difficulty, progress, contentStats, recentSchedule } = req.body;
   if (!message || typeof message !== 'string') {
     return res.status(400).json({ error: 'Mensagem inválida' });
   }
@@ -202,11 +202,29 @@ app.post('/api/chat', async (req, res) => {
   }
 
   if (!openai) {
-    return res.json({ reply: fallbackResponse(message, subject) });
+    const modeHint = {
+      explain: 'Vou explicar em etapas, começando pelo essencial.',
+      understand: 'Antes de explicar tudo, vou fazer uma pergunta para descobrir o que você já sabe.',
+      summary: 'Vou organizar os conceitos principais, pontos importantes e uma forma de lembrar.',
+      practice: 'Vou propor uma questão progressiva e pedir que você explique seu raciocínio.',
+      review: 'Vou revisar os pontos mais importantes e destacar o que merece nova prática.',
+      tip: 'Vou sugerir uma estratégia prática para estudar este conteúdo.',
+      exam: 'Vou montar uma sequência curta de revisão, prática e pausas para a prova.'
+    }[mode] || '';
+    return res.json({ reply: `${modeHint} ${fallbackResponse(message, topic || subject)}`.trim() });
   }
 
   try {
-    const systemPrompt = `Você é a mentora de estudos SYNARA. Sua missão é ajudar o aluno a aprender melhor, organizar matérias, criar planos de estudo e responder dúvidas de forma clara, acolhedora e prática. Use linguagem empática, explicações passo a passo, exemplos simples e, sempre que possível, proponha um pequeno plano de estudo baseado nas metas e nas matérias registradas. Se houver metas informadas, recomende próximos passos práticos para atingi-las, incluindo revisão, prática e pausas. Se não houver metas, sugira um plano geral de revisão para a matéria atual.`;
+    const modeInstructions = {
+      explain: 'Explique progressivamente, do conceito básico a um exemplo, verificando a compreensão antes de avançar.',
+      understand: 'Atue como professor particular: faça uma pergunta diagnóstica primeiro e conduza o aluno com pistas, sem entregar a resposta imediatamente.',
+      summary: 'Crie um resumo organizado com conceitos principais, pontos importantes e uma seção Para lembrar.',
+      practice: 'Crie uma questão adequada ao nível, peça o raciocínio e analise o erro com cuidado, indicando a etapa que precisa ser revista.',
+      review: 'Faça uma revisão ativa baseada no histórico, nos erros e no domínio do conteúdo; priorize os pontos frágeis.',
+      tip: 'Dê estratégias concretas de estudo, incluindo duração, prática e pausas.',
+      exam: 'Monte um plano até a prova com blocos de revisão, exercícios, simulado e pausas; peça os assuntos se eles não estiverem disponíveis.'
+    };
+    const systemPrompt = `Você é a Mentora Synara, uma tutora educacional integrada ao progresso do estudante. ${modeInstructions[mode] || modeInstructions.explain} Personalize sua resposta com matéria, conteúdo, dificuldade, progresso, metas, cronograma, histórico e erros quando disponíveis. Não entregue respostas prontas quando o modo pedir raciocínio guiado. Se não houver contexto suficiente, diga isso e peça o material ou detalhe necessário; nunca invente fatos. Seja clara, acolhedora e prática. O módulo de bem-estar só pode sugerir organização, pausas e equilíbrio de estudos, sem diagnosticar saúde mental.`;
 
     // Construir resumo curto do histórico quando fornecido como array
     let historySummary = '';
@@ -225,8 +243,13 @@ app.post('/api/chat', async (req, res) => {
 
     const details = [
       subject ? `Matéria atual: ${subject}` : 'Matéria atual: Geral',
+      topic ? `Conteúdo atual: ${topic}` : 'Conteúdo atual: não informado',
+      difficulty ? `Nível de dificuldade: ${difficulty}` : null,
+      Number.isFinite(Number(progress)) ? `Progresso geral: ${progress}%` : null,
+      contentStats ? `Desempenho no conteúdo: ${contentStats.correct || 0}/${contentStats.attempts || 0} acertos, domínio estimado ${contentStats.mastery || 0}%, erros recentes: ${JSON.stringify(contentStats.errors || [])}` : null,
       subjects && subjects.length ? `Matérias do estudante: ${subjects.join(', ')}` : null,
       goals && goals.length ? `Metas do dia: ${goals.join(' | ')}` : 'Sem metas registradas no momento.',
+      recentSchedule?.length ? `Cronograma recente: ${JSON.stringify(recentSchedule)}` : null,
       historySummary || null,
       `Pergunta: ${effectiveMessage}`,
       fewShot
@@ -257,9 +280,21 @@ app.post('/api/generate-exercise', async (req, res) => {
   if (!subject && !topic) return res.status(400).json({ error: 'Faltam parâmetros (subject/topic)' });
   try {
     if (!openai) {
-      // fallback simples
-      const exercise = `Exercício (${subject || topic}, ${difficulty}):\n1) Explique o conceito-chave em 3 frases.\n2) Resolva um problema prático relacionado.\nResposta esperada: passos e resultado.`;
-      return res.json({ exercise });
+      const currentTopic = topic || subject;
+      const question = `Qual é uma boa estratégia para estudar ${currentTopic}?`;
+      const options = [
+        'Estudar em blocos curtos, praticar e revisar os erros.',
+        'Ler o conteúdo uma única vez e não praticar.',
+        'Evitar pausas para estudar sem parar.',
+        'Decorar respostas sem entender o conceito.'
+      ];
+      return res.json({
+        exercise: `${question}\nA) ${options[0]}\nB) ${options[1]}\nC) ${options[2]}\nD) ${options[3]}`,
+        question,
+        options,
+        correctOption: 0,
+        explanation: 'Blocos de estudo, prática e revisão dos erros ajudam a consolidar a aprendizagem.'
+      });
     }
 
     const prompt = `Gere 1 exercício prático sobre ${topic || subject}, nível ${difficulty}. Inclua enunciado claro, passos para resolver e a solução explicada.`;
