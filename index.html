@@ -1,337 +1,43 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SYNARA | Bem-estar & Aprendizado | Aprenda melhor. Sem se esgotar.</title>
-  <meta name="description" content="SYNARA | Bem-estar & Aprendizado é uma plataforma de estudo inteligente que une educação, tecnologia e bem-estar mental para um aprendizado personalizado e acessível.">
+  <title>SYNARA | Bem-estar &amp; Aprendizado</title>
+  <meta name="description" content="SYNARA une planejamento, acompanhamento e uma mentora por IA para ajudar você a aprender melhor, com equilíbrio.">
   <link rel="icon" href="assets/icon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header class="site-header header-clean">
-    <a class="brand" href="index.html">
-      <img class="brand-icon" src="assets/icon.svg" alt="SYNARA Icon">
-      <span class="brand-text"><strong>SYNARA</strong><small>Bem-estar & Aprendizado</small></span>
-    </a>
-    <div class="header-actions">
-      <nav class="nav-links">
-        <a href="#sobre" class="nav-link">Sobre</a>
-        <a href="#como-funciona" class="nav-link">Como funciona</a>
-        <a href="#ia-chat" class="nav-link">Mentora</a>
-      </nav>
-      <a href="login.html" class="cta-header">Cadastre-se</a>
-    </div>
+  <header class="site-header" id="siteHeader">
+    <a class="brand" href="#inicio" aria-label="SYNARA, início"><img class="brand-icon" src="assets/icon.svg" alt=""><span class="brand-text"><strong>SYNARA</strong><small>Bem-estar &amp; Aprendizado</small></span></a>
+    <button class="menu-toggle" id="menuToggle" type="button" aria-label="Abrir menu" aria-controls="mainNav" aria-expanded="false">☰</button>
+    <nav class="main-nav" id="mainNav" aria-label="Navegação principal">
+      <a href="#inicio">Início</a><a href="#como-funciona">Como funciona</a><a href="#recursos">Recursos</a><a href="#bem-estar">Bem-estar</a><a href="#ia-chat">Mentora</a>
+      <div class="nav-actions"><a class="nav-login" href="login.html">Entrar</a><a class="button-primary button-small" href="login.html">Começar agora <span aria-hidden="true">→</span></a></div>
+    </nav>
   </header>
-
-  <main class="page-content">
-    <section class="hero hero-modern" id="inicio">
-      <div class="hero-copy">
-        <span class="eyebrow">Estudo inteligente</span>
-        <h1>Aprenda com foco, apoio e planejamento de IA.</h1>
-        <p class="lead">A SYNARA une rotina, metas e suporte emocional para você estudar de forma mais leve e eficiente.</p>
-        <div class="hero-actions">
-          <a href="login.html" class="button-primary">Cadastre-se grátis</a>
-          <a href="login.html" class="button-secondary">Entrar</a>
-          <a href="#ia-chat" class="button-secondary">Testar a mentora</a>
-        </div>
-        <div class="hero-highlights">
-          <div class="highlight-item">
-            <strong>95%</strong>
-            <span>de alunos mais confiantes</span>
-          </div>
-          <div class="highlight-item">
-            <strong>3x</strong>
-            <span>mais organização de estudos</span>
-          </div>
-        </div>
-      </div>
-      <aside class="hero-panel">
-        <div class="panel-top">
-          <span>Dashboard rápido</span>
-          <strong>Seu plano de estudo em um único lugar</strong>
-        </div>
-        <div class="panel-cards">
-          <article class="panel-card">
-            <span>Progresso</span>
-            <strong>78%</strong>
-          </article>
-          <article class="panel-card">
-            <span>Metas da semana</span>
-            <strong>4 / 5</strong>
-          </article>
-          <article class="panel-card">
-            <span>Próxima pausa</span>
-            <strong>15 min</strong>
-          </article>
-        </div>
-        <div class="panel-footer">
-          <p>Use a mentora SYNARA para ajustar roteiros, revisar conteúdos e manter o equilíbrio.</p>
-        </div>
-      </aside>
+  <main>
+    <section class="hero" id="inicio"><div class="hero-copy reveal"><span class="eyebrow"><i></i> Estudo inteligente</span><h1>Estude no seu ritmo.<br><em>Evolua com propósito.</em></h1><p class="lead">A SYNARA combina planejamento inteligente, acompanhamento do progresso e uma mentora por IA para ajudar você a aprender melhor sem transformar os estudos em sobrecarga.</p><div class="hero-actions"><a class="button-primary" href="login.html">Começar gratuitamente <span aria-hidden="true">→</span></a><a class="button-ghost" href="#como-funciona">Conhecer a SYNARA <span aria-hidden="true">↓</span></a></div><div class="hero-proof"><span class="avatar-stack"><b>✓</b><b>+</b><b>↗</b></span><span>Um espaço para aprender<br><strong>com mais clareza e equilíbrio</strong></span></div></div>
+      <div class="hero-visual reveal reveal-delay" aria-label="Exemplo visual do painel de estudos da SYNARA"><div class="visual-orbit orbit-one"></div><div class="visual-orbit orbit-two"></div><div class="dashboard-window"><div class="window-bar"><span class="window-brand"><img src="assets/icon.svg" alt=""> SYNARA</span><span class="window-status"><i></i> Seu espaço</span></div><div class="window-body"><div class="window-greeting"><span>VISÃO GERAL</span><strong>Seu plano em movimento.</strong></div><div class="demo-label">EXEMPLO VISUAL</div><div class="dashboard-stats"><div class="dash-stat dash-stat-main"><span>Progresso geral</span><strong>72<small>%</small></strong><div class="mini-progress"><i></i></div><small>+8% nesta semana</small></div><div class="dash-stat"><span>Metas da semana</span><strong>4 <small>/ 5</small></strong><b class="stat-mark">✓</b></div><div class="dash-stat"><span>Sequência</span><strong>6 <small>dias</small></strong><b class="stat-flame">✦</b></div></div><div class="dash-lower"><div class="next-study"><div class="dash-heading"><span>PRÓXIMA ATIVIDADE</span><b>Hoje, 14:30</b></div><div class="activity"><span class="subject-icon">∑</span><div><strong>Matemática</strong><small>Equações do 2º grau · 30 min</small></div><span class="activity-arrow">→</span></div></div><div class="balance-box"><span>RITMO DO DIA</span><strong>Estudar <i>•</i> Pausar</strong><div class="balance-bar"><i></i><i></i><i></i><i></i><i></i></div><small>Seu bem-estar também conta</small></div></div></div></div><div class="floating-note note-progress"><span>↗</span><div><strong>Evolução registrada</strong><small>Você está avançando</small></div></div><div class="floating-note note-ai"><span>✦</span><div><strong>Mentora Synara</strong><small>Estou aqui para ajudar</small></div></div></div>
     </section>
-
-    <section class="section" id="recursos">
-      <div class="section-header">
-        <h2>SYNARA é a plataforma que organiza seu estudo</h2>
-        <p>Mais do que apenas um painel, a SYNARA combina IA, rotina e bem-estar para apoiar seu aprendizado de forma sustentável e personalizada.</p>
-      </div>
-      <div class="grid-3">
-        <article class="card card-minimal">
-          <div class="card-icon">🔐</div>
-          <strong>Cadastro e login seguros</strong>
-          <p>Conta pessoal para acessar seu painel e manter seu progresso salvo no navegador.</p>
-        </article>
-        <article class="card card-minimal">
-          <div class="card-icon">👤</div>
-          <strong>Perfil do estudante</strong>
-          <p>Dados pessoais, metas e preferências reunidos em um painel único.</p>
-        </article>
-        <article class="card card-minimal">
-          <div class="card-icon">🤖</div>
-          <strong>IA personalizada</strong>
-          <p>Suporte inteligente para foco, planejamento e respostas rápidas às suas dúvidas.</p>
-        </article>
-        <article class="card card-minimal">
-          <div class="card-icon">📅</div>
-          <strong>Cronograma automático</strong>
-          <p>Plano de estudos com horários e prioridades construídos a partir do seu ritmo.</p>
-        </article>
-        <article class="card card-minimal">
-          <div class="card-icon">📊</div>
-          <strong>Monitoramento acadêmico</strong>
-          <p>Progresso de matérias, metas diárias e pontos fortes destacados para você manter o controle.</p>
-        </article>
-        <article class="card card-minimal">
-          <div class="card-icon">💡</div>
-          <strong>Ferramentas de foco</strong>
-          <p>Técnicas de estudo, pausas inteligentes e recomendações para manter a concentração.</p>
-        </article>
-      </div>
-    </section>
-    <section class="section section-curriculo" id="sumario">
-      <div class="section-header">
-        <h2>Sumário das aulas</h2>
-        <p>Conteúdos extraídos do material de Língua Portuguesa e Matemática para apoiar sua rotina de estudo.</p>
-      </div>
-      <div class="grid-2">
-        <article class="card card-minimal">
-          <div class="card-icon">📚</div>
-          <strong>Língua Portuguesa</strong>
-          <p>Estudos de literatura e produção de texto: do Pré-Modernismo a reportagens e análise de narrativas.</p>
-          <ul class="summary-list">
-            <li>Pré-Modernismo, Modernismo e Manifesto Antropófago</li>
-            <li>Argumentação, opinião e construção de textos</li>
-            <li>Romantismo x Realismo e leitura de poemas</li>
-            <li>Machado de Assis, Guimarães Rosa e Lygia F. Telles</li>
-            <li>Análise de notícias e reportagem</li>
-          </ul>
-        </article>
-        <article class="card card-minimal">
-          <div class="card-icon">➗</div>
-          <strong>Matemática</strong>
-          <p>Domínio de equações e sistemas lineares, com revisão de métodos e resolução de problemas do dia a dia.</p>
-          <ul class="summary-list">
-            <li>Equações do 1º e 2º grau</li>
-            <li>Problemas com equações e fórmulas de resolução</li>
-            <li>Sistemas lineares 2×2 e 3×3</li>
-            <li>Métodos de substituição, adição e escalonamento</li>
-            <li>Discussão, classificação e revisão completa</li>
-          </ul>
-        </article>
-      </div>
-      <div class="section-header" style="margin-top: 1.5rem;">
-        <p><strong>Caderno de Exercícios:</strong> práticas de Língua Portuguesa e Matemática para fixar cada tema.</p>
-      </div>
-    </section>
-
-    <section class="section section-alt" id="sobre">
-      <div class="section-header">
-        <h2>Por que SYNARA funciona?</h2>
-        <p>As ferramentas certas para você estudar melhor sem perder o equilíbrio.</p>
-      </div>
-      <div class="grid-3">
-        <article class="card card-minimal">
-          <div class="card-icon">🧭</div>
-          <strong>Personalização real</strong>
-          <p>Sua rotina, suas metas e sua jornada de estudo centralizadas em um painel único.</p>
-        </article>
-        <article class="card card-minimal">
-          <div class="card-icon">💬</div>
-          <strong>Mentoria por IA</strong>
-          <p>Respostas práticas, dicas e sugestões durante o estudo para quem quer aprender com menos desgaste.</p>
-        </article>
-        <article class="card card-minimal">
-          <div class="card-icon">⚡</div>
-          <strong>Foco com equilíbrio</strong>
-          <p>Combina sessões de estudo e pausas inteligentes para manter a motivação alta.</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="section" id="como-funciona">
-      <div class="section-header">
-        <h2>Como a plataforma ajuda você</h2>
-        <p>Três passos simples para estudar com mais organização e menos ansiedade.</p>
-      </div>
-      <div class="feature-grid">
-        <article class="step-card">
-          <span class="step-badge">1</span>
-          <strong>Defina seu plano</strong>
-          <p>Escolha suas matérias, metas e o tempo ideal de estudo.</p>
-        </article>
-        <article class="step-card">
-          <span class="step-badge">2</span>
-          <strong>Receba sugestões</strong>
-          <p>Ganhe sugestões de estudo, pausa e revisão com base no seu ritmo.</p>
-        </article>
-        <article class="step-card">
-          <span class="step-badge">3</span>
-          <strong>Acompanhe seu progresso</strong>
-          <p>Veja seus resultados, conquiste metas e ajuste seu plano em tempo real.</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="section" id="ia-chat">
-      <div class="section-header">
-        <h2>Teste sua mentora de estudos</h2>
-        <p>Faça uma pergunta e veja como a IA da SYNARA pode orientar sua rotina.</p>
-      </div>
-      <div class="chat-layout">
-        <div class="chat-preview">
-          <div class="chat-header">
-            <div class="chat-header-title">Mentora SYNARA</div>
-            <div class="chat-subject-tag">Matéria atual: <strong id="currentSubjectLabel">Geral</strong></div>
-          </div>
-          <div class="chat-subject-controls">
-            <button class="subject-option button-secondary active" data-subject="Geral">Geral</button>
-            <button class="subject-option button-secondary" data-subject="Português">Português</button>
-            <button class="subject-option button-secondary" data-subject="Matemática">Matemática</button>
-            <button class="subject-option button-secondary" data-subject="Física">Física</button>
-          </div>
-          <div class="chat-messages" id="chatMessages">
-            <div class="chat-message bot"><div class="chat-bubble">Oi! 👋 Sou sua mentora. Faça uma pergunta sobre estudos, foco ou como organizar melhor!</div></div>
-          </div>
-          <form class="chat-form" id="chatForm">
-            <input id="chatInput" type="text" placeholder="Pergunte algo..." aria-label="Mensagem para a SYNARA" />
-            <button type="submit">Enviar</button>
-          </form>
-        </div>
-        <aside class="chat-help">
-          <h3>Experimente:</h3>
-          <ul>
-            <li>"Como estudar melhor?"</li>
-            <li>"Dicas de foco"</li>
-            <li>"Rotina de estudos"</li>
-            <li>"Como lidar com estresse?"</li>
-          </ul>
-          <p class="chat-help-note">A mentora não faz a tarefa por você; ela ajuda a encontrar o caminho certo para você melhorar onde tem dificuldade.</p>
-        </aside>
-      </div>
-    </section>
-
-    <section class="section section-alt trust-section">
-      <div class="section-header">
-        <h2>Resultados reais</h2>
-        <p>O que estudantes e responsáveis já conquistaram com a SYNARA.</p>
-      </div>
-      <div class="trust-grid">
-        <article class="metric-card">
-          <strong>95%</strong>
-          <span>dos usuários sentem mais confiança</span>
-        </article>
-        <article class="metric-card">
-          <strong>1.200+</strong>
-          <span>metas planejadas com a mentora</span>
-        </article>
-        <article class="metric-card">
-          <strong>4,8/5</strong>
-          <span>na experiência de estudo diária</span>
-        </article>
-      </div>
-    </section>
-
-    <section class="section section-alt" id="student-area">
-      <div class="section-header">
-        <h2>Área do estudante</h2>
-        <p>Este é um espaço individual para cada estudante. Selecione sua matéria e use a IA específica da disciplina para ajudar você a compreender o assunto, resolver dúvidas e melhorar onde tiver dificuldade.</p>
-      </div>
-      <div class="subject-selection">
-        <button class="subject-selection-button button-secondary active" data-subject="Geral">Geral</button>
-        <button class="subject-selection-button button-secondary" data-subject="Português">Português</button>
-        <button class="subject-selection-button button-secondary" data-subject="Matemática">Matemática</button>
-        <button class="subject-selection-button button-secondary" data-subject="Física">Física</button>
-        <button class="subject-selection-button button-secondary" data-subject="Química">Química</button>
-        <button class="subject-selection-button button-secondary" data-subject="Biologia">Biologia</button>
-        <button class="subject-selection-button button-secondary" data-subject="Artes">Artes</button>
-      </div>
-      <form class="subject-add-form" id="subjectAddForm">
-        <label for="newSubject">Adicionar outra matéria</label>
-        <div class="subject-add-controls">
-          <input id="newSubject" type="text" placeholder="Digite o nome da matéria" />
-          <button type="submit" class="button-primary">Adicionar</button>
-        </div>
-        <p class="subject-add-note">Cada matéria tem sua IA focada na disciplina para orientar e ajudar você a entender como fazer os exercícios e melhorar onde tiver dificuldade.</p>
-      </form>
-      <div class="student-area-note">
-        <p>Este espaço é personalizado e individual para cada estudante, com matérias e ajuda específicas para sua jornada de estudo.</p>
-      </div>
-    </section>
-
-    <section class="cta-section cta-personas" id="cta">
-      <div class="cta-personas-grid">
-        <div class="persona-block">
-          <h2>Comece seu plano hoje.</h2>
-          <p>Inicie sua rotina de estudo com uma conta gratuita e veja a diferença já na primeira semana.</p>
-          <a href="login.html?role=student" class="button-primary">Cadastre-se grátis</a>
-        </div>
-        <div class="persona-block">
-          <h2>Precisa de ajuda?</h2>
-          <p>Converse com a mentora IA e receba orientação prática para seus estudos.</p>
-          <a href="#ia-chat" class="button-secondary">Testar agora</a>
-        </div>
-        <div class="persona-block">
-          <h2>Junte sua equipe.</h2>
-          <p>Professores e responsáveis podem supervisionar o progresso com tranquilidade.</p>
-          <a href="login.html?role=teacher" class="button-primary">Começar</a>
-        </div>
-      </div>
-    </section>
-
-    <footer class="footer" id="contato">
-      <div class="footer-inner">
-        <div>
-          <div class="footer-top">
-            <img class="footer-icon" src="assets/icon.svg" alt="SYNARA icon">
-            <div>
-              <strong>SYNARA</strong>
-              <p class="footer-tagline">Transformando aprendizagem com tecnologia humanizada.</p>
-            </div>
-          </div>
-          <p class="footer-description">Plataforma inteligente de estudo que combina educação, IA e bem-estar mental.</p>
-        </div>
-        <div>
-          <h3>Links rápidos</h3>
-          <a href="#inicio">Início</a>
-          <a href="dashboard.html">Dashboard</a>
-          <a href="login.html">Entrar</a>
-        </div>
-        <div>
-          <h3>Contato</h3>
-          <a href="mailto:synaraeducationltda@gmail.com">synaraeducationltda@gmail.com</a>
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <small>© 2026 SYNARA | Bem-estar & Aprendizado. Todos os direitos reservados.</small>
-      </div>
-    </footer>
+    <section class="trust-strip"><span>UMA PLATAFORMA PARA O SEU DIA A DIA</span><div><b>Planeje</b><i>•</i><b>Aprenda</b><i>•</i><b>Acompanhe</b><i>•</i><b>Respire</b></div></section>
+    <section class="section why-section" id="sobre"><div class="section-heading centered"><span class="eyebrow">A experiência SYNARA</span><h2>Por que estudar<br><em>com a SYNARA?</em></h2><p>Uma experiência criada para organizar o estudo sem esquecer do estudante.</p></div><div class="pillar-grid"><article class="pillar-card"><span class="card-number">01</span><span class="pillar-icon">◌</span><h3>Personalização</h3><p>Cada estudante possui uma rotina, objetivos e dificuldades diferentes. A SYNARA adapta a experiência às suas necessidades.</p><a href="#recursos">Conhecer <span>↗</span></a></article><article class="pillar-card pillar-featured"><span class="card-number">02</span><span class="pillar-icon">✦</span><h3>Mentoria por IA</h3><p>Uma mentora virtual para explicar conteúdos, criar resumos, gerar questões e ajudar na organização dos estudos.</p><a href="#ia-chat">Experimentar <span>↗</span></a></article><article class="pillar-card"><span class="card-number">03</span><span class="pillar-icon">◒</span><h3>Equilíbrio</h3><p>Planejamento que considera não apenas produtividade, mas também pausas, ritmo e organização da rotina.</p><a href="#bem-estar">Conhecer <span>↗</span></a></article></div></section>
+    <section class="section ai-section" id="ia-chat"><div class="section-heading"><span class="eyebrow">Sua parceira de estudos</span><h2>Uma mentora para acompanhar <em>sua jornada.</em></h2><p>Converse, pergunte e encontre o próximo passo. A mentora entende o contexto do seu estudo e ajuda você a avançar.</p></div><div class="ai-layout"><div class="chat-preview"><div class="chat-top"><div class="mentor-avatar">✦</div><div><strong>Mentora SYNARA</strong><small><i></i> Online para você</small></div><span class="chat-top-dots">•••</span></div><div class="chat-subject-controls"><button class="subject-option active" data-subject="Geral">Geral</button><button class="subject-option" data-subject="Português">Português</button><button class="subject-option" data-subject="Matemática">Matemática</button><button class="subject-option" data-subject="Física">Física</button></div><div class="chat-messages" id="chatMessages"><div class="chat-message bot"><div class="chat-bubble">Oi! Sou sua mentora. O que você quer organizar ou entender hoje?</div></div></div><form class="chat-form" id="chatForm"><input id="chatInput" type="text" placeholder="Pergunte algo para sua mentora..." aria-label="Mensagem para a SYNARA" autocomplete="off"><button type="submit" aria-label="Enviar mensagem">Enviar <span>→</span></button></form></div><aside class="ai-actions"><span class="eyebrow">Comece por aqui</span><h3>O que você precisa agora?</h3><p>Escolha uma ação ou escreva sua própria dúvida para experimentar a mentora.</p><div class="quick-actions"><button type="button" class="quick-action" data-action="explain"><span>↗</span>Explicar conteúdo</button><button type="button" class="quick-action" data-action="summary"><span>≡</span>Criar resumo</button><button type="button" class="quick-action" data-action="question"><span>?</span>Gerar questões</button><button type="button" class="quick-action" data-action="tips"><span>✦</span>Dicas de estudo</button></div><div class="ai-note"><span>i</span>A mentora ajuda você a encontrar o caminho. O aprendizado continua sendo seu.</div></aside></div></section>
+    <section class="section steps-section" id="como-funciona"><div class="section-heading centered"><span class="eyebrow">Seu ponto de partida</span><h2>Começar é <em>simples.</em></h2><p>Um passo de cada vez, com uma visão clara do que vem pela frente.</p></div><div class="steps-grid"><article class="step"><span>01</span><div><h3>Crie seu perfil</h3><p>Conte um pouco sobre você e sua rotina.</p></div></article><article class="step"><span>02</span><div><h3>Adicione suas matérias</h3><p>Reúna tudo o que você está aprendendo.</p></div></article><article class="step"><span>03</span><div><h3>Defina seus objetivos</h3><p>Transforme intenção em metas possíveis.</p></div></article><article class="step"><span>04</span><div><h3>Organize seu plano</h3><p>Escolha quando e como estudar.</p></div></article><article class="step"><span>05</span><div><h3>Acompanhe sua evolução</h3><p>Estude, revise e veja seu caminho.</p></div></article></div></section>
+    <section class="section progress-section" id="progresso"><div class="progress-copy"><span class="eyebrow">Clareza para continuar</span><h2>Veja sua evolução <em>acontecer.</em></h2><p>O progresso ganha sentido quando você consegue enxergar o caminho. Acompanhe suas matérias, sessões e metas no seu próprio painel.</p><a class="text-link" href="login.html">Criar meu espaço <span>→</span></a></div><div class="progress-preview"><div class="progress-head"><div><span>MEU PROGRESSO</span><strong>Visão geral</strong></div><span class="demo-label">EXEMPLO</span></div><div class="overall-progress"><div><span>Progresso geral</span><strong>72%</strong></div><div class="large-bar"><i></i></div></div><div class="subject-progress"><div><span><i class="dot dot-teal"></i>Matemática</span><strong>78%</strong><b><i style="width:78%"></i></b></div><div><span><i class="dot dot-blue"></i>Português</span><strong>91%</strong><b><i style="width:91%"></i></b></div><div><span><i class="dot dot-yellow"></i>Física</span><strong>64%</strong><b><i style="width:64%"></i></b></div></div><div class="progress-footer"><span><strong>4</strong> metas concluídas</span><span><strong>12</strong> sessões</span><span><strong>6</strong> dias seguidos</span></div></div></section>
+    <section class="section wellbeing-section" id="bem-estar"><div class="wellbeing-copy"><span class="eyebrow">Um ritmo que cabe em você</span><h2>Foco não significa <em>estudar sem parar.</em></h2><p>A SYNARA foi pensada para ajudar o estudante a encontrar um ritmo sustentável de aprendizagem, combinando organização, foco e momentos de pausa.</p><div class="rhythm-flow"><div><span>01</span><strong>Estudar</strong></div><i>↓</i><div><span>02</span><strong>Pausar</strong></div><i>↓</i><div><span>03</span><strong>Revisar</strong></div><i>↓</i><div><span>04</span><strong>Continuar</strong></div></div></div><div class="wellbeing-cards"><article><span>◷</span><strong>Foco</strong><p>Sessões que respeitam sua atenção.</p></article><article><span>⌁</span><strong>Organização</strong><p>Um plano claro para cada dia.</p></article><article><span>○</span><strong>Pausas</strong><p>Tempo para recuperar o ritmo.</p></article><article><span>♡</span><strong>Equilíbrio</strong><p>Aprender também é cuidar.</p></article></div></section>
+    <section class="section features-section" id="recursos"><div class="section-heading centered"><span class="eyebrow">Feita para usar</span><h2>Tudo para estudar <em>melhor.</em></h2><p>Ferramentas conectadas para você sair da intenção e construir constância.</p></div><div class="feature-list"><div class="feature-item"><span>▦</span><strong>Dashboard personalizado</strong></div><div class="feature-item"><span>◈</span><strong>Organização por matérias</strong></div><div class="feature-item"><span>◎</span><strong>Metas de estudo</strong></div><div class="feature-item"><span>◷</span><strong>Cronograma</strong></div><div class="feature-item"><span>✦</span><strong>Mentora por IA</strong></div><div class="feature-item"><span>≡</span><strong>Resumos</strong></div><div class="feature-item"><span>?</span><strong>Geração de questões</strong></div><div class="feature-item"><span>↗</span><strong>Acompanhamento de progresso</strong></div></div></section>
+    <section class="synthesis-section"><div class="synthesis-copy"><span class="eyebrow">A nossa ideia</span><h2>Educação e tecnologia podem caminhar junto com o <em>bem-estar.</em></h2></div><div class="formula"><div><span>📚</span><strong>Estudos</strong></div><b>+</b><div><span>✦</span><strong>Inteligência</strong></div><b>+</b><div><span>◎</span><strong>Organização</strong></div><b>+</b><div><span>♡</span><strong>Bem-estar</strong></div><b>=</b><div class="formula-result"><img src="assets/icon.svg" alt=""><strong>SYNARA</strong></div></div></section>
+    <section class="final-cta"><div><span class="eyebrow">Seu próximo capítulo</span><h2>Seu próximo passo<br><em>começa aqui.</em></h2><p>Organize seus estudos, acompanhe sua evolução e encontre um ritmo que funcione para você.</p></div><a id="finalCta" class="button-light" href="login.html">Começar gratuitamente <span>→</span></a></section>
   </main>
-
-  <script src="auth.js"></script>
-  <script src="script.js"></script>
+  <footer class="footer"><div class="footer-main"><a class="brand" href="#inicio"><img class="brand-icon" src="assets/icon.svg" alt=""><span class="brand-text"><strong>SYNARA</strong><small>Bem-estar &amp; Aprendizado</small></span></a><p>Educação que cuida.<br>Tecnologia que acompanha.</p><nav aria-label="Links do rodapé"><a href="#inicio">Início</a><a href="#como-funciona">Como funciona</a><a href="#recursos">Recursos</a><a href="#ia-chat">Mentora</a><a href="#bem-estar">Bem-estar</a></nav></div><div class="footer-bottom"><span>© 2026 SYNARA | Bem-estar &amp; Aprendizado</span><a href="login.html">Acessar minha conta <span>→</span></a></div></footer>
+  <script src="auth.js"></script><script src="script.js"></script>
+  <script>
+    const menuToggle=document.getElementById('menuToggle'),mainNav=document.getElementById('mainNav');menuToggle?.addEventListener('click',()=>{const open=mainNav.classList.toggle('is-open');menuToggle.setAttribute('aria-expanded',String(open));menuToggle.setAttribute('aria-label',open?'Fechar menu':'Abrir menu')});mainNav?.querySelectorAll('a').forEach(link=>link.addEventListener('click',()=>{mainNav.classList.remove('is-open');menuToggle?.setAttribute('aria-expanded','false')}));document.querySelectorAll('.subject-option').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('.subject-option').forEach(item=>item.classList.remove('active'));button.classList.add('active');window.synaraSubject=button.dataset.subject||'Geral'}));const finalCta=document.getElementById('finalCta');if(window.auth?.getCurrentUser()){finalCta.href='dashboard.html';finalCta.innerHTML='Ir para meu dashboard <span>→</span>'}const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting)entry.target.classList.add('is-visible')}),{threshold:.12});document.querySelectorAll('.pillar-card,.step,.feature-item,.progress-preview,.wellbeing-cards article').forEach(element=>{element.classList.add('scroll-reveal');observer.observe(element)});
+  </script>
 </body>
 </html>
