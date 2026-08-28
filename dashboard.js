@@ -39,6 +39,7 @@ if (!currentUser) {
     ['#headerAvatar', '#sidebarAvatar'].forEach((selector) => { const element = $(selector); if (element) element.textContent = initials(name); });
     $('#profileEmail').textContent = user.email;
     $('#settingsEmail').textContent = user.email;
+    if ($('#mentorGreetingName')) $('#mentorGreetingName').textContent = shortName;
   }
 
   function totalProgress() {
@@ -118,6 +119,15 @@ if (!currentUser) {
     window.synaraSubject = state.selectedSubject;
     $('#currentContext').textContent = `Contexto: ${state.selectedSubject} · ${totalProgress()}% de progresso geral`;
     $('#mentorContext').innerHTML = `<p class="muted">${state.user.subjects.length} matéria(s) cadastrada(s).</p><p class="muted">${state.user.goals.filter((goal) => !goal.completed).length} meta(s) em aberto.</p><p class="muted">${formatMinutes(auth.getStudyMinutes())} de estudo registrado.</p>`;
+    $('#mentorSubjects').innerHTML = state.user.subjects.length ? state.user.subjects.map((subject) => `<button type="button" class="mentor-subject-button ${state.selectedSubject === subject.name ? 'active' : ''}" data-mentor-subject="${escapeHtml(subject.name)}"><span>◈</span>${escapeHtml(subject.name)}</button>`).join('') : '<div class="mentor-subject-empty">Ainda não há matérias. Adicione a primeira para personalizar a mentora.</div>';
+    const progress = totalProgress();
+    $('#mentorProgressValue').textContent = `${progress}%`;
+    $('#mentorProgressBar').style.width = `${progress}%`;
+    $('#mentorProgressHint').textContent = state.user.subjects.length ? `${state.user.subjects.length} matéria(s) acompanhada(s)` : 'Adicione matérias para começar';
+    const completedGoals = state.user.goals.filter((goal) => goal.completed).length;
+    $('#mentorProgress').innerHTML = `<div class="progress-fact"><span>Metas concluídas</span><strong>${completedGoals}/${state.user.goals.length}</strong></div><div class="progress-fact"><span>Tempo estudado</span><strong>${formatMinutes(auth.getStudyMinutes())}</strong></div><div class="progress-fact"><span>Sessões registradas</span><strong>${state.user.studySessions.length}</strong></div>`;
+    const nextGoal = state.user.goals.find((goal) => !goal.completed);
+    $('#mentorNextGoal').textContent = nextGoal ? nextGoal.text : (state.user.goals.length ? 'Todas as metas concluídas' : 'Crie sua primeira meta');
     renderMentorTools();
   }
 
@@ -183,6 +193,7 @@ if (!currentUser) {
       return;
     }
     const sectionButton = event.target.closest('[data-section]'); if (sectionButton) navigate(sectionButton.dataset.section);
+    const mentorSubject = event.target.closest('[data-mentor-subject]'); if (mentorSubject) { state.selectedSubject = mentorSubject.dataset.mentorSubject; window.synaraSubject = state.selectedSubject; renderMentorContext(); showStatus(`Contexto alterado para ${state.selectedSubject}.`); return; }
     const recommend = event.target.closest('[data-recommend-study]'); if (recommend) { const subject = state.selectedSubject === 'Geral' ? state.user.subjects[0]?.name : state.selectedSubject; const nextTopic = state.topic || 'o próximo conteúdo pendente'; $('#chatInput').value = `Recomende o que devo estudar agora em ${subject || 'minhas matérias'}, considerando meu progresso e dificuldades em ${nextTopic}.`; $('#chatForm').requestSubmit(); }
     const challenge = event.target.closest('[data-start-challenge]'); if (challenge) { const subject = state.selectedSubject === 'Geral' ? state.user.subjects[0]?.name : state.selectedSubject; if (!subject) { showStatus('Adicione uma matéria para iniciar um desafio.'); return; } state.mode = 'practice'; state.topic = state.topic || 'revisão geral'; $('#exerciseResult').classList.remove('hidden'); $('#exerciseResult').textContent = 'Preparando desafio...'; try { const questions = await Promise.all([...Array(5)].map(() => fetch('/api/generate-exercise', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userEmail: state.user.email, subject, topic: state.topic, difficulty: state.difficulty }) }).then((response) => response.json()))); state.challenge = { questions: questions.filter((item) => item.question && item.options), index: 0, correct: 0 }; if (state.challenge.questions.length) renderQuestion(state.challenge.questions[0]); else $('#exerciseResult').textContent = 'Não foi possível preparar o desafio agora.'; } catch (error) { $('#exerciseResult').textContent = 'Não foi possível preparar o desafio agora.'; } }
     const finishSession = event.target.closest('[data-finish-session]'); if (finishSession) { const minutes = Math.max(1, Math.round((Date.now() - state.sessionStartedAt) / 60000)); const subject = state.user.subjects.find((item) => item.name === state.selectedSubject); if (subject) auth.addStudySession(subject.id, minutes, state.topic || 'Estudo com a Mentora'); const results = state.user.exerciseResults.filter((item) => new Date(item.createdAt) >= new Date(state.sessionStartedAt)); const correct = results.filter((item) => item.correct).length; const errors = results.filter((item) => !item.correct).map((item) => item.topic).filter(Boolean); $('#exerciseResult').classList.remove('hidden'); $('#exerciseResult').innerHTML = `<strong>Resumo da sessão</strong><p>Você estudou: <b>${minutes} minutos</b><br>Questões: <b>${results.length}</b><br>Acertos: <b>${correct}</b><br>Desempenho: <b>${results.length ? Math.round(correct / results.length * 100) : 0}%</b></p><p><b>Próximo passo recomendado:</b> ${errors.length ? `revisar ${escapeHtml([...new Set(errors)].join(', '))} e praticar novamente.` : 'fazer uma questão de aplicação e revisar os pontos principais.'}</p>`; state.sessionStartedAt = Date.now(); renderAll(); showStatus('Sessão registrada no progresso.'); }
@@ -209,6 +220,15 @@ if (!currentUser) {
   $('#goalForm').addEventListener('submit', (event) => { event.preventDefault(); auth.addGoal($('#goalText').value.trim(), $('#goalSubject').selectedOptions[0]?.textContent === 'Geral' ? '' : $('#goalSubject').selectedOptions[0]?.textContent); event.target.reset(); renderAll(); showStatus('Meta criada.'); });
   $('#scheduleForm').addEventListener('submit', (event) => { event.preventDefault(); auth.addScheduleItem({ subjectId: Number($('#scheduleSubject').value), topic: $('#scheduleTopic').value.trim(), date: $('#scheduleDate').value, time: $('#scheduleTime').value, duration: Number($('#scheduleDuration').value), priority: $('#schedulePriority').value }); event.target.reset(); $('#scheduleDate').value = today; renderAll(); showStatus('Estudo adicionado ao cronograma.'); });
   $('#mentorSubject').addEventListener('change', (event) => { state.selectedSubject = event.target.value; window.synaraSubject = state.selectedSubject; renderMentorContext(); });
+  const mentorInput = $('#chatInput');
+  const resizeMentorInput = () => { mentorInput.style.height = 'auto'; mentorInput.style.height = `${Math.min(mentorInput.scrollHeight, 130)}px`; };
+  mentorInput.addEventListener('input', resizeMentorInput);
+  mentorInput.addEventListener('keydown', (event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); $('#chatForm').requestSubmit(); } });
+  $('#chatPlus').addEventListener('click', () => { const menu = $('#attachmentMenu'); menu.hidden = !menu.hidden; $('#chatPlus').setAttribute('aria-expanded', String(!menu.hidden)); });
+  document.addEventListener('click', (event) => { if (!event.target.closest('.chat-input-wrap')) { $('#attachmentMenu').hidden = true; $('#chatPlus').setAttribute('aria-expanded', 'false'); } });
+  document.querySelector('[data-attachment="text"]')?.addEventListener('click', () => { $('#mentorTopic').focus(); $('#attachmentMenu').hidden = true; });
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  $('#chatMic').addEventListener('click', () => { if (!SpeechRecognition) { showStatus('Entrada por voz não é compatível com este navegador.'); return; } const recognition = new SpeechRecognition(); recognition.lang = 'pt-BR'; recognition.interimResults = false; $('#chatMic').classList.add('listening'); recognition.onresult = (event) => { mentorInput.value = `${mentorInput.value} ${event.results[0][0].transcript}`.trim(); resizeMentorInput(); }; recognition.onerror = () => showStatus('Não foi possível usar a entrada por voz.'); recognition.onend = () => $('#chatMic').classList.remove('listening'); recognition.start(); });
   document.addEventListener('change', (event) => { if (event.target.id === 'mentorMode') state.mode = event.target.value; if (event.target.id === 'mentorTopic') state.topic = event.target.value.trim(); if (event.target.id === 'mentorDifficulty') state.difficulty = event.target.value; window.synaraStudyContext = { ...window.synaraStudyContext, mode: state.mode, topic: state.topic, difficulty: state.difficulty, subject: state.selectedSubject }; });
   $$('[data-mood]').forEach((button) => button.addEventListener('click', () => { auth.setWellbeing(button.dataset.mood); renderAll(); showStatus('Seu ritmo foi atualizado.'); }));
   $('#profileTrigger').addEventListener('click', () => { const menu = $('#profileMenu'); menu.hidden = !menu.hidden; $('#profileTrigger').setAttribute('aria-expanded', String(!menu.hidden)); });
