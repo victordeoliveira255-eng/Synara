@@ -2,6 +2,7 @@ node_modules/
 dist/
 .env
 .env.local
+.data/
 .DS_Store
 npm-debug.log*
 .vscode/

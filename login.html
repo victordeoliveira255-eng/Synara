@@ -45,7 +45,9 @@
                 <input id="loginPassword" type="password" placeholder="••••••••" required />
               </div>
               <button type="submit" class="button-primary">Entrar</button>
+              <button type="button" class="button-quiet" id="forgotPasswordBtn">Esqueci minha senha</button>
               <p class="form-error" id="loginError"></p>
+              <p class="form-success" id="loginSuccess"></p>
             </form>
           </div>
 
@@ -132,43 +134,73 @@
     const registerForm = document.getElementById('registerForm');
     const loginError = document.getElementById('loginError');
     const registerError = document.getElementById('registerError');
+    const loginSuccess = document.getElementById('loginSuccess');
+    const forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
 
-    if (auth.getCurrentUser()) {
-      window.location.href = 'dashboard.html';
+    async function hydrateSession() {
+      const user = await auth.hydrateFromServer();
+      if (user) window.location.href = 'dashboard.html';
     }
 
-    loginForm.addEventListener('submit', (e) => {
+    hydrateSession();
+
+    function setFormError(element, message) {
+      element.textContent = message || '';
+      element.style.display = message ? 'block' : 'none';
+    }
+
+    function setFormSuccess(element, message) {
+      element.textContent = message || '';
+      element.style.display = message ? 'block' : 'none';
+    }
+
+    loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      loginError.style.display = 'none';
+      setFormError(loginError, '');
+      setFormSuccess(loginSuccess, '');
 
       const email = document.getElementById('loginEmail').value.trim();
       const password = document.getElementById('loginPassword').value.trim();
-      const result = auth.login(email, password);
+      const result = await auth.login(email, password);
 
       if (result.success) {
+        setFormSuccess(loginSuccess, 'Login realizado com sucesso. Redirecionando...');
         window.location.href = 'dashboard.html';
       } else {
-        loginError.textContent = result.message;
-        loginError.style.display = 'block';
+        setFormError(loginError, result.message);
       }
     });
 
-    registerForm.addEventListener('submit', (e) => {
+    registerForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      registerError.style.display = 'none';
+      setFormError(registerError, '');
 
       const name = document.getElementById('registerName').value.trim();
       const email = document.getElementById('registerEmail').value.trim();
       const password = document.getElementById('registerPassword').value.trim();
-      const result = auth.register(email, password, name);
+      const result = await auth.register(email, password, name);
 
       if (result.success) {
-        auth.login(email, password);
-        window.location.href = 'dashboard.html';
-      } else {
-        registerError.textContent = result.message;
-        registerError.style.display = 'block';
+        const loginResult = await auth.login(email, password);
+        if (loginResult.success) {
+          window.location.href = 'dashboard.html';
+          return;
+        }
       }
+
+      setFormError(registerError, result.message || 'Não foi possível concluir o cadastro.');
+    });
+
+    forgotPasswordBtn.addEventListener('click', async () => {
+      const email = document.getElementById('loginEmail').value.trim();
+      if (!email) {
+        setFormError(loginError, 'Informe o e-mail para recuperar a senha.');
+        return;
+      }
+
+      const result = await auth.requestPasswordReset(email);
+      setFormError(loginError, '');
+      setFormSuccess(loginSuccess, result.message || 'Se o e-mail existir, enviaremos instruções.');
     });
   </script>
 </body>

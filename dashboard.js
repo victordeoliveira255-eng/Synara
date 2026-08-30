@@ -1,9 +1,17 @@
 const currentUser = auth.getCurrentUser();
 
-if (!currentUser) {
-  window.location.href = 'login.html';
-} else {
-  const state = { user: currentUser, selectedSubject: currentUser.subjects[0]?.name || 'Geral', mode: 'explain', topic: '', difficulty: 'médio', sessionStartedAt: Date.now(), challenge: null };
+async function ensureAuthenticated() {
+  const user = currentUser || await auth.hydrateFromServer();
+  if (!user) {
+    window.location.href = 'login.html';
+    return false;
+  }
+  return user;
+}
+
+ensureAuthenticated().then((user) => {
+  if (!user) return;
+  const state = { user, selectedSubject: user.subjects[0]?.name || 'Geral', mode: 'explain', topic: '', difficulty: 'médio', sessionStartedAt: Date.now(), challenge: null };
   const $ = (selector) => document.querySelector(selector);
   const $$ = (selector) => [...document.querySelectorAll(selector)];
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
@@ -236,4 +244,4 @@ if (!currentUser) {
   $('#mobileBackdrop').addEventListener('click', () => $('#menuToggle').click());
   $('#scheduleDate').value = today;
   renderAll();
-}
+});
