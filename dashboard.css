@@ -133,3 +133,15 @@ h1, h2, p { margin-top: 0; } h1 { margin-bottom: .4rem; color: var(--dash-navy);
 @keyframes messageIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
 @media (max-width: 1100px) { .mentor-workspace { grid-template-columns: 180px minmax(360px, 1fr); }.progress-rail { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }.progress-rail .rail-heading { grid-column: 1 / -1; margin-bottom: 0; }.progress-facts { margin-top: 0; }.next-goal { margin-top: 0; } }
 @media (max-width: 720px) { .mentor-intro { align-items: stretch; flex-direction: column; }.session-chip { align-self: flex-start; }.mentor-workspace { display: flex; flex-direction: column; }.subject-rail, .progress-rail, .mentor-panel { width: 100%; }.subject-rail { order: 1; }.mentor-panel { order: 2; }.progress-rail { order: 3; display: block; }.progress-rail .rail-heading { margin-bottom: 1rem; }.progress-facts { margin-top: .8rem; }.next-goal { margin-top: 1.2rem; }.mentor-panel .quick-actions { grid-template-columns: 1fr; }.mentor-panel .chat-form { flex-wrap: nowrap; }.send-button { padding: 0 .7rem; }.mentor-panel .context-row label { align-items: flex-start; flex-direction: column; gap: .35rem; }.mentor-panel .context-row select { width: 100%; } }
+.privacy-grid { grid-template-columns: 1fr; gap: 1rem; }
+.privacy-info { display: grid; gap: .8rem; }
+.info-row { display: grid; grid-template-columns: 150px 1fr; gap: 1rem; align-items: center; }
+.info-row span { color: var(--dash-muted); font-size: .88rem; }
+.info-row strong { color: var(--dash-navy); }
+.privacy-actions { display: grid; gap: .8rem; }
+.privacy-action-btn { display: block; padding: .85rem 1rem; border: 1px solid var(--dash-border); border-radius: 8px; background: #fff; color: var(--dash-navy); text-decoration: none; text-align: left; font-weight: 500; transition: background .2s, border-color .2s; }
+.privacy-action-btn:hover { background: var(--dash-sky); border-color: var(--dash-teal); }
+.privacy-action-btn.delete { border-color: #d9534f; color: #d9534f; }
+.privacy-action-btn.delete:hover { background: rgba(217, 83, 79, 0.08); }
+.button-danger { padding: .85rem 1.2rem; border: 0; border-radius: 8px; background: #d9534f; color: #fff; font-weight: 600; transition: background .2s; }
+.button-danger:hover { background: #c9302c; }

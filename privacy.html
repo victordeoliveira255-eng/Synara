@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacidade e Proteção de Dados | SYNARA</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .privacy-content { max-width: 900px; margin: 2rem auto; padding: 2rem; line-height: 1.8; }
+    .privacy-content h2 { color: var(--navy); margin-top: 2rem; margin-bottom: 1rem; }
+    .privacy-content h3 { color: var(--teal); margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1.1rem; }
+    .privacy-content p { color: var(--ink); margin-bottom: 1rem; }
+    .privacy-content ul { margin-left: 2rem; margin-bottom: 1rem; }
+    .privacy-content li { margin-bottom: 0.5rem; }
+    .privacy-highlight { background: var(--cyan); padding: 1.5rem; border-radius: 8px; margin: 1.5rem 0; border-left: 4px solid var(--teal); }
+    .privacy-contact { background: var(--sky); padding: 1.5rem; border-radius: 8px; margin: 2rem 0; }
+    .back-link { display: inline-block; margin-bottom: 1.5rem; color: var(--teal); font-weight: 500; }
+    .back-link:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="index.html">
+      <img class="brand-icon" src="assets/icon.svg" alt="SYNARA Icon">
+      <span class="brand-text"><strong>SYNARA</strong><small>Bem-estar & Aprendizado</small></span>
+    </a>
+    <nav class="nav-links">
+      <a href="index.html">Início</a>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="login.html">Entrar</a>
+    </nav>
+    <a href="dashboard.html" class="cta-header">Ver painel</a>
+  </header>
+
+  <main class="page-content">
+    <a href="javascript:history.back()" class="back-link">← Voltar</a>
+    
+    <section class="privacy-content">
+      <h1>Privacidade e Proteção de Dados</h1>
+      <p><strong>Última atualização:</strong> 30 de agosto de 2026</p>
+
+      <h2>1. Quais Dados a SYNARA Coleta?</h2>
+      <p>A SYNARA coleta dados para proporcionar uma experiência de aprendizado personalizada e segura. Os dados coletados incluem:</p>
+      <ul>
+        <li><strong>Dados de Conta:</strong> Nome, e-mail e senha (criptografada).</li>
+        <li><strong>Dados de Estudo:</strong> Disciplinas, metas, histórico de sessões de estudo, progresso, exercícios resolvidos.</li>
+        <li><strong>Dados de Interação:</strong> Perguntas feitas à mentora de IA, respostas fornecidas, preferências de estudo.</li>
+        <li><strong>Dados de Bem-estar:</strong> Anotações sobre humor e bem-estar compartilhadas voluntariamente.</li>
+        <li><strong>Dados Técnicos:</strong> Informações de navegação, tipo de dispositivo (não identificável).</li>
+      </ul>
+
+      <h2>2. Por Que Esses Dados São Utilizados?</h2>
+      <p>Os dados coletados são utilizados para:</p>
+      <ul>
+        <li>Autenticar você e manter sua sessão segura;</li>
+        <li>Personalizar as recomendações de estudo baseadas em seu progresso;</li>
+        <li>Oferecer uma mentora de IA que entende seu contexto e necessidades;</li>
+        <li>Manter um histórico de suas metas e progresso;</li>
+        <li>Melhorar a qualidade da plataforma (em ambiente de desenvolvimento/testes);</li>
+        <li>Cumprir obrigações legais de segurança e proteção.</li>
+      </ul>
+
+      <h2>3. Como os Dados São Armazenados?</h2>
+      <p>Os dados são armazenados de forma segura:</p>
+      <ul>
+        <li><strong>Senhas:</strong> Criptografadas usando bcryptjs, nunca armazenadas em texto puro.</li>
+        <li><strong>Banco de Dados:</strong> Protegido em servidor dedicado com backups regulares.</li>
+        <li><strong>Dados de Sessão:</strong> Utilizados apenas durante sua sessão ativa, em cookie seguro.</li>
+        <li><strong>Dados de Estudo:</strong> Armazenados apenas para seu uso pessoal e não são compartilhados sem seu consentimento.</li>
+      </ul>
+
+      <div class="privacy-highlight">
+        <strong>🔒 Segurança:</strong> A SYNARA utiliza HTTPS, cookies seguro HTTP-only, e validação robusta em todas as entradas de dados.
+      </div>
+
+      <h2>4. Como os Dados São Protegidos?</h2>
+      <p>Implementamos várias camadas de segurança:</p>
+      <ul>
+        <li>Criptografia de senhas com bcryptjs;</li>
+        <li>Tokens JWT com expiração limitada;</li>
+        <li>Cookies HTTP-only (não acessíveis por JavaScript);</li>
+        <li>Validação rigorosa de entradas;</li>
+        <li>Proteção contra ataques comuns (CSRF, SQL Injection, XSS);</li>
+        <li>Headers de segurança HTTP (Helmet.js);</li>
+        <li>Rate limiting para prevenir ataques de força bruta.</li>
+      </ul>
+
+      <h2>5. Com Quem os Dados Podem Ser Compartilhados?</h2>
+      <p>Seus dados <strong>nunca são vendidos</strong> a terceiros. Porém, podem ser compartilhados em casos limitados:</p>
+      <ul>
+        <li><strong>OpenAI:</strong> Quando você usa a mentora de IA, o contexto da sua pergunta é enviado para processamento (sem dados pessoais identificáveis, quando possível).</li>
+        <li><strong>Conformidade Legal:</strong> Se exigido por lei, autoridades competentes podem solicitar dados (raramente).</li>
+        <li><strong>Parceiros Técnicos:</strong> Provedores de hospedagem ou serviços que ajudam a manter a plataforma funcionando.</li>
+      </ul>
+      <p><strong>Aviso importante:</strong> Você sempre pode optar por não usar a mentora de IA se não desejar compartilhar dados com OpenAI.</p>
+
+      <h2>6. Por Quanto Tempo os Dados São Mantidos?</h2>
+      <ul>
+        <li><strong>Dados de Conta:</strong> Mantidos enquanto sua conta estiver ativa.</li>
+        <li><strong>Dados de Estudo:</strong> Mantidos enquanto sua conta estiver ativa.</li>
+        <li><strong>Tokens de Recuperação de Senha:</strong> Expiram após 1 hora e são marcados como usados após utilização.</li>
+        <li><strong>Logs de Segurança:</strong> Mantidos por até 90 dias (sem dados pessoais sensíveis).</li>
+        <li><strong>Após Exclusão da Conta:</strong> Todos os seus dados são removidos, exceto informações necessárias para conformidade legal ou retenção técnica essencial.</li>
+      </ul>
+
+      <h2>7. Como Solicitar Informações Sobre Seus Dados?</h2>
+      <p>Você tem o direito de:</p>
+      <ul>
+        <li><strong>Acessar seus dados:</strong> Faça login no dashboard e veja sua seção "Privacidade e Meus Dados".</li>
+        <li><strong>Corrigir dados:</strong> Atualize seu nome e e-mail nas configurações da conta.</li>
+        <li><strong>Solicitar um relatório:</strong> Entre em contato conosco (veja seção Contato).</li>
+      </ul>
+
+      <h2>8. Como Solicitar Correção de Dados?</h2>
+      <p>Para corrigir informações da sua conta:</p>
+      <ul>
+        <li>Acesse o dashboard e vá até "Configurações de Perfil";</li>
+        <li>Atualize os dados que desejar;</li>
+        <li>Se não conseguir, envie um e-mail com os dados que deseja corrigir.</li>
+      </ul>
+
+      <h2>9. Como Solicitar Exclusão da Conta?</h2>
+      <p>Para excluir sua conta e todos os seus dados pessoais:</p>
+      <ul>
+        <li>Acesse o dashboard;</li>
+        <li>Vá até "Privacidade e Meus Dados" → "Excluir Conta";</li>
+        <li>Confirme a exclusão (esta ação é permanente);</li>
+        <li>Sua conta e todos os dados associados serão removidos.</li>
+      </ul>
+      <p><strong>Importante:</strong> A exclusão é permanente. Se mudar de ideia depois, será necessário criar uma nova conta.</p>
+
+      <h2>10. Como Entrar em Contato Sobre Privacidade?</h2>
+      <p>Para dúvidas ou solicitações relacionadas à privacidade:</p>
+
+      <div class="privacy-contact">
+        <strong>📧 E-mail:</strong> synaraeducationltda@gmail.com<br/>
+        <strong>📝 Assunto sugerido:</strong> "Privacidade e Proteção de Dados - [Sua Solicitação]"<br/>
+        <strong>⏱️ Resposta em:</strong> Até 10 dias úteis<br/>
+        <p style="margin-top: 1rem; font-size: 0.9rem; color: var(--muted);">Sua privacidade é importante para nós. Responderemos todas as solicitações de forma rápida e transparente.</p>
+      </div>
+
+      <h2>11. Mudanças a Esta Política</h2>
+      <p>A SYNARA pode atualizar esta política periodicamente. Se fizermos mudanças significativas, informaremos por e-mail. O uso continuado da plataforma após as mudanças constitui aceitação.</p>
+
+      <h2>12. Informações Importantes Para Usuários Educacionais</h2>
+      <p>Este é um projeto de prototipagem educacional (TCC). Antes de uma operação comercial real:</p>
+      <ul>
+        <li>Esta política deverá ser revisada por consultoria jurídica especializada em LGPD;</li>
+        <li>Certificações de segurança adicionais podem ser necessárias;</li>
+        <li>Conformidade total com LGPD e GDPR deve ser auditada;</li>
+        <li>Parcerias com terceiros devem ter termos legais claros.</li>
+      </ul>
+
+      <div class="privacy-highlight">
+        <strong>⚖️ LGPD:</strong> A SYNARA trabalha para estar em conformidade com a Lei Geral de Proteção de Dados (LGPD - Lei 13.709/2018). Você, como titular dos dados, tem direitos garantidos por lei.
+      </div>
+
+      <hr style="margin: 3rem 0; border: none; border-top: 1px solid var(--line);">
+      
+      <p style="text-align: center; color: var(--muted); font-size: 0.9rem;">
+        <strong>SYNARA — Bem-estar & Aprendizado</strong><br/>
+        © 2026. Todos os direitos reservados.<br/>
+        Design e funcionalidades desenvolvidas com foco em segurança e privacidade.
+      </p>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div>
+        <div class="footer-top">
+          <img class="footer-icon" src="assets/icon.svg" alt="SYNARA icon">
+          <div>
+            <strong>SYNARA</strong>
+            <p class="footer-tagline">Transformando aprendizagem com tecnologia humanizada.</p>
+          </div>
+        </div>
+        <p class="footer-description">Acesse seu espaço de estudos, prioridades e equilíbrio mental com a plataforma SYNARA.</p>
+      </div>
+      <div>
+        <h3>Links rápidos</h3>
+        <a href="index.html">Início</a>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="login.html">Entrar</a>
+        <a href="privacy.html">Privacidade</a>
+      </div>
+      <div>
+        <h3>Contato</h3>
+        <a href="mailto:synaraeducationltda@gmail.com">synaraeducationltda@gmail.com</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <small>© 2026 SYNARA | Bem-estar & Aprendizado. Todos os direitos reservados.</small>
+      <small>Design pensado para educação, tecnologia e saúde mental.</small>
+    </div>
+  </footer>
+</body>
+</html>

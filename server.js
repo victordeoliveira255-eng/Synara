@@ -9,6 +9,9 @@ import cookieParser from 'cookie-parser';
 import sqlite3 from 'sqlite3';
 import { Pool } from 'pg';
 import { OpenAI } from 'openai';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import validator from 'validator';
 
 dotenv.config();
 
@@ -18,25 +21,67 @@ const JWT_SECRET = process.env.JWT_SECRET || 'synara-dev-secret-change-me';
 const SESSION_COOKIE = 'synara_session';
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const STORE_PATH = path.resolve('./memory_store.json');
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000').split(',').map(o => o.trim());
 
-app.use(express.json({ limit: '1mb' }));
-app.use(cookieParser());
+// Security headers via Helmet
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", 'data:', 'https:'],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'", 'data:'],
+      objectSrc: ["'none'"],
+      upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null
+    }
+  }
+}));
+
+// CORS with whitelist
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  const origin = req.headers.origin;
+  if (ALLOWED_ORIGINS.includes(origin) || ALLOWED_ORIGINS.includes('*')) {
+    res.header('Access-Control-Allow-Origin', origin || ALLOWED_ORIGINS[0]);
+  }
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   next();
 });
+
+app.use(express.json({ limit: '1mb' }));
+app.use(cookieParser());
 app.use(express.static('.'));
 
 const openAiKey = process.env.OPENAI_API_KEY;
 const openai = openAiKey ? new OpenAI({ apiKey: openAiKey }) : null;
 
+// Rate limiting for auth endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 requests per windowMs
+  message: 'Muitas tentativas. Tente novamente mais tarde.',
+  standardHeaders: false,
+  legacyHeaders: false,
+  skip: (req) => process.env.NODE_ENV !== 'production' && req.ip === '::1'
+});
+
+const strictLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 3, // 3 requests per hour
+  message: 'Muitas tentativas. Tente novamente mais tarde.',
+  standardHeaders: false,
+  legacyHeaders: false,
+  skip: (req) => process.env.NODE_ENV !== 'production' && req.ip === '::1'
+});
+
 let pgPool = null;
 let sqliteDb = null;
 let memoryStore = {};
+let userSessions = {}; // Track active sessions for account deletion and security
 
 function persistStore() {
   try {
@@ -89,7 +134,7 @@ function signToken(id, email) {
   return jwt.sign({ sub: id, email }, JWT_SECRET, { expiresIn: '7d' });
 }
 
-function setAuthCookie(res, token) {
+function setAuthCookie(res, token, userId) {
   res.cookie(SESSION_COOKIE, token, {
     httpOnly: true,
     sameSite: 'lax',
@@ -97,10 +142,22 @@ function setAuthCookie(res, token) {
     maxAge: ONE_WEEK_MS,
     path: '/'
   });
+  // Track session for account deletion
+  if (userId) {
+    if (!userSessions[userId]) userSessions[userId] = [];
+    userSessions[userId].push({ token, createdAt: Date.now() });
+  }
 }
 
 function clearAuthCookie(res) {
   res.clearCookie(SESSION_COOKIE, { path: '/' });
+}
+
+function invalidateUserSessions(userId) {
+  // Clear all sessions for a user (used on account deletion or password reset)
+  if (userSessions[userId]) {
+    delete userSessions[userId];
+  }
 }
 
 async function initDatabase() {
@@ -223,7 +280,7 @@ async function requireAuth(req, res, next) {
   }
 }
 
-app.post('/api/auth/register', async (req, res) => {
+app.post('/api/auth/register', authLimiter, async (req, res) => {
   const { name, email, password } = req.body || {};
   const cleanName = String(name || '').trim();
   const cleanEmail = String(email || '').trim().toLowerCase();
@@ -232,16 +289,16 @@ app.post('/api/auth/register', async (req, res) => {
     return res.status(400).json({ success: false, message: 'Preencha nome, e-mail e senha.' });
   }
 
-  if (cleanName.length < 2) {
+  if (cleanName.length < 2 || cleanName.length > 100) {
     return res.status(400).json({ success: false, message: 'Informe um nome válido.' });
   }
 
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+  if (!validator.isEmail(cleanEmail)) {
     return res.status(400).json({ success: false, message: 'Informe um e-mail válido.' });
   }
 
-  if (String(password).length < 6) {
-    return res.status(400).json({ success: false, message: 'A senha precisa ter pelo menos 6 caracteres.' });
+  if (String(password).length < 6 || String(password).length > 128) {
+    return res.status(400).json({ success: false, message: 'A senha precisa ter entre 6 e 128 caracteres.' });
   }
 
   try {
@@ -283,7 +340,7 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', authLimiter, async (req, res) => {
   const { email, password } = req.body || {};
   const cleanEmail = String(email || '').trim().toLowerCase();
 
@@ -304,8 +361,8 @@ app.post('/api/auth/login', async (req, res) => {
 
     const user = buildSafeUser(row);
     const token = signToken(user.id, user.email);
-    setAuthCookie(res, token);
-    return res.json({ success: true, user, token, message: 'Login realizado com sucesso.' });
+    setAuthCookie(res, token, user.id);
+    return res.json({ success: true, user, message: 'Login realizado com sucesso.' });
   } catch (error) {
     console.error('Login error:', error);
     return res.status(500).json({ success: false, message: 'Não foi possível fazer login no momento.' });
@@ -374,7 +431,7 @@ app.put('/api/user/profile', requireAuth, async (req, res) => {
   }
 });
 
-app.post('/api/auth/forgot-password', async (req, res) => {
+app.post('/api/auth/forgot-password', authLimiter, async (req, res) => {
   const email = String(req.body?.email || '').trim().toLowerCase();
   if (!email) {
     return res.status(400).json({ success: false, message: 'Informe o e-mail da conta.' });
@@ -410,9 +467,9 @@ app.post('/api/auth/forgot-password', async (req, res) => {
   }
 });
 
-app.post('/api/auth/reset-password', async (req, res) => {
+app.post('/api/auth/reset-password', strictLimiter, async (req, res) => {
   const { token, password } = req.body || {};
-  if (!token || !password || String(password).length < 6) {
+  if (!token || !password || String(password).length < 6 || String(password).length > 128) {
     return res.status(400).json({ success: false, message: 'Token e nova senha válidos são obrigatórios.' });
   }
 
@@ -444,7 +501,10 @@ app.post('/api/auth/reset-password', async (req, res) => {
       });
     }
 
-    return res.json({ success: true, message: 'Senha redefinida com sucesso.' });
+    // Invalidate all sessions for this user (security best practice after password reset)
+    invalidateUserSessions(resetRecord.user_id);
+
+    return res.json({ success: true, message: 'Senha redefinida com sucesso. Por favor, faça login novamente.' });
   } catch (error) {
     console.error('Reset password error:', error);
     return res.status(500).json({ success: false, message: 'Não foi possível redefinir a senha.' });
@@ -465,8 +525,14 @@ async function createEmbedding(text) {
   return response.data[0].embedding;
 }
 
-app.post('/api/embeddings/index', async (req, res) => {
+app.post('/api/embeddings/index', requireAuth, async (req, res) => {
   const { userEmail, content, metadata } = req.body;
+  
+  // Verify user owns this email (prevent users from indexing data for other users)
+  if (userEmail !== req.user.email) {
+    return res.status(403).json({ error: 'Acesso não autorizado' });
+  }
+
   if (!userEmail || !content) return res.status(400).json({ error: 'Missing userEmail or content' });
 
   try {
@@ -489,8 +555,14 @@ app.post('/api/embeddings/index', async (req, res) => {
   }
 });
 
-app.post('/api/embeddings/query', async (req, res) => {
+app.post('/api/embeddings/query', requireAuth, async (req, res) => {
   const { userEmail, query, topK = 3 } = req.body;
+  
+  // Verify user owns this email
+  if (userEmail !== req.user.email) {
+    return res.status(403).json({ error: 'Acesso não autorizado' });
+  }
+
   if (!userEmail || !query) return res.status(400).json({ error: 'Missing userEmail or query' });
 
   try {
@@ -562,7 +634,7 @@ function fallbackResponse(message, subject = 'Geral') {
   ]);
 }
 
-app.post('/api/chat', async (req, res) => {
+app.post('/api/chat', requireAuth, async (req, res) => {
   const { message, subject, history, subjects, goals, messageHistory, mode, topic, difficulty, progress, contentStats, recentSchedule } = req.body;
 
   if (!message || typeof message !== 'string') {
@@ -690,6 +762,46 @@ app.post('/api/generate-exercise', async (req, res) => {
   } catch (error) {
     console.error('Generate exercise error:', error);
     return res.status(500).json({ error: 'Erro ao gerar exercício' });
+  }
+});
+
+// Account deletion endpoint
+app.delete('/api/account', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    if (pgPool) {
+      // Delete all associated data
+      await pgPool.query('DELETE FROM password_reset_tokens WHERE user_id = $1', [userId]);
+      await pgPool.query('DELETE FROM embeddings WHERE user_email = $1', [req.user.email]);
+      await pgPool.query('DELETE FROM users WHERE id = $1', [userId]);
+    } else {
+      // SQLite deletion
+      await new Promise((resolve, reject) => {
+        sqliteDb.run('DELETE FROM password_reset_tokens WHERE user_id = ?', [userId], (error) => error ? reject(error) : resolve());
+      });
+      
+      // Remove embeddings for this user
+      if (memoryStore[req.user.email]) {
+        delete memoryStore[req.user.email];
+        persistStore();
+      }
+      
+      await new Promise((resolve, reject) => {
+        sqliteDb.run('DELETE FROM users WHERE id = ?', [userId], (error) => error ? reject(error) : resolve());
+      });
+    }
+    
+    // Invalidate all sessions for this user
+    invalidateUserSessions(userId);
+    
+    // Clear the auth cookie
+    clearAuthCookie(res);
+    
+    return res.json({ success: true, message: 'Conta excluída com sucesso. Seus dados foram removidos.' });
+  } catch (error) {
+    console.error('Account deletion error:', error);
+    return res.status(500).json({ success: false, message: 'Não foi possível excluir a conta no momento.' });
   }
 });
 

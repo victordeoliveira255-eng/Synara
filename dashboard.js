@@ -159,6 +159,14 @@ ensureAuthenticated().then((user) => {
     $('#wellbeingSuggestion').textContent = suggestions[mood] || 'Escolha uma opção para receber uma sugestão simples de organização.';
   }
 
+  function renderPrivacy() {
+    if (!state.user) return;
+    const createdAt = state.user.createdAt ? new Date(state.user.createdAt).toLocaleDateString('pt-BR') : '-';
+    $('#privacyName').textContent = state.user.name || '-';
+    $('#privacyEmail').textContent = state.user.email || '-';
+    $('#privacyCreatedAt').textContent = createdAt;
+  }
+
   function renderQuestion(data) {
     const challengeLabel = state.challenge ? `Questão ${state.challenge.index + 1}/${state.challenge.questions.length}` : 'Questão';
     $('#exerciseResult').innerHTML = `<strong>${challengeLabel}</strong><p>${escapeHtml(data.question)}</p><div class="question-options">${data.options.map((option, index) => `<button type="button" data-answer-option="${index}">${String.fromCharCode(65 + index)}) ${escapeHtml(option)}</button>`).join('')}</div><div id="questionFeedback" class="muted"></div>`;
@@ -167,7 +175,7 @@ ensureAuthenticated().then((user) => {
   }
 
   function renderAll() {
-    refreshUser(); renderUser(); renderStats(); renderContinue(); renderToday(); renderHome(); renderSubjects(); renderGoals(); renderSchedule(); renderProgress(); renderMentorContext(); renderWellbeing();
+    refreshUser(); renderUser(); renderStats(); renderContinue(); renderToday(); renderHome(); renderSubjects(); renderGoals(); renderSchedule(); renderProgress(); renderMentorContext(); renderWellbeing(); renderPrivacy();
     window.synaraStudyContext = { mode: state.mode, topic: state.topic, difficulty: state.difficulty, subject: state.selectedSubject, progress: totalProgress(), contentStats: state.selectedSubject !== 'Geral' && state.topic ? auth.getContentStats(state.selectedSubject, state.topic) : null, recentSchedule: state.user.schedule.slice(-5), goals: state.user.goals.map((goal) => ({ text: goal.text, completed: goal.completed })) };
     $('#scheduleSubject').innerHTML = subjectOptions(); $('#goalSubject').innerHTML = `<option value="">Geral</option>${subjectOptions()}`;
   }
@@ -242,6 +250,48 @@ ensureAuthenticated().then((user) => {
   $('#profileTrigger').addEventListener('click', () => { const menu = $('#profileMenu'); menu.hidden = !menu.hidden; $('#profileTrigger').setAttribute('aria-expanded', String(!menu.hidden)); });
   $('#menuToggle').addEventListener('click', () => { const open = $('#sidebar').classList.toggle('open'); $('#menuToggle').setAttribute('aria-expanded', String(open)); });
   $('#mobileBackdrop').addEventListener('click', () => $('#menuToggle').click());
+  
+  // Privacy & Account Deletion
+  document.addEventListener('click', (event) => {
+    const deleteBtn = event.target.closest('#deleteAccountBtn');
+    if (deleteBtn) {
+      const confirmed = confirm('Você tem certeza que deseja excluir sua conta? Esta ação é permanente e não pode ser desfeita. Todos os seus dados serão removidos.');
+      if (confirmed) {
+        const doubleConfirm = prompt('Digite "CONFIRMAR EXCLUSÃO" para confirmar definitivamente:');
+        if (doubleConfirm === 'CONFIRMAR EXCLUSÃO') {
+          deleteAccount();
+        } else {
+          showStatus('Exclusão cancelada.');
+        }
+      }
+    }
+  });
+  
+  async function deleteAccount() {
+    try {
+      showStatus('Excluindo sua conta...');
+      const response = await fetch('/api/account', {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (response.ok) {
+        showStatus('Conta excluída com sucesso. Redirecionando...');
+        sessionStorage.clear();
+        setTimeout(() => {
+          window.location.href = 'login.html';
+        }, 1500);
+      } else {
+        const data = await response.json();
+        showStatus(data.message || 'Não foi possível excluir a conta.');
+      }
+    } catch (error) {
+      console.error('Delete account error:', error);
+      showStatus('Erro ao excluir a conta. Tente novamente.');
+    }
+  }
+  
   $('#scheduleDate').value = today;
   renderAll();
 });
