@@ -806,7 +806,18 @@ app.delete('/api/account', requireAuth, async (req, res) => {
 });
 
 async function startServer() {
-  await initDatabase();
+  try {
+    console.log('Inicializando banco de dados...');
+    await Promise.race([
+      initDatabase(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Database init timeout')), 10000))
+    ]);
+    console.log('✅ Banco de dados inicializado');
+  } catch (error) {
+    console.error('⚠️ Erro ao inicializar banco de dados:', error.message);
+    console.log('Continuando com servidor disponível...');
+  }
+
   app.listen(PORT, () => {
     console.log(`SYNARA API rodando em http://localhost:${PORT}`);
   });
