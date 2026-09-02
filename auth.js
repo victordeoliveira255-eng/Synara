@@ -9,6 +9,7 @@ class SynaraAuth {
       id: user.id,
       name: user.name || 'Aluno',
       email: user.email || '',
+      role: user.role || 'user',
       profile: user.profile && typeof user.profile === 'object' ? user.profile : {},
       createdAt: user.createdAt || user.created_at || new Date().toISOString(),
       updatedAt: user.updatedAt || user.updated_at || new Date().toISOString(),
@@ -41,6 +42,11 @@ class SynaraAuth {
       console.warn('Could not read current user session:', error);
       return null;
     }
+  }
+
+  isAdmin() {
+    const user = this.getCurrentUser();
+    return Boolean(user && user.role === 'admin');
   }
 
   async request(endpoint, options = {}) {

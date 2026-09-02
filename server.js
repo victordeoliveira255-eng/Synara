@@ -19,9 +19,11 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'synara-dev-secret-change-me';
 const SESSION_COOKIE = 'synara_session';
+const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || '').trim().toLowerCase(); // Empty by default - admin must be configured explicitly
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const STORE_PATH = path.resolve('./memory_store.json');
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000').split(',').map(o => o.trim());
+const USER_ROLE = { USER: 'user', ADMIN: 'admin' };
 
 // Security headers via Helmet
 app.use(helmet({
@@ -112,10 +114,13 @@ function parseProfile(value, fallback = {}) {
 
 function buildSafeUser(row) {
   const profile = parseProfile(row.profile || row.profile_json || {}, {});
+  // Use role from database, default to 'user' if not set
+  const rowRole = row.role || USER_ROLE.USER;
   const user = {
     id: row.id,
     name: row.name,
     email: row.email,
+    role: rowRole,
     profile,
     createdAt: row.created_at || row.createdAt,
     updatedAt: row.updated_at || row.updatedAt,
@@ -130,8 +135,8 @@ function buildSafeUser(row) {
   return user;
 }
 
-function signToken(id, email) {
-  return jwt.sign({ sub: id, email }, JWT_SECRET, { expiresIn: '7d' });
+function signToken(id, email, role = USER_ROLE.USER) {
+  return jwt.sign({ sub: id, email, role }, JWT_SECRET, { expiresIn: '7d' });
 }
 
 function setAuthCookie(res, token, userId) {
@@ -169,11 +174,13 @@ async function initDatabase() {
         name TEXT NOT NULL,
         email TEXT NOT NULL UNIQUE,
         password_hash TEXT NOT NULL,
+        role TEXT NOT NULL DEFAULT 'user',
         profile JSONB NOT NULL DEFAULT '{}'::jsonb,
         created_at TIMESTAMPTZ DEFAULT now(),
         updated_at TIMESTAMPTZ DEFAULT now()
       );
     `);
+    await pgPool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'user';`)
     await pgPool.query(`
       CREATE TABLE IF NOT EXISTS password_reset_tokens (
         id SERIAL PRIMARY KEY,
@@ -194,6 +201,54 @@ async function initDatabase() {
         created_at TIMESTAMPTZ DEFAULT now()
       );
     `);
+    await pgPool.query(`
+      CREATE TABLE IF NOT EXISTS user_memories (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        category TEXT NOT NULL DEFAULT 'general',
+        title TEXT,
+        content TEXT NOT NULL,
+        metadata JSONB DEFAULT '{}'::jsonb,
+        created_at TIMESTAMPTZ DEFAULT now()
+      );
+    `);
+    await pgPool.query(`
+      CREATE TABLE IF NOT EXISTS bncc_items (
+        id SERIAL PRIMARY KEY,
+        etapa TEXT,
+        serie TEXT,
+        area TEXT,
+        disciplina TEXT,
+        unidade_tematica TEXT,
+        objeto_conhecimento TEXT,
+        habilidade TEXT,
+        codigo_habilidade TEXT,
+        conteudos_relacionados TEXT,
+        atividades TEXT,
+        status TEXT NOT NULL DEFAULT 'active',
+        created_at TIMESTAMPTZ DEFAULT now(),
+        updated_at TIMESTAMPTZ DEFAULT now()
+      );
+    `);
+    await pgPool.query(`
+      CREATE TABLE IF NOT EXISTS mentor_events (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER,
+        event_type TEXT NOT NULL,
+        event_data JSONB DEFAULT '{}'::jsonb,
+        created_at TIMESTAMPTZ DEFAULT now()
+      );
+    `);
+    await pgPool.query(`
+      CREATE TABLE IF NOT EXISTS admin_logs (
+        id SERIAL PRIMARY KEY,
+        admin_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE SET NULL,
+        action TEXT NOT NULL,
+        resource TEXT,
+        details JSONB DEFAULT '{}'::jsonb,
+        created_at TIMESTAMPTZ DEFAULT now()
+      );
+    `);
     console.log('Using PostgreSQL database');
     return;
   }
@@ -211,12 +266,28 @@ async function initDatabase() {
           name TEXT NOT NULL,
           email TEXT NOT NULL UNIQUE,
           password_hash TEXT NOT NULL,
+          role TEXT NOT NULL DEFAULT 'user',
           profile TEXT NOT NULL DEFAULT '{}',
           created_at TEXT DEFAULT CURRENT_TIMESTAMP,
           updated_at TEXT DEFAULT CURRENT_TIMESTAMP
         );
       `, (error) => {
         if (error) return reject(error);
+        sqliteDb.get('PRAGMA table_info(users)', (pragmaError, tableInfo) => {
+          if (pragmaError) return reject(pragmaError);
+          const hasRole = Array.isArray(tableInfo) && tableInfo.some((column) => column.name === 'role');
+          if (!hasRole) {
+            sqliteDb.run('ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT "user"', (alterError) => {
+              if (alterError) return reject(alterError);
+              continueSetup();
+            });
+            return;
+          }
+          continueSetup();
+        });
+      });
+
+      function continueSetup() {
         sqliteDb.run(`
           CREATE TABLE IF NOT EXISTS password_reset_tokens (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -229,9 +300,79 @@ async function initDatabase() {
           );
         `, (tokenError) => {
           if (tokenError) return reject(tokenError);
-          resolve();
+          sqliteDb.run(`
+            CREATE TABLE IF NOT EXISTS embeddings (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              user_email TEXT NOT NULL,
+              content TEXT NOT NULL,
+              embedding TEXT NOT NULL,
+              metadata TEXT DEFAULT '{}',
+              created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );
+          `, (embeddingError) => {
+            if (embeddingError) return reject(embeddingError);
+            sqliteDb.run(`
+              CREATE TABLE IF NOT EXISTS user_memories (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                category TEXT NOT NULL DEFAULT 'general',
+                title TEXT,
+                content TEXT NOT NULL,
+                metadata TEXT DEFAULT '{}',
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+              );
+            `, (memoryError) => {
+              if (memoryError) return reject(memoryError);
+              sqliteDb.run(`
+                CREATE TABLE IF NOT EXISTS bncc_items (
+                  id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  etapa TEXT,
+                  serie TEXT,
+                  area TEXT,
+                  disciplina TEXT,
+                  unidade_tematica TEXT,
+                  objeto_conhecimento TEXT,
+                  habilidade TEXT,
+                  codigo_habilidade TEXT,
+                  conteudos_relacionados TEXT,
+                  atividades TEXT,
+                  status TEXT NOT NULL DEFAULT 'active',
+                  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+                );
+              `, (bnccError) => {
+                if (bnccError) return reject(bnccError);
+                sqliteDb.run(`
+                  CREATE TABLE IF NOT EXISTS mentor_events (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER,
+                    event_type TEXT NOT NULL,
+                    event_data TEXT DEFAULT '{}',
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                  );
+                `, (eventError) => {
+                  if (eventError) return reject(eventError);
+                  sqliteDb.run(`
+                    CREATE TABLE IF NOT EXISTS admin_logs (
+                      id INTEGER PRIMARY KEY AUTOINCREMENT,
+                      admin_user_id INTEGER NOT NULL,
+                      action TEXT NOT NULL,
+                      resource TEXT,
+                      details TEXT DEFAULT '{}',
+                      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                      FOREIGN KEY(admin_user_id) REFERENCES users(id) ON DELETE SET NULL
+                    );
+                  `, (logError) => {
+                    if (logError) return reject(logError);
+                    resolve();
+                  });
+                });
+              });
+            });
+          });
         });
-      });
+      }
     });
   });
 
@@ -280,6 +421,62 @@ async function requireAuth(req, res, next) {
   }
 }
 
+function requireRole(role) {
+  return (req, res, next) => {
+    if (!req.user || req.user.role !== role) {
+      return res.status(403).json({ success: false, message: 'Acesso restrito ao painel administrativo.' });
+    }
+    return next();
+  };
+}
+
+// ensureAdminAccount: Disabled to prevent automatic admin promotion.
+// Admin accounts must be configured explicitly through secure bootstrap mechanism.
+// See documentation for how to set ADMIN_EMAIL in production.
+async function ensureAdminAccount() {
+  // This function intentionally does nothing.
+  // Admin promotion must be configured externally, not hardcoded.
+  return;
+}
+
+async function addAdminLog(adminUserId, action, resource, details = {}) {
+  const payload = JSON.stringify(details || {});
+  if (pgPool) {
+    await pgPool.query('INSERT INTO admin_logs (admin_user_id, action, resource, details) VALUES ($1, $2, $3, $4)', [adminUserId, action, resource, payload]);
+    return;
+  }
+  await new Promise((resolve, reject) => {
+    sqliteDb.run('INSERT INTO admin_logs (admin_user_id, action, resource, details) VALUES (?, ?, ?, ?)', [adminUserId, action, resource, payload], (error) => error ? reject(error) : resolve());
+  });
+}
+
+async function recordMentorEvent(userId, eventType, eventData = {}) {
+  const payload = JSON.stringify(eventData || {});
+  if (pgPool) {
+    await pgPool.query('INSERT INTO mentor_events (user_id, event_type, event_data) VALUES ($1, $2, $3)', [userId || null, eventType, payload]);
+    return;
+  }
+  await new Promise((resolve, reject) => {
+    sqliteDb.run('INSERT INTO mentor_events (user_id, event_type, event_data) VALUES (?, ?, ?)', [userId || null, eventType, payload], (error) => error ? reject(error) : resolve());
+  });
+}
+
+async function getUserMemoryContext(user, limit = 5) {
+  if (!user || !user.id) return '';
+  if (pgPool) {
+    const result = await pgPool.query('SELECT category, title, content, metadata, created_at FROM user_memories WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2', [user.id, limit]);
+    const memories = result.rows.map((row) => `- ${row.category}: ${row.title || row.content}`);
+    return memories.length ? `Memória educacional do estudante:\n${memories.join('\n')}` : '';
+  }
+  return new Promise((resolve, reject) => {
+    sqliteDb.all('SELECT category, title, content, metadata, created_at FROM user_memories WHERE user_id = ? ORDER BY created_at DESC LIMIT ?', [user.id, limit], (error, rows) => {
+      if (error) return reject(error);
+      const memories = rows.map((row) => `- ${row.category}: ${row.title || row.content}`);
+      resolve(memories.length ? `Memória educacional do estudante:\n${memories.join('\n')}` : '');
+    });
+  });
+}
+
 app.post('/api/auth/register', authLimiter, async (req, res) => {
   const { name, email, password } = req.body || {};
   const cleanName = String(name || '').trim();
@@ -308,11 +505,12 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
     }
 
     const passwordHash = await bcrypt.hash(String(password), 10);
+    const role = USER_ROLE.USER; // All new accounts start as users
 
     if (pgPool) {
       const result = await pgPool.query(
-        'INSERT INTO users (name, email, password_hash, profile) VALUES ($1, $2, $3, $4) RETURNING id, name, email, profile, created_at, updated_at',
-        [cleanName, cleanEmail, passwordHash, JSON.stringify({})]
+        'INSERT INTO users (name, email, password_hash, role, profile) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, role, profile, created_at, updated_at',
+        [cleanName, cleanEmail, passwordHash, role, JSON.stringify({})]
       );
       const user = buildSafeUser(result.rows[0]);
       return res.status(201).json({ success: true, user, message: 'Cadastro realizado com sucesso.' });
@@ -320,8 +518,8 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
 
     const insertResult = await new Promise((resolve, reject) => {
       sqliteDb.run(
-        'INSERT INTO users (name, email, password_hash, profile) VALUES (?, ?, ?, ?)',
-        [cleanName, cleanEmail, passwordHash, JSON.stringify({})],
+        'INSERT INTO users (name, email, password_hash, role, profile) VALUES (?, ?, ?, ?, ?)',
+        [cleanName, cleanEmail, passwordHash, role, JSON.stringify({})],
         function onInsert(error) {
           if (error) return reject(error);
           resolve({ lastID: this.lastID });
@@ -360,7 +558,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
     }
 
     const user = buildSafeUser(row);
-    const token = signToken(user.id, user.email);
+    const token = signToken(user.id, user.email, user.role);
     setAuthCookie(res, token, user.id);
     return res.json({ success: true, user, message: 'Login realizado com sucesso.' });
   } catch (error) {
@@ -389,6 +587,233 @@ app.get('/api/auth/me', async (req, res) => {
     return res.json({ success: true, user: buildSafeUser(user) });
   } catch {
     return res.status(401).json({ success: false, message: 'Sessão expirada ou não autenticada.' });
+  }
+});
+
+app.get('/admin', requireAuth, requireRole(USER_ROLE.ADMIN), (req, res) => {
+  res.sendFile(path.resolve('./admin.html'));
+});
+
+app.get('/api/admin/stats', requireAuth, requireRole(USER_ROLE.ADMIN), async (req, res) => {
+  try {
+    let totalUsers = 0;
+    let activeUsers = 0;
+    let totalMentorInteractions = 0;
+    let totalQuestions = 0;
+    let totalSummaries = 0;
+    let totalCourseItems = 0;
+    let totalContentItems = 0;
+
+    if (pgPool) {
+      const [usersRes, mentorRes, bnccRes] = await Promise.all([
+        pgPool.query('SELECT COUNT(*)::int AS total_users, COUNT(*) FILTER (WHERE role = $1)::int AS active_users FROM users', [USER_ROLE.ADMIN]),
+        pgPool.query("SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE event_type = 'question')::int AS questions, COUNT(*) FILTER (WHERE event_type = 'summary')::int AS summaries FROM mentor_events"),
+        pgPool.query('SELECT COUNT(*)::int AS total FROM bncc_items')
+      ]);
+      totalUsers = Number(usersRes.rows[0]?.total_users || 0);
+      activeUsers = Number(usersRes.rows[0]?.active_users || 0);
+      totalMentorInteractions = Number(mentorRes.rows[0]?.total || 0);
+      totalQuestions = Number(mentorRes.rows[0]?.questions || 0);
+      totalSummaries = Number(mentorRes.rows[0]?.summaries || 0);
+      totalContentItems = Number(bnccRes.rows[0]?.total || 0);
+    } else {
+      const userRows = await new Promise((resolve, reject) => {
+        sqliteDb.all('SELECT COUNT(*) AS total_users, SUM(CASE WHEN role = ? THEN 1 ELSE 0 END) AS active_users FROM users', [USER_ROLE.ADMIN], (error, rows) => error ? reject(error) : resolve(rows[0] || {}));
+      });
+      const mentorRows = await new Promise((resolve, reject) => {
+        sqliteDb.get("SELECT COUNT(*) AS total, SUM(CASE WHEN event_type = 'question' THEN 1 ELSE 0 END) AS questions, SUM(CASE WHEN event_type = 'summary' THEN 1 ELSE 0 END) AS summaries FROM mentor_events", (error, row) => error ? reject(error) : resolve(row || {}));
+      });
+      const bnccRows = await new Promise((resolve, reject) => {
+        sqliteDb.get('SELECT COUNT(*) AS total FROM bncc_items', (error, row) => error ? reject(error) : resolve(row || {}));
+      });
+      totalUsers = Number(userRows.total_users || 0);
+      activeUsers = Number(userRows.active_users || 0);
+      totalMentorInteractions = Number(mentorRows.total || 0);
+      totalQuestions = Number(mentorRows.questions || 0);
+      totalSummaries = Number(mentorRows.summaries || 0);
+      totalContentItems = Number(bnccRows.total || 0);
+    }
+
+    const stats = {
+      totalUsers,
+      activeUsers,
+      totalMentorInteractions,
+      totalQuestions,
+      totalSummaries,
+      totalCourseItems: totalContentItems,
+      totalContentItems,
+      totalInfluences: totalMentorInteractions,
+      lastUpdated: new Date().toISOString()
+    };
+
+    return res.json({ success: true, stats });
+  } catch (error) {
+    console.error('Admin stats error:', error);
+    return res.status(500).json({ success: false, message: 'Não foi possível carregar as estatísticas administrativas.' });
+  }
+});
+
+app.get('/api/admin/users', requireAuth, requireRole(USER_ROLE.ADMIN), async (req, res) => {
+  try {
+    if (pgPool) {
+      const result = await pgPool.query('SELECT id, name, email, role, created_at, updated_at FROM users ORDER BY created_at DESC');
+      return res.json({ success: true, users: result.rows.map((row) => ({ ...row, createdAt: row.created_at, updatedAt: row.updated_at })) });
+    }
+
+    sqliteDb.all('SELECT id, name, email, role, created_at, updated_at FROM users ORDER BY created_at DESC', (error, rows) => {
+      if (error) {
+        return res.status(500).json({ success: false, message: 'Não foi possível carregar usuários.' });
+      }
+      return res.json({ success: true, users: rows.map((row) => ({ ...row, createdAt: row.created_at, updatedAt: row.updated_at })) });
+    });
+    return;
+  } catch (error) {
+    console.error('Admin users error:', error);
+    return res.status(500).json({ success: false, message: 'Não foi possível carregar usuários.' });
+  }
+});
+
+app.get('/api/admin/bncc', requireAuth, requireRole(USER_ROLE.ADMIN), async (req, res) => {
+  try {
+    if (pgPool) {
+      const result = await pgPool.query('SELECT * FROM bncc_items ORDER BY created_at DESC');
+      return res.json({ success: true, items: result.rows });
+    }
+    sqliteDb.all('SELECT * FROM bncc_items ORDER BY created_at DESC', (error, rows) => {
+      if (error) {
+        return res.status(500).json({ success: false, message: 'Não foi possível carregar a BNCC.' });
+      }
+      return res.json({ success: true, items: rows });
+    });
+    return;
+  } catch (error) {
+    console.error('BNCC admin error:', error);
+    return res.status(500).json({ success: false, message: 'Não foi possível carregar a BNCC.' });
+  }
+});
+
+app.get('/api/admin/logs', requireAuth, requireRole(USER_ROLE.ADMIN), async (req, res) => {
+  try {
+    if (pgPool) {
+      const result = await pgPool.query('SELECT * FROM admin_logs ORDER BY created_at DESC LIMIT 50');
+      return res.json({ success: true, logs: result.rows });
+    }
+    sqliteDb.all('SELECT * FROM admin_logs ORDER BY created_at DESC LIMIT 50', (error, rows) => {
+      if (error) {
+        return res.status(500).json({ success: false, message: 'Não foi possível carregar logs.' });
+      }
+      return res.json({ success: true, logs: rows });
+    });
+    return;
+  } catch (error) {
+    console.error('Admin logs error:', error);
+    return res.status(500).json({ success: false, message: 'Não foi possível carregar logs.' });
+  }
+});
+
+app.get('/api/admin/mentor', requireAuth, requireRole(USER_ROLE.ADMIN), async (req, res) => {
+  try {
+    if (pgPool) {
+      const result = await pgPool.query("SELECT event_type, COUNT(*)::int AS total FROM mentor_events GROUP BY event_type ORDER BY total DESC");
+      const latest = await pgPool.query('SELECT event_type, created_at FROM mentor_events ORDER BY created_at DESC LIMIT 10');
+      return res.json({ success: true, summary: result.rows, latest: latest.rows });
+    }
+    sqliteDb.all("SELECT event_type, COUNT(*) AS total FROM mentor_events GROUP BY event_type ORDER BY total DESC", (error, rows) => {
+      if (error) return res.status(500).json({ success: false, message: 'Não foi possível carregar dados da mentora.' });
+      sqliteDb.all('SELECT event_type, created_at FROM mentor_events ORDER BY created_at DESC LIMIT 10', (innerError, latestRows) => {
+        if (innerError) return res.status(500).json({ success: false, message: 'Não foi possível carregar dados da mentora.' });
+        return res.json({ success: true, summary: rows, latest: latestRows });
+      });
+    });
+    return;
+  } catch (error) {
+    console.error('Admin mentor data error:', error);
+    return res.status(500).json({ success: false, message: 'Não foi possível carregar dados da mentora.' });
+  }
+});
+
+app.post('/api/admin/bncc', requireAuth, requireRole(USER_ROLE.ADMIN), async (req, res) => {
+  const { etapa, serie, area, disciplina, unidadeTematica, objetoConhecimento, habilidade, codigoHabilidade, conteudosRelacionados, atividades } = req.body || {};
+  if (!disciplina || !area) {
+    return res.status(400).json({ success: false, message: 'Disciplina e área são obrigatórias.' });
+  }
+
+  try {
+    if (pgPool) {
+      const result = await pgPool.query(
+        'INSERT INTO bncc_items (etapa, serie, area, disciplina, unidade_tematica, objeto_conhecimento, habilidade, codigo_habilidade, conteudos_relacionados, atividades, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *',
+        [etapa || '', serie || '', area || '', disciplina, unidadeTematica || '', objetoConhecimento || '', habilidade || '', codigoHabilidade || '', conteudosRelacionados || '', atividades || '', 'active']
+      );
+      await addAdminLog(req.user.id, 'create_content', 'bncc', { codigoHabilidade, disciplina, area });
+      return res.status(201).json({ success: true, item: result.rows[0] });
+    }
+
+    sqliteDb.run(
+      'INSERT INTO bncc_items (etapa, serie, area, disciplina, unidade_tematica, objeto_conhecimento, habilidade, codigo_habilidade, conteudos_relacionados, atividades, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [etapa || '', serie || '', area || '', disciplina, unidadeTematica || '', objetoConhecimento || '', habilidade || '', codigoHabilidade || '', conteudosRelacionados || '', atividades || '', 'active'],
+      function onInsert(error) {
+        if (error) return res.status(500).json({ success: false, message: 'Não foi possível salvar esta estrutura BNCC.' });
+        sqliteDb.get('SELECT * FROM bncc_items WHERE id = ?', [this.lastID], (readError, row) => {
+          if (readError) return res.status(500).json({ success: false, message: 'Não foi possível recuperar a estrutura salva.' });
+          addAdminLog(req.user.id, 'create_content', 'bncc', { codigoHabilidade, disciplina, area });
+          return res.status(201).json({ success: true, item: row });
+        });
+      }
+    );
+    return;
+  } catch (error) {
+    console.error('Create BNCC record error:', error);
+    return res.status(500).json({ success: false, message: 'Não foi possível criar a estrutura BNCC.' });
+  }
+});
+
+app.post('/api/mentor/memory', requireAuth, async (req, res) => {
+  const { category = 'general', title, content, metadata = {} } = req.body || {};
+  if (!content || typeof content !== 'string' || !content.trim()) {
+    return res.status(400).json({ success: false, message: 'Conteúdo da memória é obrigatório.' });
+  }
+
+  try {
+    if (pgPool) {
+      const result = await pgPool.query(
+        'INSERT INTO user_memories (user_id, category, title, content, metadata) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+        [req.user.id, category, title || 'Memória educacional', content.trim(), metadata]
+      );
+      return res.status(201).json({ success: true, memory: result.rows[0] });
+    }
+
+    sqliteDb.run(
+      'INSERT INTO user_memories (user_id, category, title, content, metadata) VALUES (?, ?, ?, ?, ?)',
+      [req.user.id, category, title || 'Memória educacional', content.trim(), JSON.stringify(metadata || {})],
+      function onInsert(error) {
+        if (error) return res.status(500).json({ success: false, message: 'Não foi possível salvar a memória.' });
+        sqliteDb.get('SELECT * FROM user_memories WHERE id = ?', [this.lastID], (readError, row) => {
+          if (readError) return res.status(500).json({ success: false, message: 'Não foi possível recuperar a memória salva.' });
+          return res.status(201).json({ success: true, memory: row });
+        });
+      }
+    );
+    return;
+  } catch (error) {
+    console.error('Save memory error:', error);
+    return res.status(500).json({ success: false, message: 'Não foi possível salvar a memória.' });
+  }
+});
+
+app.get('/api/mentor/memory', requireAuth, async (req, res) => {
+  try {
+    if (pgPool) {
+      const result = await pgPool.query('SELECT id, category, title, content, metadata, created_at FROM user_memories WHERE user_id = $1 ORDER BY created_at DESC LIMIT 10', [req.user.id]);
+      return res.json({ success: true, memories: result.rows });
+    }
+    sqliteDb.all('SELECT id, category, title, content, metadata, created_at FROM user_memories WHERE user_id = ? ORDER BY created_at DESC LIMIT 10', [req.user.id], (error, rows) => {
+      if (error) return res.status(500).json({ success: false, message: 'Não foi possível recuperar a memória.' });
+      return res.json({ success: true, memories: rows });
+    });
+    return;
+  } catch (error) {
+    console.error('Get memory error:', error);
+    return res.status(500).json({ success: false, message: 'Não foi possível recuperar a memória.' });
   }
 });
 
@@ -684,7 +1109,8 @@ app.post('/api/chat', requireAuth, async (req, res) => {
       exam: 'Monte um plano até a prova com blocos de revisão, exercícios, simulado e pausas; peça os assuntos se eles não estiverem disponíveis.'
     };
 
-    const systemPrompt = `Você é a Mentora Synara, uma tutora educacional integrada ao progresso do estudante. ${modeInstructions[mode] || modeInstructions.explain} Personalize sua resposta com matéria, conteúdo, dificuldade, progresso, metas, cronograma, histórico e erros quando disponíveis. Não entregue respostas prontas quando o modo pedir raciocínio guiado. Se não houver contexto suficiente, diga isso e peça o material ou detalhe necessário; nunca invente fatos. Seja clara, acolhedora e prática. O módulo de bem-estar só pode sugerir organização, pausas e equilíbrio de estudos, sem diagnosticar saúde mental.`;
+    const memoryContext = await getUserMemoryContext(req.user);
+    const systemPrompt = `Você é a Mentora Synara, uma tutora educacional integrada ao progresso do estudante. ${modeInstructions[mode] || modeInstructions.explain} Personalize sua resposta com matéria, conteúdo, dificuldade, progresso, metas, cronograma, histórico e erros quando disponíveis. Não entregue respostas prontas quando o modo pedir raciocínio guiado. Se não houver contexto suficiente, diga isso e peça o material ou detalhe necessário; nunca invente fatos. Seja clara, acolhedora e prática. O módulo de bem-estar só pode sugerir organização, pausas e equilíbrio de estudos, sem diagnosticar saúde mental. ${memoryContext ? `\n\nContexto da memória do estudante:\n${memoryContext}` : ''}`;
 
     let historySummary = '';
     if (Array.isArray(messageHistory) && messageHistory.length) {
@@ -725,6 +1151,7 @@ app.post('/api/chat', requireAuth, async (req, res) => {
       .filter(Boolean)
       .join(' ') || fallbackResponse(message, subject);
 
+    await recordMentorEvent(req.user.id, mode || 'conversation', { subject: subject || topic || 'Geral', mode, messageLength: String(message).length, hasGoal: Array.isArray(goals) && goals.length > 0 });
     return res.json({ reply });
   } catch (error) {
     console.error('OpenAI error:', error);
@@ -746,6 +1173,7 @@ app.post('/api/generate-exercise', async (req, res) => {
         'Evitar pausas para estudar sem parar.',
         'Decorar respostas sem entender o conceito.'
       ];
+      await recordMentorEvent(null, 'question', { subject: subject || topic || 'Geral', difficulty });
       return res.json({
         exercise: `${question}\nA) ${options[0]}\nB) ${options[1]}\nC) ${options[2]}\nD) ${options[3]}`,
         question,
@@ -758,6 +1186,7 @@ app.post('/api/generate-exercise', async (req, res) => {
     const prompt = `Gere 1 exercício prático sobre ${topic || subject}, nível ${difficulty}. Inclua enunciado claro, passos para resolver e a solução explicada.`;
     const response = await openai.responses.create({ model: 'gpt-4.1-mini', input: prompt, temperature: 0.6 });
     const exercise = response.output_text || (response.output || []).flatMap((item) => item?.content || []).map((chunk) => chunk?.text || '').join(' ');
+    await recordMentorEvent(null, 'question', { subject: subject || topic || 'Geral', difficulty, isGenerated: true });
     return res.json({ exercise });
   } catch (error) {
     console.error('Generate exercise error:', error);
@@ -818,9 +1247,15 @@ async function startServer() {
     console.log('Continuando com servidor disponível...');
   }
 
+  await ensureAdminAccount();
+
   app.listen(PORT, () => {
     console.log(`SYNARA API rodando em http://localhost:${PORT}`);
   });
 }
+
+app.get('/api/admin/health', requireAuth, requireRole(USER_ROLE.ADMIN), (req, res) => {
+  res.json({ success: true, ok: true, admin: req.user.email });
+});
 
 startServer();

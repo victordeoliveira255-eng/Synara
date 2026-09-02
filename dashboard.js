@@ -47,6 +47,8 @@ ensureAuthenticated().then((user) => {
     ['#headerAvatar', '#sidebarAvatar'].forEach((selector) => { const element = $(selector); if (element) element.textContent = initials(name); });
     $('#profileEmail').textContent = user.email;
     $('#settingsEmail').textContent = user.email;
+    const adminLink = $('#adminQuickLink');
+    if (adminLink) adminLink.hidden = user.role !== 'admin';
     if ($('#mentorGreetingName')) $('#mentorGreetingName').textContent = shortName;
   }
 
