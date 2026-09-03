@@ -273,7 +273,7 @@ async function initDatabase() {
         );
       `, (error) => {
         if (error) return reject(error);
-        sqliteDb.get('PRAGMA table_info(users)', (pragmaError, tableInfo) => {
+        sqliteDb.all('PRAGMA table_info(users)', (pragmaError, tableInfo) => {
           if (pragmaError) return reject(pragmaError);
           const hasRole = Array.isArray(tableInfo) && tableInfo.some((column) => column.name === 'role');
           if (!hasRole) {
