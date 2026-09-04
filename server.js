@@ -56,6 +56,47 @@ app.use((req, res, next) => {
 
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
+
+async function requirePageAuth(req, res, next) {
+  const token = req.cookies?.[SESSION_COOKIE];
+  if (!token) {
+    if (req.accepts('html')) {
+      return res.redirect('/login.html');
+    }
+    return res.status(401).json({ success: false, message: 'Sessão expirada ou não autenticado.' });
+  }
+
+  try {
+    const payload = jwt.verify(token, JWT_SECRET);
+    const user = await fetchUserById(payload.sub);
+    if (!user) {
+      if (req.accepts('html')) {
+        return res.redirect('/login.html');
+      }
+      return res.status(401).json({ success: false, message: 'Usuário não encontrado.' });
+    }
+    req.user = buildSafeUser(user);
+    return next();
+  } catch {
+    if (req.accepts('html')) {
+      return res.redirect('/login.html');
+    }
+    return res.status(401).json({ success: false, message: 'Sessão expirada ou não autenticada.' });
+  }
+}
+
+app.get('/dashboard', requirePageAuth, (req, res) => {
+  res.sendFile(path.resolve('./dashboard.html'));
+});
+
+app.get('/dashboard.html', requirePageAuth, (req, res) => {
+  res.sendFile(path.resolve('./dashboard.html'));
+});
+
+app.get('/admin.html', requireAuth, requireRole(USER_ROLE.ADMIN), (req, res) => {
+  res.sendFile(path.resolve('./admin.html'));
+});
+
 app.use(express.static('.'));
 
 const openAiKey = process.env.OPENAI_API_KEY;
@@ -478,7 +519,7 @@ async function getUserMemoryContext(user, limit = 5) {
 }
 
 app.post('/api/auth/register', authLimiter, async (req, res) => {
-  const { name, email, password } = req.body || {};
+  const { name, email, password, role: _ignoredRole } = req.body || {};
   const cleanName = String(name || '').trim();
   const cleanEmail = String(email || '').trim().toLowerCase();
 
@@ -507,31 +548,35 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
     const passwordHash = await bcrypt.hash(String(password), 10);
     const role = USER_ROLE.USER; // All new accounts start as users
 
+    let user;
     if (pgPool) {
       const result = await pgPool.query(
         'INSERT INTO users (name, email, password_hash, role, profile) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, role, profile, created_at, updated_at',
         [cleanName, cleanEmail, passwordHash, role, JSON.stringify({})]
       );
-      const user = buildSafeUser(result.rows[0]);
-      return res.status(201).json({ success: true, user, message: 'Cadastro realizado com sucesso.' });
+      user = buildSafeUser(result.rows[0]);
+    } else {
+      const insertResult = await new Promise((resolve, reject) => {
+        sqliteDb.run(
+          'INSERT INTO users (name, email, password_hash, role, profile) VALUES (?, ?, ?, ?, ?)',
+          [cleanName, cleanEmail, passwordHash, role, JSON.stringify({})],
+          function onInsert(error) {
+            if (error) return reject(error);
+            resolve({ lastID: this.lastID });
+          }
+        );
+      });
+
+      const created = await new Promise((resolve, reject) => {
+        sqliteDb.get('SELECT * FROM users WHERE id = ?', [insertResult.lastID], (error, row) => error ? reject(error) : resolve(row));
+      });
+
+      user = buildSafeUser(created);
     }
 
-    const insertResult = await new Promise((resolve, reject) => {
-      sqliteDb.run(
-        'INSERT INTO users (name, email, password_hash, role, profile) VALUES (?, ?, ?, ?, ?)',
-        [cleanName, cleanEmail, passwordHash, role, JSON.stringify({})],
-        function onInsert(error) {
-          if (error) return reject(error);
-          resolve({ lastID: this.lastID });
-        }
-      );
-    });
-
-    const created = await new Promise((resolve, reject) => {
-      sqliteDb.get('SELECT * FROM users WHERE id = ?', [insertResult.lastID], (error, row) => error ? reject(error) : resolve(row));
-    });
-
-    return res.status(201).json({ success: true, user: buildSafeUser(created), message: 'Cadastro realizado com sucesso.' });
+    const token = signToken(user.id, user.email, user.role);
+    setAuthCookie(res, token, user.id);
+    return res.status(201).json({ success: true, user, message: 'Cadastro realizado com sucesso.' });
   } catch (error) {
     console.error('Register error:', error);
     return res.status(500).json({ success: false, message: 'Não foi possível concluir o cadastro no momento.' });
@@ -1159,9 +1204,12 @@ app.post('/api/chat', requireAuth, async (req, res) => {
   }
 });
 
-app.post('/api/generate-exercise', async (req, res) => {
+app.post('/api/generate-exercise', requireAuth, async (req, res) => {
   const { userEmail, subject, topic, difficulty = 'médio' } = req.body;
-  if (!subject && !topic) return res.status(400).json({ error: 'Faltam parâmetros (subject/topic)' });
+  if (userEmail && userEmail !== req.user.email) {
+    return res.status(403).json({ success: false, message: 'Acesso não autorizado.' });
+  }
+  if (!subject && !topic) return res.status(400).json({ success: false, message: 'Faltam parâmetros (subject/topic)' });
 
   try {
     if (!openai) {
@@ -1173,7 +1221,7 @@ app.post('/api/generate-exercise', async (req, res) => {
         'Evitar pausas para estudar sem parar.',
         'Decorar respostas sem entender o conceito.'
       ];
-      await recordMentorEvent(null, 'question', { subject: subject || topic || 'Geral', difficulty });
+      await recordMentorEvent(req.user.id, 'question', { subject: subject || topic || 'Geral', difficulty });
       return res.json({
         exercise: `${question}\nA) ${options[0]}\nB) ${options[1]}\nC) ${options[2]}\nD) ${options[3]}`,
         question,
@@ -1186,11 +1234,11 @@ app.post('/api/generate-exercise', async (req, res) => {
     const prompt = `Gere 1 exercício prático sobre ${topic || subject}, nível ${difficulty}. Inclua enunciado claro, passos para resolver e a solução explicada.`;
     const response = await openai.responses.create({ model: 'gpt-4.1-mini', input: prompt, temperature: 0.6 });
     const exercise = response.output_text || (response.output || []).flatMap((item) => item?.content || []).map((chunk) => chunk?.text || '').join(' ');
-    await recordMentorEvent(null, 'question', { subject: subject || topic || 'Geral', difficulty, isGenerated: true });
+    await recordMentorEvent(req.user.id, 'question', { subject: subject || topic || 'Geral', difficulty, isGenerated: true });
     return res.json({ exercise });
   } catch (error) {
     console.error('Generate exercise error:', error);
-    return res.status(500).json({ error: 'Erro ao gerar exercício' });
+    return res.status(500).json({ success: false, message: 'Erro ao gerar exercício' });
   }
 });
 

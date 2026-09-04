@@ -1,7 +1,5 @@
-const currentUser = auth.getCurrentUser();
-
 async function ensureAuthenticated() {
-  const user = currentUser || await auth.hydrateFromServer();
+  const user = await auth.hydrateFromServer();
   if (!user) {
     window.location.href = 'login.html';
     return false;
