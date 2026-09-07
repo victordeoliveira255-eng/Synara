@@ -494,10 +494,11 @@
       try {
         const data = await auth.request('/api/admin/stats');
         if (data.success) {
-          $('#statTotalUsers').textContent = data.totalUsers || '0';
-          $('#statActiveUsers').textContent = data.activeUsers || '0';
-          $('#statMentorInteractions').textContent = data.totalMentorInteractions || '0';
-          $('#statContentItems').textContent = data.totalContentItems || '0';
+          const stats = data.stats || {};
+          $('#statTotalUsers').textContent = stats.totalUsers || '0';
+          $('#statActiveUsers').textContent = stats.activeUsers || '0';
+          $('#statMentorInteractions').textContent = stats.totalMentorInteractions || '0';
+          $('#statContentItems').textContent = stats.totalContentItems || '0';
         }
       } catch (e) {
         console.error('Stats error:', e);
@@ -556,7 +557,7 @@
           `;
           infoContainer.innerHTML = `
             <div style="display: grid; gap: 0.5rem;">
-              <div><span>Ambiente:</span> <strong>${process.env.NODE_ENV || 'production'}</strong></div>
+              <div><span>Ambiente:</span> <strong>${['localhost', '127.0.0.1'].includes(window.location.hostname) ? 'development' : 'production'}</strong></div>
               <div><span>Admin:</span> <strong>${adminUser.email}</strong></div>
               <div><span>Timestamp:</span> <strong>${new Date().toLocaleString('pt-BR')}</strong></div>
             </div>
@@ -605,13 +606,14 @@
       container.innerHTML = '<div class="admin-loading">Carregando BNCC...</div>';
       try {
         const data = await auth.request('/api/admin/bncc');
-        if (!data.bncc_items || data.bncc_items.length === 0) {
+        const items = Array.isArray(data.items) ? data.items : [];
+        if (items.length === 0) {
           container.innerHTML = '<div class="admin-empty-state">Nenhum item BNCC cadastrado.</div>';
           return;
         }
 
         let html = '<table class="admin-table"><thead><tr><th>Disciplina</th><th>Habilidade</th><th>Código</th><th>Status</th></tr></thead><tbody>';
-        data.bncc_items.slice(0, 50).forEach(item => {
+        items.slice(0, 50).forEach(item => {
           html += `
             <tr>
               <td>${escapeHtml(item.disciplina || '-')}</td>
@@ -622,7 +624,7 @@
           `;
         });
         html += '</tbody></table>';
-        html += data.bncc_items.length > 50 ? `<p class="muted" style="margin-top: 1rem;">Mostrando 50 de ${data.bncc_items.length} itens.</p>` : '';
+        html += items.length > 50 ? `<p class="muted" style="margin-top: 1rem;">Mostrando 50 de ${items.length} itens.</p>` : '';
         container.innerHTML = html;
       } catch (e) {
         container.innerHTML = `<div class="admin-empty-state">Erro ao carregar BNCC: ${e.message}</div>`;

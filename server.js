@@ -16,6 +16,7 @@ import validator from 'validator';
 dotenv.config();
 
 const app = express();
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'synara-dev-secret-change-me';
 const SESSION_COOKIE = 'synara_session';
