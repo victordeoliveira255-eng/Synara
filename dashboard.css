@@ -20,20 +20,30 @@
 .profile-menu[hidden] { display: none; }
 .profile-menu span { color: var(--dash-muted); font-size: .8rem; overflow-wrap: anywhere; }
 .profile-menu button { border: 0; background: #edf8f8; color: var(--dash-navy); padding: .65rem; border-radius: 8px; cursor: pointer; text-align: left; }
-.dashboard-layout { display: grid; grid-template-columns: 250px minmax(0, 1fr); max-width: 1480px; margin: 0 auto; }
-.sidebar { min-height: calc(100vh - 76px); padding: 2rem 1.1rem; background: #fff; border-right: 1px solid var(--dash-border); display: flex; flex-direction: column; gap: 2rem; }
-.sidebar-heading { display: flex; align-items: center; gap: .75rem; padding: 0 .6rem; }
+.dashboard-layout { --sidebar-width: 260px; display: grid; grid-template-columns: var(--sidebar-width) minmax(0, 1fr); width: min(100%, 1480px); min-height: calc(100vh - 76px); margin: 0 auto; }
+.dashboard-layout.sidebar-collapsed { --sidebar-width: 92px; }
+.sidebar { min-height: calc(100vh - 76px); padding: 1.4rem .8rem 1rem; background: #fff; border-right: 1px solid var(--dash-border); display: flex; flex-direction: column; gap: 1.1rem; transition: width .25s ease, padding .25s ease; }
+.sidebar-heading { display: flex; align-items: center; gap: .75rem; padding: 0 .55rem; min-width: 0; }
 .sidebar-heading small, .sidebar-heading strong { display: block; }
 .sidebar-heading small { color: var(--dash-muted); font-size: .78rem; }
 .avatar { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; background: #d8f4f1; color: var(--dash-navy); font-weight: 800; flex: 0 0 auto; }
 .avatar-small { width: 32px; height: 32px; border-radius: 50%; font-size: .8rem; }
 .sidebar-nav { display: grid; gap: .3rem; }
-.sidebar-link { display: flex; align-items: center; gap: .8rem; padding: .82rem .9rem; border: 0; border-radius: 10px; background: transparent; color: var(--dash-muted); text-align: left; cursor: pointer; transition: .2s ease; }
-.sidebar-link span { width: 20px; text-align: center; color: var(--dash-teal); font-size: 1.15rem; }
+.sidebar-link { display: flex; align-items: center; justify-content: flex-start; gap: .8rem; width: 100%; padding: .82rem .9rem; border: 0; border-radius: 10px; background: transparent; color: var(--dash-muted); text-align: left; cursor: pointer; transition: .2s ease; }
+.sidebar-link .icon { width: 20px; text-align: center; color: var(--dash-teal); font-size: 1.15rem; flex: 0 0 20px; }
+.sidebar-link .label { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .sidebar-link:hover, .sidebar-link.active { background: #e9f8f7; color: var(--dash-navy); font-weight: 700; }
 .sidebar-note { margin-top: auto; padding: 1rem; background: #f0f8fb; border-radius: 12px; color: var(--dash-navy); display: grid; gap: .3rem; font-size: .85rem; }
 .sidebar-note span { color: var(--dash-muted); font-size: .78rem; line-height: 1.5; }
-.dashboard-main { min-width: 0; padding: clamp(1.25rem, 3vw, 3rem); }
+.sidebar-toggle { display: inline-flex; align-items: center; justify-content: center; width: 100%; min-height: 42px; margin-top: .6rem; border: 1px solid var(--dash-border); border-radius: 10px; background: #fff; color: var(--dash-navy); cursor: pointer; font-size: 1rem; transition: background .2s ease, border-color .2s ease; }
+.sidebar-toggle:hover { background: #edfaf9; border-color: var(--dash-teal); }
+.dashboard-main { min-width: 0; width: 100%; padding: clamp(1.25rem, 3vw, 3rem); }
+.dashboard-layout.sidebar-collapsed .sidebar-heading > div { display: none; }
+.dashboard-layout.sidebar-collapsed .sidebar-note { display: none; }
+.dashboard-layout.sidebar-collapsed .sidebar-link { justify-content: center; gap: 0; padding: .83rem .5rem; }
+.dashboard-layout.sidebar-collapsed .sidebar-link .label { display: none; }
+.dashboard-layout.sidebar-collapsed .sidebar-link .icon { margin: 0; }
+.dashboard-layout.sidebar-collapsed .sidebar-toggle { width: 100%; }
 .app-section { display: none; animation: sectionIn .35s ease both; }
 .app-section.active { display: block; }
 @keyframes sectionIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }

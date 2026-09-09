@@ -10,10 +10,27 @@ async function ensureAuthenticated() {
 ensureAuthenticated().then((user) => {
   if (!user) return;
   const state = { user, selectedSubject: user.subjects[0]?.name || 'Geral', mode: 'explain', topic: '', difficulty: 'médio', sessionStartedAt: Date.now(), challenge: null };
+  const SIDEBAR_STORAGE_KEY = 'synara-sidebar-expanded';
   const $ = (selector) => document.querySelector(selector);
   const $$ = (selector) => [...document.querySelectorAll(selector)];
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
   const today = new Date().toISOString().slice(0, 10);
+
+  function applySidebarState(expanded) {
+    const layout = $('#dashboardLayout');
+    const toggle = $('#sidebarToggle');
+    layout.classList.toggle('sidebar-collapsed', !expanded);
+    toggle.setAttribute('aria-label', expanded ? 'Recolher sidebar' : 'Expandir sidebar');
+    toggle.setAttribute('aria-expanded', String(expanded));
+    toggle.title = expanded ? 'Recolher sidebar' : 'Expandir sidebar';
+    toggle.innerHTML = expanded ? '<span aria-hidden="true">◀</span>' : '<span aria-hidden="true">▶</span>';
+    localStorage.setItem(SIDEBAR_STORAGE_KEY, expanded ? 'expanded' : 'collapsed');
+  }
+
+  function initializeSidebarState() {
+    const stored = localStorage.getItem(SIDEBAR_STORAGE_KEY);
+    applySidebarState(stored !== 'collapsed');
+  }
 
   function refreshUser() {
     state.user = auth.getCurrentUser();
@@ -249,6 +266,10 @@ ensureAuthenticated().then((user) => {
   $$('[data-mood]').forEach((button) => button.addEventListener('click', () => { auth.setWellbeing(button.dataset.mood); renderAll(); showStatus('Seu ritmo foi atualizado.'); }));
   $('#profileTrigger').addEventListener('click', () => { const menu = $('#profileMenu'); menu.hidden = !menu.hidden; $('#profileTrigger').setAttribute('aria-expanded', String(!menu.hidden)); });
   $('#menuToggle').addEventListener('click', () => { const open = $('#sidebar').classList.toggle('open'); $('#menuToggle').setAttribute('aria-expanded', String(open)); });
+  $('#sidebarToggle').addEventListener('click', () => {
+    const expanded = $('#dashboardLayout').classList.contains('sidebar-collapsed');
+    applySidebarState(expanded);
+  });
   $('#mobileBackdrop').addEventListener('click', () => $('#menuToggle').click());
   
   // Privacy & Account Deletion
@@ -293,5 +314,6 @@ ensureAuthenticated().then((user) => {
   }
   
   $('#scheduleDate').value = today;
+  initializeSidebarState();
   renderAll();
 });

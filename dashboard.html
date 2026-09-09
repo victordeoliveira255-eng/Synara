@@ -30,22 +30,25 @@
     <button class="menu-toggle" id="menuToggle" type="button" aria-label="Abrir menu" aria-expanded="false">☰</button>
   </header>
 
-  <div class="dashboard-layout">
-    <aside class="sidebar" id="sidebar">
+  <div class="dashboard-layout" id="dashboardLayout">
+    <aside class="sidebar" id="sidebar" aria-label="Navegação da Central de Estudos">
       <div class="sidebar-heading"><span class="avatar" id="sidebarAvatar">A</span><div><strong id="sidebarName">Aluno</strong><small>Seu espaço de estudos</small></div></div>
       <nav class="sidebar-nav" aria-label="Áreas da central de estudos">
-        <button class="sidebar-link active" data-section="inicio"><span>⌂</span>Início</button>
-        <button class="sidebar-link" data-section="materias"><span>▣</span>Minhas matérias</button>
-        <button class="sidebar-link" data-section="cronograma"><span>◷</span>Cronograma</button>
-        <button class="sidebar-link" data-section="metas"><span>◎</span>Metas</button>
-        <button class="sidebar-link" data-section="progresso"><span>↗</span>Meu progresso</button>
-        <button class="sidebar-link" data-section="mentora"><span>✦</span>Mentora Synara</button>
-        <button class="sidebar-link" data-section="bem-estar"><span>♡</span>Bem-estar</button>
-        <button class="sidebar-link" data-section="privacidade"><span>🔐</span>Privacidade e Dados</button>
-        <button class="sidebar-link" data-section="configuracoes"><span>⚙</span>Configurações</button>
+        <button class="sidebar-link active" data-section="inicio" aria-label="Início"><span class="icon" aria-hidden="true">⌂</span><span class="label">Início</span></button>
+        <button class="sidebar-link" data-section="materias" aria-label="Minhas matérias"><span class="icon" aria-hidden="true">▣</span><span class="label">Minhas matérias</span></button>
+        <button class="sidebar-link" data-section="cronograma" aria-label="Cronograma"><span class="icon" aria-hidden="true">◷</span><span class="label">Cronograma</span></button>
+        <button class="sidebar-link" data-section="metas" aria-label="Metas"><span class="icon" aria-hidden="true">◎</span><span class="label">Metas</span></button>
+        <button class="sidebar-link" data-section="progresso" aria-label="Meu progresso"><span class="icon" aria-hidden="true">↗</span><span class="label">Meu progresso</span></button>
+        <button class="sidebar-link" data-section="mentora" aria-label="Mentora Synara"><span class="icon" aria-hidden="true">✦</span><span class="label">Mentora Synara</span></button>
+        <button class="sidebar-link" data-section="bem-estar" aria-label="Bem-estar"><span class="icon" aria-hidden="true">♡</span><span class="label">Bem-estar</span></button>
+        <button class="sidebar-link" data-section="privacidade" aria-label="Privacidade e Dados"><span class="icon" aria-hidden="true">🔐</span><span class="label">Privacidade e Dados</span></button>
+        <button class="sidebar-link" data-section="configuracoes" aria-label="Configurações"><span class="icon" aria-hidden="true">⚙</span><span class="label">Configurações</span></button>
       </nav>
       <div class="sidebar-note"><strong>Estudo sustentável</strong><span>Seu ritmo também faz parte do progresso.</span></div>
-      <main class="dashboard-main">
+      <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Recolher sidebar" aria-expanded="true" title="Recolher sidebar"><span aria-hidden="true">◀</span></button>
+    </aside>
+
+    <main class="dashboard-main">
       <div class="mobile-backdrop" id="mobileBackdrop"></div>
       <div id="statusMessage" class="status-message" role="status" aria-live="polite"></div>
 
