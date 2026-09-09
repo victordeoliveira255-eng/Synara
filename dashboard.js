@@ -63,7 +63,7 @@ ensureAuthenticated().then((user) => {
     const name = user.name || 'Aluno';
     const shortName = name.split(' ')[0];
     ['#greetingName', '#headerName', '#sidebarName', '#settingsName'].forEach((selector) => { const element = $(selector); if (element) element.textContent = selector === '#greetingName' ? shortName : name; });
-    ['#headerAvatar', '#sidebarAvatar'].forEach((selector) => { const element = $(selector); if (element) element.textContent = initials(name); });
+    ['#headerAvatar', '#sidebarAvatar', '#settingsAvatar'].forEach((selector) => { const element = $(selector); if (element) element.textContent = initials(name); });
     $('#profileEmail').textContent = user.email;
     $('#settingsEmail').textContent = user.email;
     const adminLink = $('#adminQuickLink');
@@ -221,7 +221,7 @@ ensureAuthenticated().then((user) => {
     $('#scheduleSubject').innerHTML = subjectOptions(); $('#goalSubject').innerHTML = `<option value="">Geral</option>${subjectOptions()}`;
   }
 
-  function navigate(section) { $$('[data-view]').forEach((view) => view.classList.toggle('active', view.dataset.view === section)); $$('.sidebar-link').forEach((link) => link.classList.toggle('active', link.dataset.section === section)); $('#sidebar').classList.remove('open'); $('#menuToggle').setAttribute('aria-expanded', 'false'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+  function navigate(section) { $$('[data-view]').forEach((view) => view.classList.toggle('active', view.dataset.view === section)); $$('.sidebar-link').forEach((link) => link.classList.toggle('active', link.dataset.section === section)); const titles = { inicio: 'Visao geral do seu aprendizado', mentora: 'Estudo acompanhado pela Mentora', materias: 'Organizacao das suas materias', cronograma: 'Planejamento das suas sessoes', metas: 'Objetivos do seu caminho', progresso: 'Evolucao registrada', 'bem-estar': 'Ritmo e equilibrio para estudar', privacidade: 'Controle dos seus dados', configuracoes: 'Preferencias da sua conta' }; const title = $('#headerPageTitle'); if (title) title.textContent = titles[section] || 'Central de estudos'; $('#sidebar').classList.remove('open'); $('#menuToggle').setAttribute('aria-expanded', 'false'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
   function logout() { auth.logout(); window.location.href = 'login.html'; }
 
