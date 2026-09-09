@@ -14,6 +14,15 @@ ensureAuthenticated().then((user) => {
   const $ = (selector) => document.querySelector(selector);
   const $$ = (selector) => [...document.querySelectorAll(selector)];
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
+  const icon = (name, className = '') => name === 'close' ? `<svg class="ui-icon ${className}" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>` : `<svg class="ui-icon ${className}" aria-hidden="true"><use href="#icon-${name}"></use></svg>`;
+  function normalizeStaticIcons() {
+    const mappings = [['.rail-icon', 'book'], ['.mentor-avatar-large', 'sparkles'], ['.welcome-mark', 'sparkles'], ['.message-avatar', 'sparkles'], ['.progress-rail .rail-icon', 'chart'], ['.privacy-mark', 'shield'], ['.pause-mark', 'heart']];
+    mappings.forEach(([selector, name]) => { $$(selector).forEach((element) => { element.innerHTML = icon(name); }); });
+    [['tranquilo', 'sparkles'], ['normal', 'chart'], ['sobrecarregado', 'heart']].forEach(([mood, name]) => { const element = $(`[data-mood="${mood}"] .mood-emoji`); if (element) element.innerHTML = icon(name); });
+    const quickActions = [['explain', 'sparkles'], ['summary', 'book'], ['question', 'target'], ['tips', 'sparkles']];
+    quickActions.forEach(([action, name]) => { const element = $(`.quick-action[data-action="${action}"] span`); if (element) element.innerHTML = icon(name); });
+    [['#editProfileBtn', 'settings'], ['#changePasswordBtn', 'shield'], ['#deleteAccountBtn', 'close']].forEach(([selector, name]) => { const element = $(selector); if (element) element.innerHTML = `${icon(name)} ${element.textContent.trim()}`; });
+  }
   const today = new Date().toISOString().slice(0, 10);
 
   function applySidebarState(expanded) {
@@ -23,7 +32,7 @@ ensureAuthenticated().then((user) => {
     toggle.setAttribute('aria-label', expanded ? 'Recolher sidebar' : 'Expandir sidebar');
     toggle.setAttribute('aria-expanded', String(expanded));
     toggle.title = expanded ? 'Recolher sidebar' : 'Expandir sidebar';
-    toggle.innerHTML = expanded ? '<span aria-hidden="true">‹</span>' : '<span aria-hidden="true">›</span>';
+    toggle.innerHTML = expanded ? icon('chevron-left') : icon('chevron-right');
     $$('.sidebar-link').forEach((button) => {
       const label = button.querySelector('.label')?.textContent?.trim() || button.getAttribute('aria-label') || 'Seção';
       button.title = !expanded ? label : '';
@@ -85,12 +94,12 @@ ensureAuthenticated().then((user) => {
     const cursor = new Date();
     while (streakDates.has(cursor.toISOString().slice(0, 10))) { streak += 1; cursor.setDate(cursor.getDate() - 1); }
     const stats = [
-      ['Tempo estudado', formatMinutes(auth.getStudyMinutes()), '▣'],
-      ['Metas', `${completed} / ${goals.length}`, '◎'],
-      ['Constância', `${streak} ${streak === 1 ? 'dia' : 'dias'}`, '↗'],
-      ['Progresso', `${totalProgress()}%`, '◔']
+      ['Tempo estudado', formatMinutes(auth.getStudyMinutes()), 'book'],
+      ['Metas', `${completed} / ${goals.length}`, 'target'],
+      ['Constância', `${streak} ${streak === 1 ? 'dia' : 'dias'}`, 'chart'],
+      ['Progresso', `${totalProgress()}%`, 'progress']
     ];
-    $('#statGrid').innerHTML = stats.map(([label, value, icon]) => `<article class="stat-card"><span>${icon} ${label}</span><strong>${value}</strong></article>`).join('');
+    $('#statGrid').innerHTML = stats.map(([label, value, iconName]) => `<article class="stat-card"><span>${icon(iconName)} ${label}</span><strong>${value}</strong></article>`).join('');
   }
 
   function subjectOptions(selected = '') {
@@ -118,7 +127,7 @@ ensureAuthenticated().then((user) => {
 
   function renderSubjects() {
     const grid = $('#subjectsGrid');
-    grid.innerHTML = state.user.subjects.length ? state.user.subjects.map((subject) => `<article class="subject-card"><header><strong>${escapeHtml(subject.name)}</strong><span class="muted">${subject.progress}%</span></header><span class="muted">${subject.targetHours ? `${subject.completedHours.toFixed(1)} / ${subject.targetHours} horas` : 'Defina uma meta de horas'}</span><div class="progress-track"><div class="progress-fill" style="width:${subject.progress}%"></div></div><div class="subject-actions"><button type="button" data-start-subject="${subject.id}">Estudar</button><button type="button" data-edit-subject="${subject.id}">Editar</button><button type="button" data-remove-subject="${subject.id}">Excluir</button></div></article>`).join('') : '<div class="empty-state">📚 Você ainda não adicionou nenhuma matéria.<br><button class="button-primary" data-open-subject="true">Adicionar primeira matéria</button></div>';
+    grid.innerHTML = state.user.subjects.length ? state.user.subjects.map((subject) => `<article class="subject-card"><header><strong>${escapeHtml(subject.name)}</strong><span class="muted">${subject.progress}%</span></header><span class="muted">${subject.targetHours ? `${subject.completedHours.toFixed(1)} / ${subject.targetHours} horas` : 'Defina uma meta de horas'}</span><div class="progress-track"><div class="progress-fill" style="width:${subject.progress}%"></div></div><div class="subject-actions"><button type="button" data-start-subject="${subject.id}">Estudar</button><button type="button" data-edit-subject="${subject.id}">Editar</button><button type="button" data-remove-subject="${subject.id}">Excluir</button></div></article>`).join('') : `<div class="empty-state">${icon('book')} Você ainda não adicionou nenhuma matéria.<br><button class="button-primary" data-open-subject="true">Adicionar primeira matéria</button></div>`;
   }
 
   function renderGoals() {
@@ -138,8 +147,8 @@ ensureAuthenticated().then((user) => {
     const days = [...Array(7)].map((_, index) => { const date = new Date(); date.setDate(date.getDate() - (6 - index)); const key = date.toISOString().slice(0, 10); return { label: date.toLocaleDateString('pt-BR', { weekday: 'short' }).slice(0, 3), minutes: state.user.studySessions.filter((session) => session.completedAt.slice(0, 10) === key).reduce((sum, session) => sum + Number(session.minutes), 0) }; });
     const max = Math.max(...days.map((day) => day.minutes), 1);
     $('#weeklyChart').innerHTML = days.map((day) => `<div class="chart-bar" style="height:${Math.max(4, day.minutes / max * 180)}px" title="${day.minutes} minutos"><span>${day.label}</span></div>`).join('');
-    const total = auth.getStudyMinutes(); const achievements = [['✓', 'Primeiro estudo', state.user.studySessions.length > 0], ['✓', '5 dias de constância', new Set(state.user.studySessions.map((session) => session.completedAt.slice(0, 10))).size >= 5], ['◷', '10 horas estudadas', total >= 600], ['◎', '10 exercícios concluídos', state.user.exerciseResults?.length >= 10]];
-    $('#achievements').innerHTML = achievements.map(([icon, label, unlocked]) => `<div class="achievement ${unlocked ? '' : 'locked'}">${icon} <strong>${label}</strong><br><span class="muted">${unlocked ? 'Conquistada' : 'Ainda não desbloqueada'}</span></div>`).join('');
+    const total = auth.getStudyMinutes(); const achievements = [['check', 'Primeiro estudo', state.user.studySessions.length > 0], ['check', '5 dias de constância', new Set(state.user.studySessions.map((session) => session.completedAt.slice(0, 10))).size >= 5], ['calendar', '10 horas estudadas', total >= 600], ['target', '10 exercícios concluídos', state.user.exerciseResults?.length >= 10]];
+    $('#achievements').innerHTML = achievements.map(([iconName, label, unlocked]) => `<div class="achievement ${unlocked ? '' : 'locked'}">${icon(iconName)} <strong>${label}</strong><br><span class="muted">${unlocked ? 'Conquistada' : 'Ainda não desbloqueada'}</span></div>`).join('');
   }
 
   function renderMentorContext() {
@@ -148,7 +157,7 @@ ensureAuthenticated().then((user) => {
     window.synaraSubject = state.selectedSubject;
     $('#currentContext').textContent = `Contexto: ${state.selectedSubject} · ${totalProgress()}% de progresso geral`;
     $('#mentorContext').innerHTML = `<p class="muted">${state.user.subjects.length} matéria(s) cadastrada(s).</p><p class="muted">${state.user.goals.filter((goal) => !goal.completed).length} meta(s) em aberto.</p><p class="muted">${formatMinutes(auth.getStudyMinutes())} de estudo registrado.</p>`;
-    $('#mentorSubjects').innerHTML = state.user.subjects.length ? state.user.subjects.map((subject) => `<button type="button" class="mentor-subject-button ${state.selectedSubject === subject.name ? 'active' : ''}" data-mentor-subject="${escapeHtml(subject.name)}"><span>◈</span>${escapeHtml(subject.name)}</button>`).join('') : '<div class="mentor-subject-empty">Ainda não há matérias. Adicione a primeira para personalizar a mentora.</div>';
+    $('#mentorSubjects').innerHTML = state.user.subjects.length ? state.user.subjects.map((subject) => `<button type="button" class="mentor-subject-button ${state.selectedSubject === subject.name ? 'active' : ''}" data-mentor-subject="${escapeHtml(subject.name)}">${icon('book')}${escapeHtml(subject.name)}</button>`).join('') : '<div class="mentor-subject-empty">Ainda não há matérias. Adicione a primeira para personalizar a mentora.</div>';
     const progress = totalProgress();
     $('#mentorProgressValue').textContent = `${progress}%`;
     $('#mentorProgressBar').style.width = `${progress}%`;
@@ -169,7 +178,7 @@ ensureAuthenticated().then((user) => {
       panel.querySelector('.context-row').after(tools);
     }
     const stats = state.selectedSubject !== 'Geral' && state.topic ? auth.getContentStats(state.selectedSubject, state.topic) : null;
-    tools.innerHTML = `<div class="mentor-tool-grid"><label>Modo de estudo<select id="mentorMode"><option value="explain">📚 Explicar</option><option value="understand">🧩 Me ajude a entender</option><option value="summary">📝 Resumir</option><option value="practice">❓ Praticar</option><option value="review">🔄 Revisar</option><option value="tip">💡 Dica</option><option value="exam">🎯 Preparar para prova</option></select></label><label>Conteúdo atual<input id="mentorTopic" value="${escapeHtml(state.topic)}" placeholder="Ex.: Função quadrática"></label><label>Nível<select id="mentorDifficulty"><option value="iniciante">Iniciante</option><option value="médio">Intermediário</option><option value="avançado">Avançado</option></select></label></div><div class="mentor-context-actions"><button type="button" class="button-primary" data-recommend-study>✨ O que estudar agora?</button><button type="button" class="button-quiet" data-start-challenge>⚡ Desafio Synara</button><button type="button" class="button-quiet" data-finish-session>📊 Finalizar sessão</button>${stats ? `<span class="content-mastery">Domínio: ${stats.mastery}% · ${stats.correct}/${stats.attempts} acertos${stats.errors?.length ? ' · revise seus erros' : ''}</span>` : ''}</div>`;
+    tools.innerHTML = `<div class="mentor-tool-grid"><label>Modo de estudo<select id="mentorMode"><option value="explain">Explicar</option><option value="understand">Me ajude a entender</option><option value="summary">Resumir</option><option value="practice">Praticar</option><option value="review">Revisar</option><option value="tip">Dica</option><option value="exam">Preparar para prova</option></select></label><label>Conteúdo atual<input id="mentorTopic" value="${escapeHtml(state.topic)}" placeholder="Ex.: Função quadrática"></label><label>Nível<select id="mentorDifficulty"><option value="iniciante">Iniciante</option><option value="médio">Intermediário</option><option value="avançado">Avançado</option></select></label></div><div class="mentor-context-actions"><button type="button" class="button-primary" data-recommend-study>${icon('sparkles')} O que estudar agora?</button><button type="button" class="button-quiet" data-start-challenge>${icon('target')} Desafio Synara</button><button type="button" class="button-quiet" data-finish-session>${icon('chart')} Finalizar sessão</button>${stats ? `<span class="content-mastery">Domínio: ${stats.mastery}% · ${stats.correct}/${stats.attempts} acertos${stats.errors?.length ? ' · revise seus erros' : ''}</span>` : ''}</div>`;
     $('#mentorMode').value = state.mode; $('#mentorDifficulty').value = state.difficulty;
   }
 
@@ -297,7 +306,7 @@ ensureAuthenticated().then((user) => {
   $('#profileTrigger').addEventListener('click', () => { const menu = $('#profileMenu'); menu.hidden = !menu.hidden; $('#profileTrigger').setAttribute('aria-expanded', String(!menu.hidden)); });
   $('#menuToggle').addEventListener('click', () => { const open = $('#sidebar').classList.toggle('open'); $('#menuToggle').setAttribute('aria-expanded', String(open)); });
   $('#sidebarToggle').addEventListener('click', () => {
-    const expanded = $('#dashboardLayout').classList.contains('sidebar-collapsed');
+    const expanded = !$('#dashboardLayout').classList.contains('sidebar-collapsed');
     applySidebarState(expanded);
   });
   $('#mobileBackdrop').addEventListener('click', () => $('#menuToggle').click());
@@ -344,6 +353,7 @@ ensureAuthenticated().then((user) => {
   }
   
   $('#scheduleDate').value = today;
+  normalizeStaticIcons();
   initializeSidebarState();
   renderAll();
 });
