@@ -902,6 +902,69 @@ app.put('/api/user/profile', requireAuth, async (req, res) => {
   }
 });
 
+app.put('/api/user/name', requireAuth, async (req, res) => {
+  const name = String(req.body?.name || '').trim();
+  if (!name || name.length < 2 || name.length > 100) {
+    return res.status(400).json({ success: false, message: 'Informe um nome válido.' });
+  }
+
+  try {
+    if (pgPool) {
+      const result = await pgPool.query('UPDATE users SET name = $1, updated_at = now() WHERE id = $2 RETURNING id, name, email, role, profile, created_at, updated_at', [name, req.user.id]);
+      const row = result.rows[0];
+      if (!row) return res.status(404).json({ success: false, message: 'Usuário não encontrado.' });
+      return res.json({ success: true, user: buildSafeUser(row), message: 'Nome atualizado com sucesso.' });
+    }
+
+    await new Promise((resolve, reject) => {
+      sqliteDb.run('UPDATE users SET name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [name, req.user.id], (error) => error ? reject(error) : resolve());
+    });
+
+    const row = await fetchUserById(req.user.id);
+    return res.json({ success: true, user: buildSafeUser(row), message: 'Nome atualizado com sucesso.' });
+  } catch (error) {
+    console.error('Update user name error:', error);
+    return res.status(500).json({ success: false, message: 'Não foi possível atualizar o nome.' });
+  }
+});
+
+app.put('/api/user/password', requireAuth, async (req, res) => {
+  const { currentPassword, newPassword } = req.body || {};
+  if (!currentPassword || !newPassword || String(newPassword).length < 6 || String(newPassword).length > 128) {
+    return res.status(400).json({ success: false, message: 'Informe a senha atual e uma nova senha válida.' });
+  }
+
+  try {
+    const row = await fetchUserById(req.user.id);
+    if (!row) {
+      return res.status(404).json({ success: false, message: 'Usuário não encontrado.' });
+    }
+
+    const valid = await bcrypt.compare(String(currentPassword), row.password_hash || '');
+    if (!valid) {
+      return res.status(401).json({ success: false, message: 'Senha atual incorreta.' });
+    }
+
+    const passwordHash = await bcrypt.hash(String(newPassword), 10);
+
+    if (pgPool) {
+      await pgPool.query('UPDATE users SET password_hash = $1, updated_at = now() WHERE id = $2', [passwordHash, req.user.id]);
+    } else {
+      await new Promise((resolve, reject) => {
+        sqliteDb.run('UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [passwordHash, req.user.id], (error) => error ? reject(error) : resolve());
+      });
+    }
+
+    invalidateUserSessions(req.user.id);
+    clearAuthCookie(res);
+
+    return res.json({ success: true, message: 'Senha alterada com sucesso. Faça login novamente.' });
+  } catch (error) {
+    console.error('Change password error:', error);
+    return res.status(500).json({ success: false, message: 'Não foi possível alterar a senha.' });
+  }
+});
+
 app.post('/api/auth/forgot-password', authLimiter, async (req, res) => {
   const email = String(req.body?.email || '').trim().toLowerCase();
   if (!email) {

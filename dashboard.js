@@ -23,7 +23,11 @@ ensureAuthenticated().then((user) => {
     toggle.setAttribute('aria-label', expanded ? 'Recolher sidebar' : 'Expandir sidebar');
     toggle.setAttribute('aria-expanded', String(expanded));
     toggle.title = expanded ? 'Recolher sidebar' : 'Expandir sidebar';
-    toggle.innerHTML = expanded ? '<span aria-hidden="true">◀</span>' : '<span aria-hidden="true">▶</span>';
+    toggle.innerHTML = expanded ? '<span aria-hidden="true">‹</span>' : '<span aria-hidden="true">›</span>';
+    $$('.sidebar-link').forEach((button) => {
+      const label = button.querySelector('.label')?.textContent?.trim() || button.getAttribute('aria-label') || 'Seção';
+      button.title = !expanded ? label : '';
+    });
     localStorage.setItem(SIDEBAR_STORAGE_KEY, expanded ? 'expanded' : 'collapsed');
   }
 
@@ -182,6 +186,26 @@ ensureAuthenticated().then((user) => {
     $('#privacyName').textContent = state.user.name || '-';
     $('#privacyEmail').textContent = state.user.email || '-';
     $('#privacyCreatedAt').textContent = createdAt;
+    const profileNameInput = $('#profileNameInput');
+    if (profileNameInput && profileNameInput.value.trim() === '') profileNameInput.value = state.user.name || '';
+  }
+
+  async function updateProfileName(name) {
+    const trimmed = String(name || '').trim();
+    if (!trimmed) throw new Error('Informe um nome válido para continuar.');
+    const result = await auth.updateName(trimmed);
+    if (!result.success) throw new Error(result.message || 'Não foi possível atualizar o nome.');
+    await refreshUser();
+    renderAll();
+    return result;
+  }
+
+  async function updatePassword(currentPassword, newPassword, confirmPassword) {
+    if (!currentPassword || !newPassword || !confirmPassword) throw new Error('Preencha todos os campos da senha.');
+    if (newPassword !== confirmPassword) throw new Error('A nova senha e a confirmação precisam ser iguais.');
+    const result = await auth.changePassword(currentPassword, newPassword, confirmPassword);
+    if (!result.success) throw new Error(result.message || 'Não foi possível alterar a senha.');
+    return result;
   }
 
   function renderQuestion(data) {
@@ -247,9 +271,15 @@ ensureAuthenticated().then((user) => {
       if ($('#chatInput').value) $('#chatForm').requestSubmit();
     }
     if (event.target.closest('#headerLogout, #settingsLogout')) logout();
+    if (event.target.closest('#editProfileBtn')) $('#profileEditPanel').classList.toggle('hidden');
+    if (event.target.closest('#cancelProfileEdit')) { $('#profileEditPanel').classList.add('hidden'); $('#profileNameForm').reset(); }
+    if (event.target.closest('#changePasswordBtn')) $('#passwordEditPanel').classList.toggle('hidden');
+    if (event.target.closest('#cancelPasswordEdit')) { $('#passwordEditPanel').classList.add('hidden'); $('#passwordForm').reset(); }
   });
 
   $('#subjectForm').addEventListener('submit', (event) => { event.preventDefault(); const id = Number($('#subjectId').value); const name = $('#subjectName').value.trim(); const target = Number($('#subjectTarget').value) || 0; if (id) auth.editSubject(id, name, target); else auth.addSubject(name, target); $('#subjectForm').reset(); $('#subjectForm').classList.add('hidden'); renderAll(); showStatus(id ? 'Matéria atualizada.' : 'Matéria adicionada.'); });
+  $('#profileNameForm').addEventListener('submit', async (event) => { event.preventDefault(); try { await updateProfileName($('#profileNameInput').value); $('#profileEditPanel').classList.add('hidden'); showStatus('Nome atualizado com sucesso.'); } catch (error) { showStatus(error.message); } });
+  $('#passwordForm').addEventListener('submit', async (event) => { event.preventDefault(); try { await updatePassword($('#currentPassword').value, $('#newPassword').value, $('#confirmPassword').value); $('#passwordEditPanel').classList.add('hidden'); $('#passwordForm').reset(); showStatus('Senha alterada com sucesso.'); } catch (error) { showStatus(error.message); } });
   $('#goalForm').addEventListener('submit', (event) => { event.preventDefault(); auth.addGoal($('#goalText').value.trim(), $('#goalSubject').selectedOptions[0]?.textContent === 'Geral' ? '' : $('#goalSubject').selectedOptions[0]?.textContent); event.target.reset(); renderAll(); showStatus('Meta criada.'); });
   $('#scheduleForm').addEventListener('submit', (event) => { event.preventDefault(); auth.addScheduleItem({ subjectId: Number($('#scheduleSubject').value), topic: $('#scheduleTopic').value.trim(), date: $('#scheduleDate').value, time: $('#scheduleTime').value, duration: Number($('#scheduleDuration').value), priority: $('#schedulePriority').value }); event.target.reset(); $('#scheduleDate').value = today; renderAll(); showStatus('Estudo adicionado ao cronograma.'); });
   $('#mentorSubject').addEventListener('change', (event) => { state.selectedSubject = event.target.value; window.synaraSubject = state.selectedSubject; renderMentorContext(); });

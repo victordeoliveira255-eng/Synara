@@ -168,6 +168,47 @@ class SynaraAuth {
     return updatedUser;
   }
 
+  async updateName(name) {
+    const trimmed = String(name || '').trim();
+    if (!trimmed) {
+      return { success: false, message: 'Informe um nome válido.' };
+    }
+
+    try {
+      const result = await this.request('/api/user/name', {
+        method: 'PUT',
+        body: JSON.stringify({ name: trimmed })
+      });
+      const user = this.normalizeUser(result.user || {});
+      if (user) this.setCurrentUser(user);
+      return { success: true, user, message: result.message || 'Nome atualizado com sucesso.' };
+    } catch (error) {
+      return { success: false, message: error.message || 'Não foi possível atualizar o nome.' };
+    }
+  }
+
+  async changePassword(currentPassword, newPassword, confirmPassword) {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      return { success: false, message: 'Preencha todos os campos de senha.' };
+    }
+    if (String(newPassword).length < 6) {
+      return { success: false, message: 'A nova senha precisa ter pelo menos 6 caracteres.' };
+    }
+    if (String(newPassword) !== String(confirmPassword)) {
+      return { success: false, message: 'A nova senha e a confirmação precisam ser iguais.' };
+    }
+
+    try {
+      const result = await this.request('/api/user/password', {
+        method: 'PUT',
+        body: JSON.stringify({ currentPassword, newPassword })
+      });
+      return { success: true, message: result.message || 'Senha atualizada com sucesso.' };
+    } catch (error) {
+      return { success: false, message: error.message || 'Não foi possível alterar a senha.' };
+    }
+  }
+
   async hydrateFromServer() {
     try {
       const result = await this.request('/api/auth/me', { method: 'GET' });
