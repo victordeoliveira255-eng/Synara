@@ -14,21 +14,38 @@ ensureAuthenticated().then((user) => {
   const $ = (selector) => document.querySelector(selector);
   const $$ = (selector) => [...document.querySelectorAll(selector)];
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
-  const icon = (name, className = '') => name === 'close' ? `<svg class="ui-icon ${className}" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>` : `<svg class="ui-icon ${className}" aria-hidden="true"><use href="#icon-${name}"></use></svg>`;
+  const icon = (name, className = '') => {
+    const paths = {
+      close: '<path d="m6 6 12 12M18 6 6 18"/>',
+      edit: '<path d="m4 20 4.5-1 9.8-9.8a2.1 2.1 0 0 0-3-3L5.5 16 4 20ZM13.5 7.5l3 3"/>',
+      key: '<circle cx="8" cy="15" r="3"/><path d="m10.5 12.5 8-8M15 7l2 2M17 5l2 2"/>',
+      document: '<path d="M6 3h8l4 4v14H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M14 3v5h5M8 12h6M8 16h6"/>',
+      trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 14h10l1-14M9 7V4h6v3"/>',
+      menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
+      plus: '<path d="M12 5v14M5 12h14"/>',
+      mic: '<rect x="8" y="3" width="8" height="12" rx="4"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/>',
+      arrow: '<path d="M4 12h16M13 5l7 7-7 7"/>',
+      chevron: '<path d="m9 5 6 7-6 7"/>'
+    };
+    return `<svg class="ui-icon ${className}" aria-hidden="true">${paths[name] || `<use href="#icon-${name}"></use>`}</svg>`;
+  };
   function normalizeStaticIcons() {
     const mappings = [['.rail-icon', 'book'], ['.mentor-avatar-large', 'sparkles'], ['.welcome-mark', 'sparkles'], ['.message-avatar', 'sparkles'], ['.progress-rail .rail-icon', 'chart'], ['.privacy-mark', 'shield'], ['.pause-mark', 'heart']];
     mappings.forEach(([selector, name]) => { $$(selector).forEach((element) => { element.innerHTML = icon(name); }); });
     [['tranquilo', 'sparkles'], ['normal', 'chart'], ['sobrecarregado', 'heart']].forEach(([mood, name]) => { const element = $(`[data-mood="${mood}"] .mood-emoji`); if (element) element.innerHTML = icon(name); });
     const quickActions = [['explain', 'sparkles'], ['summary', 'book'], ['question', 'target'], ['tips', 'sparkles']];
     quickActions.forEach(([action, name]) => { const element = $(`.quick-action[data-action="${action}"] span`); if (element) element.innerHTML = icon(name); });
-    [['#editProfileBtn', 'settings'], ['#changePasswordBtn', 'shield'], ['#deleteAccountBtn', 'close']].forEach(([selector, name]) => { const element = $(selector); if (element) element.innerHTML = `${icon(name)} ${element.textContent.trim()}`; });
+    [['.menu-icon', 'menu'], ['.chat-plus', 'plus'], ['.chat-mic', 'mic'], ['.send-button span', 'arrow'], ['.text-button span', 'arrow'], ['.quick-link-arrow', 'arrow'], ['.next-goal button span', 'arrow'], ['.settings-link span', 'arrow'], ['.rail-add span', 'plus'], ['.profile-trigger > span:last-child', 'chevron']].forEach(([selector, name]) => { $$(selector).forEach((element) => { element.innerHTML = icon(name); }); });
+    [['#editProfileBtn', 'edit', 'Editar meus dados'], ['#changePasswordBtn', 'key', 'Alterar senha'], ['a[href="privacy.html"]', 'document', 'Ler politica de privacidade'], ['#deleteAccountBtn', 'trash', 'Excluir minha conta']].forEach(([selector, name, label]) => { const element = $(selector); if (element) element.innerHTML = `${icon(name)} ${label}`; });
   }
   const today = new Date().toISOString().slice(0, 10);
 
   function applySidebarState(expanded) {
     const layout = $('#dashboardLayout');
     const toggle = $('#sidebarToggle');
-    layout.classList.toggle('sidebar-collapsed', !expanded);
+    const collapsed = !expanded;
+    layout.classList.toggle('sidebar-collapsed', collapsed);
+    layout.dataset.sidebarState = collapsed ? 'collapsed' : 'expanded';
     toggle.setAttribute('aria-label', expanded ? 'Recolher sidebar' : 'Expandir sidebar');
     toggle.setAttribute('aria-expanded', String(expanded));
     toggle.title = expanded ? 'Recolher sidebar' : 'Expandir sidebar';
@@ -120,7 +137,7 @@ ensureAuthenticated().then((user) => {
 
   function renderHome() {
     const goals = state.user.goals.slice(0, 3);
-    $('#homeGoals').innerHTML = `<div class="panel-heading"><h2>Metas de hoje</h2><button class="text-button" data-section="metas">Gerenciar</button></div>${goals.length ? goals.map((goal) => `<div class="mini-item"><span>${goal.completed ? '✓' : '○'} ${escapeHtml(goal.text)}</span></div>`).join('') : '<div class="empty-state">Você ainda não criou uma meta.</div>'}`;
+    $('#homeGoals').innerHTML = `<div class="panel-heading"><h2>Metas de hoje</h2><button class="text-button" data-section="metas">Gerenciar</button></div>${goals.length ? goals.map((goal) => `<div class="mini-item"><span>${goal.completed ? icon('check') : ''} ${escapeHtml(goal.text)}</span></div>`).join('') : '<div class="empty-state">Você ainda não criou uma meta.</div>'}`;
     const mood = state.user.wellbeing.mood;
     $('#homeWellbeing').innerHTML = `<div class="panel-heading"><h2>Seu ritmo</h2><button class="text-button" data-section="bem-estar">Acompanhar</button></div><p class="muted">${mood ? `Hoje você marcou seu ritmo como <strong>${mood}</strong>.` : 'Como você está se sentindo para estudar hoje?'}</p><button class="button-primary" data-section="bem-estar">${mood ? 'Atualizar ritmo' : 'Responder agora'}</button>`;
   }
@@ -252,7 +269,7 @@ ensureAuthenticated().then((user) => {
           window.setTimeout(() => { state.challenge.index += 1; renderQuestion(state.challenge.questions[state.challenge.index]); }, 500);
         } else {
           const score = state.challenge.correct;
-          $('#exerciseResult').innerHTML = `<strong>🎉 Desafio concluído!</strong><p>${score}/${state.challenge.questions.length} acertos. ${score >= 4 ? 'Seu desempenho foi excelente.' : 'Revise os erros e tente novamente.'}</p>`;
+          $('#exerciseResult').innerHTML = `<strong>${icon('sparkles')} Desafio concluído!</strong><p>${score}/${state.challenge.questions.length} acertos. ${score >= 4 ? 'Seu desempenho foi excelente.' : 'Revise os erros e tente novamente.'}</p>`;
           state.challenge = null;
         }
       }
