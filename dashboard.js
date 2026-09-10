@@ -16,6 +16,19 @@ ensureAuthenticated().then((user) => {
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
   const icon = (name, className = '') => {
     const paths = {
+      home: '<path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V10Z"/>',
+      sparkles: '<path d="m12 3 1.4 5.6L19 10l-5.6 1.4L12 17l-1.4-5.6L5 10l5.6-1.4L12 3ZM19 16l.7 2.3L22 19l-2.3.7L19 16Z"/>',
+      book: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21V5.5ZM4 21V6.5A2.5 2.5 0 0 1 6.5 4H8v15H6.5A2.5 2.5 0 0 0 4 21Z"/>',
+      calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18M7 14h.01M12 14h.01M17 14h.01M7 17h.01M12 17h.01"/>',
+      target: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="m16 8 3-3M19 5h-3M19 5v3"/>',
+      chart: '<path d="M4 19V5M4 19h17M8 16v-4M12 16V8M16 16v-6M20 16v-9"/>',
+      progress: '<path d="M4 19V5M4 19h17M7 15l4-4 3 2 5-7"/>',
+      check: '<path d="m5 12 4 4L19 6"/>',
+      heart: '<path d="M20.8 8.8c0 5.2-8.8 10.2-8.8 10.2S3.2 14 3.2 8.8A4.8 4.8 0 0 1 12 6a4.8 4.8 0 0 1 8.8 2.8Z"/>',
+      shield: '<path d="M12 3 20 6v5c0 5-3.3 8.4-8 10-4.7-1.6-8-5-8-10V6l8-3Z"/><path d="m8.5 12 2.2 2.2 4.8-5"/>',
+      settings: '<circle cx="12" cy="12" r="3"/><path d="m19 12 2-1-2-4-2 .5a7 7 0 0 0-1.5-1.5L16 4l-4-2-1 2a7 7 0 0 0-2 0L8 2 4 4l.5 2a7 7 0 0 0-1.5 1.5L1 7l2 4 2-.5a7 7 0 0 0 0 2L3 12l-2 4 2 1a7 7 0 0 0 1.5 1.5L4 20l4 2 1-2a7 7 0 0 0 2 0l1 2 4-2-.5-2a7 7 0 0 0 1.5-1.5l2 .5 2-4-2-1Z"/>',
+      'chevron-left': '<path d="m15 5-7 7 7 7"/>',
+      'chevron-right': '<path d="m9 5 7 7-7 7"/>',
       close: '<path d="m6 6 12 12M18 6 6 18"/>',
       edit: '<path d="m4 20 4.5-1 9.8-9.8a2.1 2.1 0 0 0-3-3L5.5 16 4 20ZM13.5 7.5l3 3"/>',
       key: '<circle cx="8" cy="15" r="3"/><path d="m10.5 12.5 8-8M15 7l2 2M17 5l2 2"/>',
