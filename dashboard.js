@@ -40,10 +40,10 @@ ensureAuthenticated().then((user) => {
       arrow: '<path d="M4 12h16M13 5l7 7-7 7"/>',
       chevron: '<path d="m9 5 6 7-6 7"/>'
     };
-    return `<svg class="ui-icon ${className}" aria-hidden="true">${paths[name] || `<use href="#icon-${name}"></use>`}</svg>`;
+    return paths[name] ? `<svg class="ui-icon ${className}" aria-hidden="true">${paths[name]}</svg>` : '';
   };
   function normalizeStaticIcons() {
-    const mappings = [['.rail-icon', 'book'], ['.mentor-avatar-large', 'sparkles'], ['.welcome-mark', 'sparkles'], ['.message-avatar', 'sparkles'], ['.progress-rail .rail-icon', 'chart'], ['.privacy-mark', 'shield'], ['.pause-mark', 'heart']];
+    const mappings = [['.sidebar-link[data-section="inicio"] .ui-icon', 'home'], ['.sidebar-link[data-section="mentora"] .ui-icon', 'sparkles'], ['.sidebar-link[data-section="materias"] .ui-icon', 'book'], ['.sidebar-link[data-section="cronograma"] .ui-icon', 'calendar'], ['.sidebar-link[data-section="metas"] .ui-icon', 'target'], ['.sidebar-link[data-section="progresso"] .ui-icon', 'chart'], ['.sidebar-link[data-section="bem-estar"] .ui-icon', 'heart'], ['.sidebar-link[data-section="privacidade"] .ui-icon', 'shield'], ['.sidebar-link[data-section="configuracoes"] .ui-icon', 'settings'], ['.sidebar-note-mark', 'sparkles'], ['.rail-icon', 'book'], ['.mentor-avatar-large', 'sparkles'], ['.welcome-mark', 'sparkles'], ['.message-avatar', 'sparkles'], ['.progress-rail .rail-icon', 'chart'], ['.privacy-mark', 'shield'], ['.pause-mark', 'heart']];
     mappings.forEach(([selector, name]) => { $$(selector).forEach((element) => { element.innerHTML = icon(name); }); });
     [['tranquilo', 'sparkles'], ['normal', 'chart'], ['sobrecarregado', 'heart']].forEach(([mood, name]) => { const element = $(`[data-mood="${mood}"] .mood-emoji`); if (element) element.innerHTML = icon(name); });
     const quickActions = [['explain', 'sparkles'], ['summary', 'book'], ['question', 'target'], ['tips', 'sparkles']];
