@@ -3,54 +3,729 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Central de estudos personalizada da SYNARA.">
-  <title>Central de estudos | SYNARA</title>
+  <meta name="description" content="Central de Estudos da SYNARA: planejamento, progresso e uma Mentora por IA que se adapta a como você aprende.">
+  <title>Central de Estudos | SYNARA</title>
   <link rel="icon" href="assets/icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="dashboard.css">
+  <link rel="stylesheet" href="central.css">
 </head>
 <body class="dashboard-page">
-  <svg class="icon-sprite" aria-hidden="true"><symbol id="icon-home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V10Z"/></symbol><symbol id="icon-sparkles" viewBox="0 0 24 24"><path d="m12 3 1.4 5.6L19 10l-5.6 1.4L12 17l-1.4-5.6L5 10l5.6-1.4L12 3ZM19 16l.7 2.3L22 19l-2.3.7L19 22l-.7-2.3L16 19l2.3-.7L19 16Z"/></symbol><symbol id="icon-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21V5.5ZM4 21V6.5A2.5 2.5 0 0 1 6.5 4H8v15H6.5A2.5 2.5 0 0 0 4 21Z"/></symbol><symbol id="icon-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18M7 14h.01M12 14h.01M17 14h.01M7 17h.01M12 17h.01"/></symbol><symbol id="icon-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="m16 8 3-3M19 5h-3M19 5v3"/></symbol><symbol id="icon-chart" viewBox="0 0 24 24"><path d="M4 19V5M4 19h17M8 16v-4M12 16V8M16 16v-6M20 16v-9"/></symbol><symbol id="icon-progress" viewBox="0 0 24 24"><path d="M4 19V5M4 19h17M7 15l4-4 3 2 5-7"/></symbol><symbol id="icon-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol><symbol id="icon-heart" viewBox="0 0 24 24"><path d="M20.8 8.8c0 5.2-8.8 10.2-8.8 10.2S3.2 14 3.2 8.8A4.8 4.8 0 0 1 12 6a4.8 4.8 0 0 1 8.8 2.8Z"/></symbol><symbol id="icon-shield" viewBox="0 0 24 24"><path d="M12 3 20 6v5c0 5-3.3 8.4-8 10-4.7-1.6-8-5-8-10V6l8-3Z"/><path d="m8.5 12 2.2 2.2 4.8-5"/></symbol><symbol id="icon-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="m19 12 2-1-2-4-2 .5a7 7 0 0 0-1.5-1.5L16 4l-4-2-1 2a7 7 0 0 0-2 0L8 2 4 4l.5 2a7 7 0 0 0-1.5 1.5L1 7l2 4 2-.5a7 7 0 0 0 0 2L3 12l-2 4 2 1a7 7 0 0 0 1.5 1.5L4 20l4 2 1-2a7 7 0 0 0 2 0l1 2 4-2-.5-2a7 7 0 0 0 1.5-1.5l2 .5 2-4-2-1Z"/></symbol><symbol id="icon-chevron-left" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></symbol><symbol id="icon-chevron-right" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol><symbol id="icon-arrow-right" viewBox="0 0 24 24"><path d="M4 12h16M13 5l7 7-7 7"/></symbol></svg>
-  <header class="dashboard-header">
-    <a class="brand dashboard-brand" href="index.html" aria-label="SYNARA, voltar ao inicio"><img class="brand-icon" src="assets/icon.svg" alt=""><span class="brand-text"><strong>SYNARA</strong><small>Bem-estar &amp; Aprendizado</small></span></a>
-    <div class="header-context"><span class="header-context-label">CENTRAL DE ESTUDOS</span><span id="headerPageTitle">Visao geral do seu aprendizado</span></div>
-    <nav class="top-nav" aria-label="Acoes da conta"><a class="top-nav-link" id="adminQuickLink" href="/admin" hidden>Painel Admin</a><button class="profile-trigger" id="profileTrigger" type="button" aria-expanded="false" aria-controls="profileMenu"><span class="avatar avatar-small" id="headerAvatar">A</span><span id="headerName">Aluno</span><span aria-hidden="true">⌄</span></button><div class="profile-menu" id="profileMenu" hidden><span id="profileEmail"></span><button id="headerLogout" type="button">Sair da conta</button></div></nav>
-    <button class="menu-toggle" id="menuToggle" type="button" aria-label="Abrir menu" aria-expanded="false"><span class="menu-icon" aria-hidden="true">☰</span></button>
-  </header>
+  <button class="dashboard-backdrop" id="sidebarBackdrop" type="button" aria-label="Fechar menu" hidden></button>
 
-  <div class="dashboard-layout" id="dashboardLayout">
-    <aside class="sidebar" id="sidebar" aria-label="Navegacao da Central de Estudos">
-      <div class="sidebar-heading"><span class="avatar" id="sidebarAvatar">A</span><div><strong id="sidebarName">Aluno</strong><small>Seu espaco de estudos</small></div></div>
-      <nav class="sidebar-nav" aria-label="Areas da central de estudos">
-        <div class="sidebar-group"><span class="sidebar-group-label">Principal</span><button class="sidebar-link active" data-section="inicio" aria-label="Inicio"><svg class="ui-icon" aria-hidden="true"><use href="#icon-home"/></svg><span class="label">Inicio</span></button><button class="sidebar-link" data-section="mentora" aria-label="Mentora Synara"><svg class="ui-icon" aria-hidden="true"><use href="#icon-sparkles"/></svg><span class="label">Mentora</span></button><button class="sidebar-link" data-section="materias" aria-label="Minhas materias"><svg class="ui-icon" aria-hidden="true"><use href="#icon-book"/></svg><span class="label">Materias</span></button><button class="sidebar-link" data-section="cronograma" aria-label="Cronograma"><svg class="ui-icon" aria-hidden="true"><use href="#icon-calendar"/></svg><span class="label">Cronograma</span></button><button class="sidebar-link" data-section="metas" aria-label="Metas"><svg class="ui-icon" aria-hidden="true"><use href="#icon-target"/></svg><span class="label">Metas</span></button><button class="sidebar-link" data-section="progresso" aria-label="Meu progresso"><svg class="ui-icon" aria-hidden="true"><use href="#icon-chart"/></svg><span class="label">Progresso</span></button></div>
-        <div class="sidebar-group"><span class="sidebar-group-label">Bem-estar</span><button class="sidebar-link" data-section="bem-estar" aria-label="Bem-estar"><svg class="ui-icon" aria-hidden="true"><use href="#icon-heart"/></svg><span class="label">Bem-estar</span></button></div>
-        <div class="sidebar-group"><span class="sidebar-group-label">Conta</span><button class="sidebar-link" data-section="privacidade" aria-label="Privacidade e Dados"><svg class="ui-icon" aria-hidden="true"><use href="#icon-shield"/></svg><span class="label">Privacidade</span></button><button class="sidebar-link" data-section="configuracoes" aria-label="Configuracoes"><svg class="ui-icon" aria-hidden="true"><use href="#icon-settings"/></svg><span class="label">Configuracoes</span></button></div>
+  <div class="dashboard-shell" id="dashboardShell">
+    <aside class="dashboard-sidebar" id="dashboardSidebar" aria-label="Navegação da Central de Estudos">
+      <div class="dashboard-sidebar__brand">
+        <img src="assets/icon.svg" alt="">
+        <span class="brand-copy"><strong>SYNARA</strong><small>Bem-estar &amp; Educação</small></span>
+      </div>
+      <button class="dashboard-sidebar__toggle" id="sidebarToggle" type="button" aria-label="Recolher menu lateral" aria-expanded="true" aria-controls="dashboardShell">
+        <span class="dashboard-icon-slot" data-icon="chevron-left"></span>
+      </button>
+
+      <nav class="dashboard-sidebar__nav" aria-label="Seções da Central">
+        <div class="dashboard-nav-group">
+          <span class="dashboard-nav-group__label">Estudar</span>
+          <button class="dashboard-nav-link" type="button" data-section="inicio" aria-label="Início">
+            <span class="dashboard-icon-slot" data-icon="home"></span><span class="nav-label">Início</span>
+          </button>
+          <button class="dashboard-nav-link" type="button" data-section="mentora" aria-label="Mentora">
+            <span class="dashboard-icon-slot" data-icon="mentor"></span><span class="nav-label">Mentora</span>
+          </button>
+          <button class="dashboard-nav-link" type="button" data-section="materias" aria-label="Minhas Matérias">
+            <span class="dashboard-icon-slot" data-icon="book"></span><span class="nav-label">Minhas Matérias</span>
+          </button>
+        </div>
+        <div class="dashboard-nav-group">
+          <span class="dashboard-nav-group__label">Planejar</span>
+          <button class="dashboard-nav-link" type="button" data-section="cronograma" aria-label="Cronograma">
+            <span class="dashboard-icon-slot" data-icon="calendar"></span><span class="nav-label">Cronograma</span>
+          </button>
+          <button class="dashboard-nav-link" type="button" data-section="metas" aria-label="Metas">
+            <span class="dashboard-icon-slot" data-icon="target"></span><span class="nav-label">Metas</span>
+          </button>
+        </div>
+        <div class="dashboard-nav-group">
+          <span class="dashboard-nav-group__label">Acompanhar</span>
+          <button class="dashboard-nav-link" type="button" data-section="progresso" aria-label="Progresso">
+            <span class="dashboard-icon-slot" data-icon="chart"></span><span class="nav-label">Progresso</span>
+          </button>
+          <button class="dashboard-nav-link" type="button" data-section="bem-estar" aria-label="Bem-estar">
+            <span class="dashboard-icon-slot" data-icon="heart"></span><span class="nav-label">Bem-estar</span>
+          </button>
+        </div>
+        <div class="dashboard-nav-group">
+          <span class="dashboard-nav-group__label">Conta</span>
+          <button class="dashboard-nav-link" type="button" data-section="privacidade" aria-label="Privacidade e dados">
+            <span class="dashboard-icon-slot" data-icon="shield"></span><span class="nav-label">Privacidade e dados</span>
+          </button>
+          <button class="dashboard-nav-link" type="button" data-section="configuracoes" aria-label="Configurações">
+            <span class="dashboard-icon-slot" data-icon="settings"></span><span class="nav-label">Configurações</span>
+          </button>
+        </div>
       </nav>
-      <div class="sidebar-note"><span class="sidebar-note-mark"><svg class="ui-icon" aria-hidden="true"><use href="#icon-sparkles"/></svg></span><strong>Estudo sustentavel</strong><span>Seu ritmo tambem faz parte do progresso.</span></div><button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Recolher sidebar" aria-expanded="true" title="Recolher sidebar"><svg class="ui-icon" aria-hidden="true"><use href="#icon-chevron-left"/></svg></button>
+
+      <div class="dashboard-sidebar__footer">
+        <div class="dashboard-sidebar__note">
+          <strong>Sua aprendizagem, do seu jeito</strong>
+          A Mentora observa o que funciona para você e adapta a forma de explicar.
+        </div>
+      </div>
     </aside>
 
-    <main class="dashboard-main"><div class="mobile-backdrop" id="mobileBackdrop"></div><div id="statusMessage" class="status-message" role="status" aria-live="polite"></div>
-      <section class="app-section active" data-view="inicio">
-        <div class="section-intro home-intro"><div><span class="eyebrow">Sua central de estudos</span><h1>Ola, <span id="greetingName">Aluno</span></h1><p>Um espaco claro para decidir o proximo passo do seu aprendizado.</p></div><button class="button-primary" data-section="mentora"><svg class="ui-icon" aria-hidden="true"><use href="#icon-sparkles"/></svg> Conversar com a mentora</button></div><div class="stat-grid" id="statGrid"></div>
-        <div class="content-grid home-grid home-primary-grid"><article class="panel continue-panel" id="continuePanel"></article><article class="panel today-panel"><div class="panel-heading"><div><span class="eyebrow">Agenda de hoje</span><h2>Proximos estudos</h2></div><button class="text-button" data-section="cronograma">Ver cronograma <span aria-hidden="true">→</span></button></div><div id="todaySchedule"></div></article></div>
-        <div class="home-section-label"><span class="eyebrow">Seu sistema de apoio</span><h2>Acesso rapido</h2></div><div class="quick-link-grid"><button class="quick-link-card" data-section="mentora"><span class="quick-link-icon"><svg class="ui-icon" aria-hidden="true"><use href="#icon-sparkles"/></svg></span><strong>Mentora</strong><small>Converse sobre qualquer assunto</small><span class="quick-link-arrow"><svg class="ui-icon" aria-hidden="true"><use href="#icon-arrow-right"/></svg></span></button><button class="quick-link-card" data-section="materias"><span class="quick-link-icon"><svg class="ui-icon" aria-hidden="true"><use href="#icon-book"/></svg></span><strong>Materias</strong><small>Acompanhe seu conteudo</small><span class="quick-link-arrow"><svg class="ui-icon" aria-hidden="true"><use href="#icon-arrow-right"/></svg></span></button><button class="quick-link-card" data-section="metas"><span class="quick-link-icon"><svg class="ui-icon" aria-hidden="true"><use href="#icon-target"/></svg></span><strong>Metas</strong><small>Transforme planos em passos</small><span class="quick-link-arrow"><svg class="ui-icon" aria-hidden="true"><use href="#icon-arrow-right"/></svg></span></button><button class="quick-link-card" data-section="bem-estar"><span class="quick-link-icon"><svg class="ui-icon" aria-hidden="true"><use href="#icon-heart"/></svg></span><strong>Bem-estar</strong><small>Cuide do seu ritmo</small><span class="quick-link-arrow"><svg class="ui-icon" aria-hidden="true"><use href="#icon-arrow-right"/></svg></span></button></div>
-        <div class="content-grid home-grid lower-grid"><article class="panel" id="homeGoals"></article><article class="panel" id="homeWellbeing"></article></div>
-      </section>
+    <div class="dashboard-main">
+      <header class="dashboard-topbar">
+        <button class="dashboard-icon-btn dashboard-menu-toggle" id="menuToggle" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="dashboardSidebar">
+          <span class="dashboard-icon-slot" data-icon="menu"></span>
+        </button>
+        <div class="dashboard-topbar__context">
+          <span class="dashboard-topbar__eyebrow">Central de Estudos</span>
+          <span class="dashboard-topbar__title" id="topbarTitle">Início</span>
+        </div>
+        <div class="dashboard-topbar__actions">
+          <a class="d-btn d-btn--ghost d-btn--sm" id="adminQuickLink" href="/admin" hidden>
+            <span class="dashboard-icon-slot" data-icon="shield"></span> Painel Admin
+          </a>
+          <div class="dashboard-account">
+            <button class="dashboard-account__trigger" id="accountTrigger" type="button" aria-expanded="false" aria-controls="accountMenu">
+              <span class="dashboard-avatar is-small" id="accountAvatar">A</span>
+              <span class="dashboard-account__meta"><strong id="accountName">Estudante</strong><small>Área do estudante</small></span>
+              <span class="dashboard-icon-slot" data-icon="chevron-down"></span>
+            </button>
+            <div class="dashboard-menu" id="accountMenu" hidden>
+              <div class="dashboard-menu__head">
+                <strong id="accountMenuName">Estudante</strong>
+                <span id="accountMenuEmail">-</span>
+              </div>
+              <button class="dashboard-menu__item" type="button" data-section="configuracoes">
+                <span class="dashboard-icon-slot" data-icon="settings"></span> Configurações
+              </button>
+              <button class="dashboard-menu__item" type="button" data-section="privacidade">
+                <span class="dashboard-icon-slot" data-icon="shield"></span> Privacidade e dados
+              </button>
+              <button class="dashboard-menu__item" type="button" id="logoutButton">
+                <span class="dashboard-icon-slot" data-icon="logout"></span> Sair da conta
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
 
-      <section class="app-section" data-view="materias"><div class="section-heading"><div><span class="eyebrow">Organize seus conteudos</span><h1>Minhas materias</h1><p>Veja seu avanco e escolha onde concentrar energia.</p></div><button class="button-primary" id="openSubjectForm"><span aria-hidden="true">+</span> Adicionar materia</button></div><form class="panel inline-form hidden" id="subjectForm"><label>Nome da materia<input id="subjectName" required placeholder="Ex.: Matematica"></label><label>Horas planejadas<input id="subjectTarget" type="number" min="0" step="0.5" placeholder="Ex.: 20"></label><input id="subjectId" type="hidden"><button class="button-primary" type="submit">Salvar materia</button><button class="button-quiet" id="cancelSubject" type="button">Cancelar</button></form><div class="subject-grid" id="subjectsGrid"></div></section>
-      <section class="app-section" data-view="cronograma"><div class="section-heading"><div><span class="eyebrow">Planeje com leveza</span><h1>Cronograma</h1><p>Defina quando estudar e transforme planos em sessoes reais.</p></div></div><form class="panel schedule-form" id="scheduleForm"><label>Materia<select id="scheduleSubject" required></select></label><label>Conteudo<input id="scheduleTopic" required placeholder="Ex.: Funcoes"></label><label>Data<input id="scheduleDate" type="date" required></label><label>Horario<input id="scheduleTime" type="time" required></label><label>Duracao (min)<input id="scheduleDuration" type="number" min="1" value="30" required></label><label>Prioridade<select id="schedulePriority"><option value="normal">Normal</option><option value="alta">Alta</option><option value="baixa">Baixa</option></select></label><button class="button-primary" type="submit">Adicionar ao cronograma</button></form><div class="panel"><div class="panel-heading"><div><span class="eyebrow">Sua agenda</span><h2>Estudos planejados</h2></div></div><div id="scheduleList"></div></div></section>
-      <section class="app-section" data-view="metas"><div class="section-heading"><div><span class="eyebrow">Pequenos passos</span><h1>Metas</h1><p>Escolha objetivos claros e acompanhe o que ja avancou.</p></div></div><form class="panel goal-form" id="goalForm"><label>O que voce quer alcancar?<input id="goalText" required placeholder="Ex.: Estudar Matematica 5 horas esta semana"></label><label>Materia relacionada<select id="goalSubject"><option value="">Geral</option></select></label><button class="button-primary" type="submit">Criar meta</button></form><div class="panel"><div class="panel-heading"><div><span class="eyebrow">Em andamento</span><h2>Suas metas</h2></div><span class="muted" id="goalSummary"></span></div><div id="goalsList"></div></div></section>
-      <section class="app-section" data-view="progresso"><div class="section-heading"><div><span class="eyebrow">Veja sua evolucao</span><h1>Meu progresso</h1><p>Dados registrados a partir das suas sessoes e materias.</p></div></div><div class="content-grid progress-grid"><article class="panel"><div class="panel-heading"><div><span class="eyebrow">Por materia</span><h2>Onde voce esta avancando</h2></div></div><div id="progressSubjects"></div></article><article class="panel"><div class="panel-heading"><div><span class="eyebrow">Ultimos 7 dias</span><h2>Ritmo de estudos</h2></div></div><div class="weekly-chart" id="weeklyChart"></div><div class="chart-legend">Minutos estudados por dia</div></article></div><div class="home-section-label progress-achievement-label"><span class="eyebrow">Conquistas</span><h2>Marcos do seu caminho</h2></div><div class="achievement-grid" id="achievements"></div></section>
+      <main class="dashboard-page-content" id="dashboardContent">
 
-      <section class="app-section" data-view="mentora"><div class="mentor-intro"><div><span class="eyebrow">Ambiente de conversa</span><h1>Estude com a Mentora</h1><p>Uma conversa focada para transformar duvidas em proximos passos.</p></div><div class="session-chip"><span class="session-dot"></span>Sessao de estudo ativa</div></div><div class="mentor-workspace"><aside class="subject-rail panel"><div class="rail-heading"><span class="rail-icon">▣</span><div><strong>Contexto atual</strong><small>Escolha uma materia</small></div></div><div class="mentor-subject-list" id="mentorSubjects"></div><button class="rail-add" type="button" data-section="materias"><span>+</span> Adicionar materia</button><div class="rail-note"><strong>Seu ritmo importa</strong><span>Pausas tambem fazem parte do aprendizado.</span></div></aside><article class="panel mentor-panel"><div class="mentor-head"><div class="mentor-avatar-large">✦</div><div><h2>Mentora SYNARA</h2><span id="currentContext">Contexto: Geral</span></div><span class="mentor-online"><i></i> Online</span></div><div class="mentor-toolbar"><div class="context-row"><label for="mentorSubject">Materia atual<select id="mentorSubject"></select></label></div><div class="mentor-action-row"><button type="button" class="button-primary" data-recommend-study>O que estudar agora?</button></div></div><div class="mentor-welcome"><span class="welcome-mark">✦</span><h2>Pronta para ajudar voce a aprender melhor.</h2><p>Comece com uma pergunta ou escolha uma sugestao de estudo.</p></div><div class="chat-messages" id="chatMessages"><div class="chat-message bot"><span class="message-avatar">✦</span><div><small class="message-author">Mentora SYNARA</small><div class="chat-bubble">Ola! Estou pronta para ajudar. Explique uma duvida, organize sua semana ou pratique um conteudo.</div></div></div></div><div class="mentor-tools" id="mentorContext"></div><div class="mentor-tools-panel" aria-label="Acoes da mentora"><div class="quick-actions"><button type="button" class="quick-action" data-action="explain"><span>↗</span><b>Explique um assunto</b><small>Entenda os fundamentos</small></button><button type="button" class="quick-action" data-action="summary"><span>≡</span><b>Crie um resumo</b><small>Organize os pontos</small></button><button type="button" class="quick-action" data-action="question"><span>?</span><b>Gere uma questao</b><small>Pratique agora</small></button><button type="button" class="quick-action" data-action="tips"><span>✦</span><b>De dicas de estudo</b><small>Melhore seu ritmo</small></button></div></div><form class="chat-form" id="chatForm"><div class="chat-input-wrap"><textarea id="chatInput" rows="1" placeholder="Pergunte qualquer coisa sobre seus estudos..." aria-label="Mensagem para a SYNARA" autocomplete="off"></textarea><button class="chat-plus" id="chatPlus" type="button" aria-label="Abrir opcoes de conteudo" aria-expanded="false">+</button><button class="chat-mic" id="chatMic" type="button" aria-label="Usar entrada por voz">◉</button><div class="attachment-menu" id="attachmentMenu" hidden><button type="button" data-attachment="text">Adicionar texto ao contexto</button><button type="button" data-attachment="file" disabled>Enviar arquivo <small>Em breve</small></button></div></div><button class="send-button" type="submit" id="sendBtn" aria-label="Enviar mensagem">Enviar <span aria-hidden="true">→</span></button></form><div class="exercise-result hidden" id="exerciseResult"></div><p class="mentor-disclaimer"><span>i</span> A Mentora usa o contexto atual e o historico do seu progresso para responder com mais precisao.</p></article><aside class="progress-rail"><div class="rail-heading"><span class="rail-icon">↗</span><div><strong>Seu progresso</strong><small>Dados da sua conta</small></div></div><div class="progress-focus"><span>Progresso geral</span><strong id="mentorProgressValue">0%</strong><div class="progress-track"><div class="progress-fill" id="mentorProgressBar" style="width:0%"></div></div><small id="mentorProgressHint">Adicione materias para comecar</small></div><div class="progress-facts" id="mentorProgress"></div><div class="next-goal"><span>PROXIMO PASSO</span><strong id="mentorNextGoal">Crie sua primeira meta</strong><button type="button" data-section="metas">Ver metas <span>→</span></button></div></aside></div></section>
+        <!-- ===================== INÍCIO ===================== -->
+        <section class="dashboard-view" data-view="inicio" aria-label="Início">
+          <div class="dashboard-view__head">
+            <div>
+              <span class="d-eyebrow">Sua jornada de aprendizagem</span>
+              <h1 id="homeGreeting">Olá!</h1>
+              <p id="homeSubtitle">Vamos continuar de onde você parou.</p>
+            </div>
+            <div class="dashboard-view__head-actions">
+              <button class="d-btn d-btn--accent" type="button" data-goto="mentora">
+                <span class="dashboard-icon-slot" data-icon="mentor"></span> Falar com a Mentora
+              </button>
+            </div>
+          </div>
 
-      <section class="app-section" data-view="bem-estar"><div class="section-heading"><div><span class="eyebrow">Seu ritmo</span><h1>Bem-estar</h1><p>Observe como voce esta e ajuste sua rotina de estudos.</p></div></div><div class="content-grid wellbeing-grid"><article class="panel wellbeing-checkin"><div class="panel-heading"><div><span class="eyebrow">Check-in de hoje</span><h2>Como esta seu ritmo de estudos?</h2></div></div><div class="mood-options"><button type="button" data-mood="tranquilo"><span class="mood-emoji">◌</span><strong>Tranquilo</strong><small>Tenho espaco mental</small></button><button type="button" data-mood="normal"><span class="mood-emoji">◐</span><strong>Normal</strong><small>Posso avancar com calma</small></button><button type="button" data-mood="sobrecarregado"><span class="mood-emoji">○</span><strong>Sobrecarregado</strong><small>Preciso reduzir o ritmo</small></button></div><div id="wellbeingSuggestion" class="suggestion-box"></div></article><article class="panel pause-panel"><div class="panel-heading"><div><span class="eyebrow">Pausa planejada</span><h2>Um ritmo que cabe no dia</h2></div><span class="pause-mark">♡</span></div><div class="break-plan"><strong>25 min</strong><span>de estudo focado</span><b>+</b><strong>5 min</strong><span>de pausa consciente</span></div><p class="muted">Ajuste o ritmo quando precisar. Descanso tambem faz parte do aprendizado.</p></article></div></section>
+          <div class="d-stack">
+            <article class="d-card d-card--pad-lg" id="homeFocusCard">
+              <div class="d-card__head">
+                <div>
+                  <span class="d-eyebrow">O que fazer agora</span>
+                  <h2 id="homeFocusTitle">Seu próximo passo</h2>
+                  <p id="homeFocusText">Estamos montando sua recomendação com base no seu momento.</p>
+                </div>
+                <span class="d-card__mark"><span class="dashboard-icon-slot" data-icon="compass"></span></span>
+              </div>
+              <div class="d-row">
+                <button class="d-btn d-btn--primary" type="button" id="homeFocusAction">Começar</button>
+                <button class="d-btn d-btn--quiet" type="button" data-goto="materias">Ver matérias</button>
+              </div>
+            </article>
 
-      <section class="app-section" data-view="privacidade"><div class="section-heading"><div><span class="eyebrow">Controle da sua conta</span><h1>Privacidade e dados</h1><p>Veja quais informacoes estao associadas a sua conta e gerencie suas escolhas.</p></div></div><div class="content-grid privacy-grid"><article class="panel"><div class="panel-heading"><div><span class="eyebrow">Informacoes da conta</span><h2>Seus dados</h2></div><span class="privacy-mark">◈</span></div><div class="privacy-info"><div class="info-row"><span>Nome</span><strong id="privacyName">-</strong></div><div class="info-row"><span>E-mail</span><strong id="privacyEmail">-</strong></div><div class="info-row"><span>Conta criada em</span><strong id="privacyCreatedAt">-</strong></div></div><p class="muted privacy-copy">Seus dados sao usados para personalizar a experiencia de estudos e ficam protegidos pelos mecanismos de seguranca da SYNARA.</p></article><article class="panel"><div class="panel-heading"><div><span class="eyebrow">Acoes disponiveis</span><h2>Gerenciar conta</h2></div></div><div class="privacy-actions"><button type="button" class="privacy-action-btn" id="editProfileBtn">✎ Editar meus dados</button><button type="button" class="privacy-action-btn" id="changePasswordBtn">🔑 Alterar senha</button><a href="privacy.html" target="_blank" rel="noopener" class="privacy-action-btn">📄 Ler politica de privacidade</a><button type="button" class="privacy-action-btn delete" id="deleteAccountBtn">🗑️ Excluir minha conta</button></div><div class="privacy-form-panel hidden" id="profileEditPanel"><form id="profileNameForm" class="privacy-inline-form"><label>Nome completo<input id="profileNameInput" name="name" type="text" maxlength="100" placeholder="Seu nome completo" required></label><button class="button-primary" type="submit">Salvar nome</button><button class="button-quiet" type="button" id="cancelProfileEdit">Cancelar</button></form></div><div class="privacy-form-panel hidden" id="passwordEditPanel"><form id="passwordForm" class="privacy-inline-form"><label>Senha atual<input id="currentPassword" name="currentPassword" type="password" required></label><label>Nova senha<input id="newPassword" name="newPassword" type="password" minlength="6" required></label><label>Confirmar nova senha<input id="confirmPassword" name="confirmPassword" type="password" minlength="6" required></label><button class="button-primary" type="submit">Salvar senha</button><button class="button-quiet" type="button" id="cancelPasswordEdit">Cancelar</button></form></div><p class="muted privacy-warning">A exclusao da conta e permanente e nao pode ser desfeita.</p></article></div></section>
+            <div class="d-grid d-grid--stats" id="homeStats"></div>
 
-      <section class="app-section" data-view="configuracoes"><div class="section-heading"><div><span class="eyebrow">Sua conta</span><h1>Configuracoes</h1><p>Confira seus dados e as acoes importantes da conta.</p></div></div><div class="settings-grid"><article class="panel settings-panel"><div class="panel-heading"><div><span class="eyebrow">Perfil</span><h2>Identidade SYNARA</h2></div><span class="avatar settings-avatar" id="settingsAvatar">A</span></div><div class="setting-row"><span>Nome</span><strong id="settingsName">-</strong></div><div class="setting-row"><span>E-mail</span><strong id="settingsEmail">-</strong></div><div class="setting-row"><span>Dados</span><strong>Sincronizados com sua conta</strong></div></article><article class="panel settings-panel"><div class="panel-heading"><div><span class="eyebrow">Seguranca</span><h2>Acesso protegido</h2></div><span class="settings-status">Ativo</span></div><p class="muted">Sua sessao usa autenticacao protegida por cookie. Para atualizar a senha, acesse Privacidade e dados.</p><button class="button-quiet settings-link" data-section="privacidade">Gerenciar privacidade <span>→</span></button><button class="button-danger" id="settingsLogout" type="button">Sair da conta</button></article></div></section>
-+    </main>
-+  </div>
-+  <script src="auth.js"></script><script src="script.js"></script><script src="dashboard.js"></script>
-+</body>
-+</html>
+            <div class="d-grid d-grid--2">
+              <article class="d-card">
+                <div class="d-card__head">
+                  <div><span class="d-eyebrow">Hoje</span><h2>Próximas atividades</h2><p>O que está planejado para as próximas horas.</p></div>
+                  <span class="d-card__mark"><span class="dashboard-icon-slot" data-icon="clock"></span></span>
+                </div>
+                <div id="homeSchedule"></div>
+              </article>
+              <article class="d-card">
+                <div class="d-card__head">
+                  <div><span class="d-eyebrow">Metas</span><h2>Suas prioridades</h2><p>Foque no que está em aberto.</p></div>
+                  <span class="d-card__mark"><span class="dashboard-icon-slot" data-icon="target"></span></span>
+                </div>
+                <div id="homeGoals"></div>
+              </article>
+            </div>
+
+            <div class="d-grid d-grid--2">
+              <article class="d-card">
+                <div class="d-card__head">
+                  <div><span class="d-eyebrow">Matérias</span><h2>Seu progresso por matéria</h2><p>Continue de onde faz sentido.</p></div>
+                  <span class="d-card__mark"><span class="dashboard-icon-slot" data-icon="book"></span></span>
+                </div>
+                <div id="homeSubjects"></div>
+              </article>
+              <article class="d-card">
+                <div class="d-card__head">
+                  <div><span class="d-eyebrow">Mentora</span><h2>Recomendação de estudo</h2><p>Uma sugestão a partir dos seus dados reais.</p></div>
+                  <span class="d-card__mark"><span class="dashboard-icon-slot" data-icon="mentor"></span></span>
+                </div>
+                <div id="homeMentor"></div>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================== MATÉRIAS ===================== -->
+        <section class="dashboard-view" data-view="materias" aria-label="Minhas Matérias">
+          <div class="dashboard-view__head">
+            <div>
+              <span class="d-eyebrow">O que você estuda</span>
+              <h1>Minhas Matérias</h1>
+              <p>Organize o que estuda e acompanhe o progresso de cada matéria.</p>
+            </div>
+            <div class="dashboard-view__head-actions">
+              <button class="d-btn d-btn--ghost" type="button" id="subjectToggleForm">
+                <span class="dashboard-icon-slot" data-icon="plus"></span> Nova matéria
+              </button>
+            </div>
+          </div>
+
+          <div class="d-stack">
+            <article class="d-card d-card--soft" id="subjectFormCard" hidden>
+              <form class="d-form d-form--inline" id="subjectForm">
+                <div class="d-field">
+                  <label for="subjectName">Nome da matéria</label>
+                  <input class="d-input" id="subjectName" name="name" type="text" maxlength="80" placeholder="Ex.: Matemática" required>
+                </div>
+                <div class="d-field">
+                  <label for="subjectTarget">Meta de horas</label>
+                  <input class="d-input" id="subjectTarget" name="targetHours" type="number" min="0" step="1" placeholder="Ex.: 20">
+                </div>
+                <div class="d-form-actions">
+                  <button class="d-btn d-btn--primary" type="submit">Adicionar</button>
+                  <button class="d-btn d-btn--quiet" type="button" id="subjectCancel">Cancelar</button>
+                </div>
+              </form>
+              <p class="d-error" id="subjectError" hidden></p>
+            </article>
+
+            <div id="subjectList"></div>
+          </div>
+        </section>
+
+        <!-- ===================== CRONOGRAMA ===================== -->
+        <section class="dashboard-view" data-view="cronograma" aria-label="Cronograma">
+          <div class="dashboard-view__head">
+            <div>
+              <span class="d-eyebrow">O que fazer e quando</span>
+              <h1>Cronograma</h1>
+              <p>Planeje os blocos de estudo e acompanhe o que está pendente ou concluído.</p>
+            </div>
+            <div class="dashboard-view__head-actions">
+              <button class="d-btn d-btn--ghost" type="button" id="scheduleToggleForm">
+                <span class="dashboard-icon-slot" data-icon="plus"></span> Novo item
+              </button>
+            </div>
+          </div>
+
+          <div class="d-stack">
+            <article class="d-card d-card--soft" id="scheduleFormCard" hidden>
+              <form class="d-form d-form--inline" id="scheduleForm">
+                <div class="d-field">
+                  <label for="scheduleSubject">Matéria</label>
+                  <select class="d-select" id="scheduleSubject" required></select>
+                </div>
+                <div class="d-field">
+                  <label for="scheduleTopic">Assunto</label>
+                  <input class="d-input" id="scheduleTopic" type="text" maxlength="120" placeholder="Ex.: Equações do 2º grau">
+                </div>
+                <div class="d-field">
+                  <label for="scheduleDate">Data</label>
+                  <input class="d-input" id="scheduleDate" type="date" required>
+                </div>
+                <div class="d-field">
+                  <label for="scheduleTime">Horário</label>
+                  <input class="d-input" id="scheduleTime" type="time" required>
+                </div>
+                <div class="d-field">
+                  <label for="scheduleDuration">Duração (min)</label>
+                  <input class="d-input" id="scheduleDuration" type="number" min="5" max="600" step="5" placeholder="30" required>
+                </div>
+                <div class="d-form-actions">
+                  <button class="d-btn d-btn--primary" type="submit">Adicionar</button>
+                  <button class="d-btn d-btn--quiet" type="button" id="scheduleCancel">Cancelar</button>
+                </div>
+              </form>
+              <p class="d-error" id="scheduleError" hidden></p>
+            </article>
+
+            <div class="d-stack" id="scheduleGroups"></div>
+          </div>
+        </section>
+
+        <!-- ===================== METAS ===================== -->
+        <section class="dashboard-view" data-view="metas" aria-label="Metas">
+          <div class="dashboard-view__head">
+            <div>
+              <span class="d-eyebrow">Objetivos</span>
+              <h1>Metas</h1>
+              <p>Defina objetivos claros. Você pode registrar um prazo e dividir a meta em etapas.</p>
+            </div>
+            <div class="dashboard-view__head-actions">
+              <button class="d-btn d-btn--ghost" type="button" id="goalToggleForm">
+                <span class="dashboard-icon-slot" data-icon="plus"></span> Nova meta
+              </button>
+            </div>
+          </div>
+
+          <div class="d-stack">
+            <article class="d-card d-card--soft" id="goalFormCard" hidden>
+              <form class="d-form d-form--inline" id="goalForm">
+                <div class="d-field">
+                  <label for="goalText">O que você quer alcançar?</label>
+                  <input class="d-input" id="goalText" type="text" maxlength="160" placeholder="Ex.: Terminar a revisão de funções" required>
+                </div>
+                <div class="d-field">
+                  <label for="goalSubject">Matéria (opcional)</label>
+                  <select class="d-select" id="goalSubject"><option value="">Geral</option></select>
+                </div>
+                <div class="d-field">
+                  <label for="goalDue">Prazo (opcional)</label>
+                  <input class="d-input" id="goalDue" type="date">
+                </div>
+                <div class="d-form-actions">
+                  <button class="d-btn d-btn--primary" type="submit">Adicionar</button>
+                  <button class="d-btn d-btn--quiet" type="button" id="goalCancel">Cancelar</button>
+                </div>
+              </form>
+              <p class="d-error" id="goalError" hidden></p>
+            </article>
+
+            <div class="d-grid d-grid--2" id="goalGroups"></div>
+          </div>
+        </section>
+
+        <!-- ===================== PROGRESSO ===================== -->
+        <section class="dashboard-view" data-view="progresso" aria-label="Progresso">
+          <div class="dashboard-view__head">
+            <div>
+              <span class="d-eyebrow">Sua evolução</span>
+              <h1>Progresso</h1>
+              <p>Um retrato honesto do que você já fez na SYNARA.</p>
+            </div>
+          </div>
+
+          <div class="d-stack">
+            <div class="d-grid d-grid--stats" id="progressStats"></div>
+
+            <article class="d-card">
+              <div class="d-card__head">
+                <div><span class="d-eyebrow">Últimos 7 dias</span><h2>Tempo de estudo</h2><p>Minutos registrados por dia.</p></div>
+                <span class="d-card__mark"><span class="dashboard-icon-slot" data-icon="chart"></span></span>
+              </div>
+              <div id="progressChart"></div>
+            </article>
+
+            <div class="d-grid d-grid--2">
+              <article class="d-card">
+                <div class="d-card__head">
+                  <div><span class="d-eyebrow">Por matéria</span><h2>Progresso das matérias</h2><p>Baseado no tempo planejado e realizado.</p></div>
+                  <span class="d-card__mark"><span class="dashboard-icon-slot" data-icon="book"></span></span>
+                </div>
+                <div id="progressSubjects"></div>
+              </article>
+              <article class="d-card">
+                <div class="d-card__head">
+                  <div><span class="d-eyebrow">Conquistas</span><h2>Marcos da sua jornada</h2><p>Desbloqueadas com o uso real da plataforma.</p></div>
+                  <span class="d-card__mark"><span class="dashboard-icon-slot" data-icon="award"></span></span>
+                </div>
+                <div id="progressAchievements"></div>
+              </article>
+            </div>
+
+            <article class="d-card" id="progressMasteryCard">
+              <div class="d-card__head">
+                <div><span class="d-eyebrow">Desempenho</span><h2>Domínio por conteúdo</h2><p>Calculado a partir dos exercícios que você respondeu.</p></div>
+                <span class="d-card__mark"><span class="dashboard-icon-slot" data-icon="target"></span></span>
+              </div>
+              <div id="progressMastery"></div>
+            </article>
+          </div>
+        </section>
+
+        <!-- ===================== MENTORA ===================== -->
+        <section class="dashboard-view dashboard-view--mentor" data-view="mentora" aria-label="Mentora">
+          <div class="d-mentor">
+            <header class="d-mentor__head">
+              <span class="d-mentor__avatar" aria-hidden="true"><span class="dashboard-icon-slot" data-icon="mentor"></span></span>
+              <div class="d-mentor__identity">
+                <h1>Mentora SYNARA</h1>
+                <p>Acompanha seu progresso e adapta a forma de explicar a você.</p>
+              </div>
+              <span class="d-mentor__status"><i></i> Online</span>
+              <div class="d-mentor__head-actions">
+                <button class="d-btn d-btn--ghost d-btn--sm" type="button" id="mentorNewChat">
+                  <span class="dashboard-icon-slot" data-icon="reset"></span> Nova conversa
+                </button>
+              </div>
+            </header>
+
+            <div class="d-mentor__context">
+              <div class="d-field">
+                <label for="mentorSubject">Matéria</label>
+                <select class="d-select" id="mentorSubject"></select>
+              </div>
+              <div class="d-field">
+                <label for="mentorTopic">Conteúdo</label>
+                <input class="d-input" id="mentorTopic" type="text" maxlength="120" placeholder="Ex.: Funções">
+              </div>
+              <div class="d-field">
+                <label for="mentorDifficulty">Nível</label>
+                <select class="d-select" id="mentorDifficulty">
+                  <option value="fácil">Fácil</option>
+                  <option value="médio" selected>Médio</option>
+                  <option value="difícil">Difícil</option>
+                </select>
+              </div>
+              <div class="d-field d-mentor__strategy">
+                <label for="mentorStrategy">Estratégia de estudo</label>
+                <select class="d-select" id="mentorStrategy">
+                  <option value="auto" selected>Automática (aprendida)</option>
+                  <option value="explain">Explicação passo a passo</option>
+                  <option value="understand">Descobrir o que eu já sei</option>
+                  <option value="summary">Resumo organizado</option>
+                  <option value="practice">Praticar com exercícios</option>
+                  <option value="review">Revisão ativa</option>
+                  <option value="tip">Estratégias de estudo</option>
+                  <option value="exam">Plano para prova</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="d-mentor__log" id="mentorLog" aria-live="polite"></div>
+
+            <div class="d-mentor__composer">
+              <form class="d-mentor__composer-inner" id="mentorForm">
+                <textarea class="d-mentor__textarea" id="mentorInput" rows="1" placeholder="Escreva sua dúvida ou peça uma forma diferente de estudar..." aria-label="Mensagem para a Mentora" autocomplete="off"></textarea>
+                <button class="d-mentor__send" id="mentorSend" type="submit" aria-label="Enviar mensagem">
+                  <span class="dashboard-icon-slot" data-icon="send"></span>
+                </button>
+              </form>
+              <div class="d-mentor__hint">
+                <span id="mentorStrategyNote">A estratégia automática usa o que já funcionou para você.</span>
+                <span>Enter envia · Shift+Enter quebra linha</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================== BEM-ESTAR ===================== -->
+        <section class="dashboard-view" data-view="bem-estar" aria-label="Bem-estar">
+          <div class="dashboard-view__head">
+            <div>
+              <span class="d-eyebrow">Equilíbrio</span>
+              <h1>Bem-estar</h1>
+              <p>Aprender bem também depende de ritmo, pausas e descanso.</p>
+            </div>
+          </div>
+
+          <div class="d-stack">
+            <div class="d-grid d-grid--2">
+              <article class="d-card">
+                <div class="d-card__head">
+                  <div><span class="d-eyebrow">Check-in</span><h2>Como está seu ritmo hoje?</h2><p>Isso ajuda a Mentora a ajustar sugestões.</p></div>
+                  <span class="d-card__mark"><span class="dashboard-icon-slot" data-icon="heart"></span></span>
+                </div>
+                <div class="d-switch-grid" id="wellbeingMoods">
+                  <button class="d-choice" type="button" data-mood="tranquilo"><span class="dashboard-icon-slot" data-icon="leaf"></span> Tranquilo</button>
+                  <button class="d-choice" type="button" data-mood="normal"><span class="dashboard-icon-slot" data-icon="balance"></span> Normal</button>
+                  <button class="d-choice" type="button" data-mood="sobrecarregado"><span class="dashboard-icon-slot" data-icon="alert"></span> Sobrecarregado</button>
+                </div>
+                <p class="d-muted" id="wellbeingMoodNote" style="margin-top:.8rem">Você ainda não registrou como está se sentindo.</p>
+              </article>
+
+              <article class="d-card">
+                <div class="d-card__head">
+                  <div><span class="d-eyebrow">Foco</span><h2>Bloco de estudo com pausa</h2><p>Ao concluir, registramos uma sessão de estudo real no seu progresso.</p></div>
+                  <span class="d-card__mark"><span class="dashboard-icon-slot" data-icon="timer"></span></span>
+                </div>
+                <div class="d-row" style="align-items:center;gap:1rem">
+                  <strong class="d-stat__value" id="focusTimerValue" style="font-size:2.4rem">25:00</strong>
+                  <div class="d-form-actions">
+                    <button class="d-btn d-btn--primary" type="button" id="focusStart"><span class="dashboard-icon-slot" data-icon="play"></span> Iniciar 25 min</button>
+                    <button class="d-btn d-btn--quiet" type="button" id="focusReset" hidden>Reiniciar</button>
+                  </div>
+                </div>
+                <div class="d-field" style="margin-top:.8rem">
+                  <label for="focusSubject">Matéria da sessão</label>
+                  <select class="d-select" id="focusSubject"></select>
+                </div>
+                <p class="d-muted" id="focusNote" style="margin-top:.6rem">Dica: 25 minutos de foco seguidos de 5 de pausa ajudam a manter a atenção.</p>
+              </article>
+            </div>
+
+            <div class="d-grid d-grid--3" id="wellbeingTips"></div>
+          </div>
+        </section>
+
+        <!-- ===================== PRIVACIDADE ===================== -->
+        <section class="dashboard-view" data-view="privacidade" aria-label="Privacidade e dados">
+          <div class="dashboard-view__head">
+            <div>
+              <span class="d-eyebrow">Controle da sua conta</span>
+              <h1>Privacidade e dados</h1>
+              <p>Veja o que está associado à sua conta e gerencie suas escolhas.</p>
+            </div>
+            <div class="dashboard-view__head-actions">
+              <a class="d-btn d-btn--ghost" href="privacy.html" target="_blank" rel="noopener">
+                <span class="dashboard-icon-slot" data-icon="document"></span> Ler política de privacidade
+              </a>
+            </div>
+          </div>
+
+          <div class="d-stack">
+            <div class="d-grid d-grid--2">
+              <article class="d-card">
+                <div class="d-card__head">
+                  <div><span class="d-eyebrow">Informações da conta</span><h2>Seus dados</h2></div>
+                  <span class="d-card__mark"><span class="dashboard-icon-slot" data-icon="user"></span></span>
+                </div>
+                <div class="d-info-row"><span>Nome</span><strong id="privacyName">-</strong></div>
+                <div class="d-info-row"><span>E-mail</span><strong id="privacyEmail">-</strong></div>
+                <div class="d-info-row"><span>Conta criada em</span><strong id="privacyCreatedAt">-</strong></div>
+                <div class="d-info-row"><span>Tipo de conta</span><strong id="privacyRole">-</strong></div>
+              </article>
+
+              <article class="d-card">
+                <div class="d-card__head">
+                  <div><span class="d-eyebrow">Armazenamento</span><h2>O que guardamos para você</h2><p>Dados usados para personalizar sua experiência.</p></div>
+                  <span class="d-card__mark"><span class="dashboard-icon-slot" data-icon="shield"></span></span>
+                </div>
+                <div id="privacyStorage"></div>
+              </article>
+            </div>
+
+            <article class="d-card" id="privacyManageCard">
+              <div class="d-card__head">
+                <div><span class="d-eyebrow">Ações disponíveis</span><h2>Gerenciar conta</h2></div>
+              </div>
+              <div class="d-form-actions">
+                <button class="d-btn d-btn--ghost" type="button" id="editProfileBtn"><span class="dashboard-icon-slot" data-icon="edit"></span> Editar meus dados</button>
+                <button class="d-btn d-btn--ghost" type="button" id="changePasswordBtn"><span class="dashboard-icon-slot" data-icon="key"></span> Alterar senha</button>
+                <button class="d-btn d-btn--danger" type="button" id="deleteAccountBtn"><span class="dashboard-icon-slot" data-icon="trash"></span> Excluir minha conta</button>
+              </div>
+
+              <div id="profileEditPanel" hidden style="margin-top:1.1rem">
+                <form class="d-form d-form--inline" id="profileNameForm">
+                  <div class="d-field">
+                    <label for="profileNameInput">Nome completo</label>
+                    <input class="d-input" id="profileNameInput" name="name" type="text" maxlength="100" placeholder="Seu nome completo" required>
+                  </div>
+                  <div class="d-form-actions">
+                    <button class="d-btn d-btn--primary" type="submit">Salvar nome</button>
+                    <button class="d-btn d-btn--quiet" type="button" id="cancelProfileEdit">Cancelar</button>
+                  </div>
+                </form>
+                <p class="d-error" id="profileNameError" hidden></p>
+                <p class="d-success" id="profileNameSuccess" hidden></p>
+              </div>
+
+              <div id="passwordEditPanel" hidden style="margin-top:1.1rem">
+                <form class="d-form d-form--inline" id="passwordForm">
+                  <div class="d-field">
+                    <label for="currentPassword">Senha atual</label>
+                    <input class="d-input" id="currentPassword" name="currentPassword" type="password" autocomplete="current-password" required>
+                  </div>
+                  <div class="d-field">
+                    <label for="newPassword">Nova senha</label>
+                    <input class="d-input" id="newPassword" name="newPassword" type="password" minlength="6" autocomplete="new-password" required>
+                  </div>
+                  <div class="d-field">
+                    <label for="confirmPassword">Confirmar nova senha</label>
+                    <input class="d-input" id="confirmPassword" name="confirmPassword" type="password" minlength="6" autocomplete="new-password" required>
+                  </div>
+                  <div class="d-form-actions">
+                    <button class="d-btn d-btn--primary" type="submit">Salvar senha</button>
+                    <button class="d-btn d-btn--quiet" type="button" id="cancelPasswordEdit">Cancelar</button>
+                  </div>
+                </form>
+                <p class="d-error" id="passwordError" hidden></p>
+                <p class="d-success" id="passwordSuccess" hidden></p>
+              </div>
+
+              <p class="d-muted" style="margin-top:1rem">A exclusão da conta é permanente e não pode ser desfeita. Todos os seus dados associados serão removidos.</p>
+            </article>
+
+            <article class="d-card">
+              <div class="d-card__head">
+                <div><span class="d-eyebrow">Transparência</span><h2>Como a SYNARA aprende com você</h2><p>Resumo honesto do que já personaliza sua experiência.</p></div>
+                <span class="d-card__mark"><span class="dashboard-icon-slot" data-icon="sparkle"></span></span>
+              </div>
+              <div id="privacyLearning"></div>
+              <div class="d-form-actions" style="margin-top:1rem">
+                <button class="d-btn d-btn--ghost" type="button" id="resetLearningProfileBtn">
+                  <span class="dashboard-icon-slot" data-icon="reset"></span> Redefinir meu perfil de aprendizagem
+                </button>
+              </div>
+              <p class="d-help" style="margin-top:.5rem">Redefinir limpa as estatísticas de estratégia guardadas no seu perfil. O histórico já enviado à Mentora pode permanecer no servidor.</p>
+            </article>
+
+          </div>
+        </section>
+
+
+
+
+
+
+
+        <!-- ===================== CONFIGURAÇÕES ===================== -->
+        <section class="dashboard-view" data-view="configuracoes" aria-label="Configurações">
+          <div class="dashboard-view__head">
+            <div>
+              <span class="d-eyebrow">Sua conta</span>
+              <h1>Configurações</h1>
+              <p>Preferências de aprendizagem, segurança e privacidade em um só lugar.</p>
+            </div>
+          </div>
+
+          <div class="d-stack">
+            <div class="d-grid d-grid--2">
+              <article class="d-card">
+                <div class="d-card__head">
+                  <div><span class="d-eyebrow">Conta</span><h2>Identidade SYNARA</h2></div>
+                  <span class="dashboard-avatar is-large" id="settingsAvatar">A</span>
+                </div>
+                <div class="d-info-row"><span>Nome</span><strong id="settingsName">-</strong></div>
+                <div class="d-info-row"><span>E-mail</span><strong id="settingsEmail">-</strong></div>
+                <div class="d-info-row"><span>Tipo de conta</span><strong id="settingsRole">-</strong></div>
+                <div class="d-info-row"><span>Sincronização</span><strong>Dados salvos na sua conta</strong></div>
+                <div class="d-form-actions" style="margin-top:1rem">
+                  <button class="d-btn d-btn--ghost d-btn--sm" type="button" data-goto="privacidade">Editar dados da conta</button>
+                </div>
+              </article>
+
+              <article class="d-card">
+                <div class="d-card__head">
+                  <div><span class="d-eyebrow">Segurança</span><h2>Acesso protegido</h2><p>Sua sessão usa autenticação por cookie HTTP-only.</p></div>
+                  <span class="d-badge d-badge--success"><span class="dashboard-icon-slot" data-icon="shield"></span> Ativo</span>
+                </div>
+                <div class="d-form-actions">
+                  <button class="d-btn d-btn--ghost" type="button" id="settingsChangePassword">Alterar senha</button>
+                  <button class="d-btn d-btn--ghost" type="button" id="settingsLogout">
+                    <span class="dashboard-icon-slot" data-icon="logout"></span> Sair da conta
+                  </button>
+                </div>
+                <div class="d-form-actions" style="margin-top:.8rem">
+                  <a class="d-btn d-btn--quiet d-btn--sm" href="privacy.html" target="_blank" rel="noopener">
+                    <span class="dashboard-icon-slot" data-icon="document"></span> Política de privacidade
+                  </a>
+                </div>
+              </article>
+            </div>
+
+            <article class="d-card">
+              <div class="d-card__head">
+                <div><span class="d-eyebrow">Preferências</span><h2>Como você prefere aprender</h2><p>Estas escolhas orientam a estratégia padrão da Mentora. Você pode mudar quando quiser.</p></div>
+                <span class="d-card__mark"><span class="dashboard-icon-slot" data-icon="sparkle"></span></span>
+              </div>
+              <form class="d-form" id="learningPrefsForm">
+                <div class="d-grid d-grid--2">
+                  <div class="d-field">
+                    <label for="prefStyle">Formato de explicação preferido</label>
+                    <select class="d-select" id="prefStyle" name="explanationStyle">
+                      <option value="">Sem preferência (deixe a SYNARA descobrir)</option>
+                      <option value="explain">Passo a passo</option>
+                      <option value="summary">Resumo curto</option>
+                      <option value="understand">Perguntas para eu pensar</option>
+                      <option value="practice">Exemplos e prática</option>
+                      <option value="review">Revisão guiada</option>
+                    </select>
+                  </div>
+                  <div class="d-field">
+                    <label for="prefPace">Ritmo preferido</label>
+                    <select class="d-select" id="prefPace" name="pace">
+                      <option value="">Sem preferência</option>
+                      <option value="micro">Em pequenas etapas</option>
+                      <option value="detalhado">Explicações completas</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="d-field">
+                  <span style="font-size:.78rem;font-weight:700">Formatos que costumam ajudar você</span>
+                  <div class="d-switch-grid" id="prefFormats">
+                    <label class="d-choice"><input type="checkbox" name="formats" value="exemplos"> Exemplos</label>
+                    <label class="d-choice"><input type="checkbox" name="formats" value="visual"> Recursos visuais</label>
+                    <label class="d-choice"><input type="checkbox" name="formats" value="interacao"> Interação e desafios</label>
+                    <label class="d-choice"><input type="checkbox" name="formats" value="analogias"> Analogias</label>
+                    <label class="d-choice"><input type="checkbox" name="formats" value="narrativas"> Histórias e narrativas</label>
+                    <label class="d-choice"><input type="checkbox" name="formats" value="perguntas"> Perguntas guiadas</label>
+                    <label class="d-choice"><input type="checkbox" name="formats" value="mapas"> Mapas e esquemas</label>
+                    <label class="d-choice"><input type="checkbox" name="formats" value="pratica"> Exercícios com feedback</label>
+                  </div>
+                </div>
+                <div class="d-form-actions">
+                  <button class="d-btn d-btn--primary" type="submit">Salvar preferências</button>
+                  <span class="d-success" id="prefsSuccess" hidden>Preferências salvas.</span>
+                  <span class="d-error" id="prefsError" hidden></span>
+                </div>
+              </form>
+            </article>
+
+            <article class="d-card">
+              <div class="d-card__head">
+                <div><span class="d-eyebrow">Privacidade</span><h2>Seus dados e controle</h2><p>Gerencie o que a SYNARA guarda e como usa para personalizar.</p></div>
+                <span class="d-card__mark"><span class="dashboard-icon-slot" data-icon="shield"></span></span>
+              </div>
+              <div class="d-form-actions">
+                <button class="d-btn d-btn--ghost" type="button" data-goto="privacidade">
+                  <span class="dashboard-icon-slot" data-icon="shield"></span> Gerenciar privacidade e dados
+                </button>
+              </div>
+            </article>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <div class="d-toast" id="toast" role="status" aria-live="polite">
+    <span class="dashboard-icon-slot" data-icon="check"></span>
+    <span id="toastText"></span>
+  </div>
+
+  <div class="d-modal" id="appModal" role="dialog" aria-modal="true" aria-labelledby="appModalTitle" hidden>
+    <button class="d-modal__backdrop" type="button" id="appModalBackdrop" aria-label="Fechar"></button>
+    <div class="d-modal__panel">
+      <button class="dashboard-icon-btn d-modal__close" type="button" id="appModalClose" aria-label="Fechar">
+        <span class="dashboard-icon-slot" data-icon="close"></span>
+      </button>
+      <h2 id="appModalTitle">Confirmação</h2>
+      <p id="appModalMessage"></p>
+      <div class="d-field" id="appModalField" hidden style="margin-top:1rem">
+        <label for="appModalInput" id="appModalInputLabel">Confirmação</label>
+        <input class="d-input" id="appModalInput" type="text">
+      </div>
+      <p class="d-error" id="appModalError" hidden></p>
+      <div class="d-modal__actions">
+        <button class="d-btn d-btn--quiet" type="button" id="appModalCancel">Cancelar</button>
+        <button class="d-btn d-btn--primary" type="button" id="appModalConfirm">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="auth.js"></script>
+  <script src="dashboard.js"></script>
+</body>
+</html>
+

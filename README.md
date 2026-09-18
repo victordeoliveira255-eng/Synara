@@ -181,11 +181,29 @@ ALLOWED_ORIGINS=https://seu-dominio.com
 
 - `server.js`: API Node/Express com autenticação, roles e painel admin
 - `auth.js`: Sistema de autenticação frontend
-- `dashboard.js` e `dashboard.html`: Central de estudos dos usuários
+- `dashboard.html` + `central.css` + `dashboard.js`: Central de Estudos reconstruída (sidebar com 2 estados, 9 páginas, Mentora em página própria)
 - `admin.html`: Painel administrativo protegido
-- `script.js`: Interface de chat com a mentora IA
+- `script.js`: Interface de chat da mentora na página pública
 - `package.json`: Dependências (Express, PostgreSQL, SQLite, JWT, bcryptjs, OpenAI, etc)
 - `.env.example`: Modelo de variáveis de ambiente
+
+### Central de Estudos (área autenticada)
+
+- Arquitetura: sidebar + main irmãos; sidebar expandida/recolhida (persistida em `localStorage`) e drawer no mobile.
+- Páginas: Início, Mentora, Minhas Matérias, Cronograma, Metas, Progresso, Bem-estar, Privacidade e dados, Configurações.
+- Ícones: SVG único e consistente (sem emoji/Unicode como ícone).
+- CSS isolado em `central.css`, escopado em `.dashboard-page` (o `dashboard.css` permanece exclusivo do `admin.html`).
+
+### Personalização real da aprendizagem
+
+A Mentora é o motor de personalização e usa apenas o que o backend já oferece:
+
+- `POST /api/chat` com `mode` (explain/understand/summary/practice/review/tip/exam) — o backend altera de fato a forma de explicar.
+- `PUT /api/user/profile` — guarda o `learningProfile` (estratégias usadas, resultados e preferências) no perfil do usuário.
+- `POST /api/mentor/memory` — registra cada uso de estratégia e o feedback ("Ajudou" / "Não ajudou") em `user_memories`.
+- `auth.recordExercise` — registra tentativas/acertos/erros por matéria e conteúdo (`contentStats`).
+- Estratégia automática: escolhe o formato com melhor resultado para o estudante; sem histórico, usa a preferência declarada ou explora um novo formato; com transparência ("usamos X porque funcionou melhor para você").
+
 
 ## Observações
 
