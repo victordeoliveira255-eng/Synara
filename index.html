@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SYNARA | Bem-estar &amp; Aprendizado</title>
+  <title>SYNARA | Bem-estar &amp; Educação</title>
   <meta name="description" content="SYNARA une planejamento, acompanhamento e uma mentora por IA para ajudar você a aprender melhor, com equilíbrio.">
   <link rel="icon" href="assets/icon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,7 +13,7 @@
 </head>
 <body>
   <header class="site-header" id="siteHeader">
-    <a class="brand" href="#inicio" aria-label="SYNARA, início"><img class="brand-icon" src="assets/icon.svg" alt=""><span class="brand-text"><strong>SYNARA</strong><small>Bem-estar &amp; Aprendizado</small></span></a>
+    <a class="brand" href="#inicio" aria-label="SYNARA, início"><img class="brand-icon" src="assets/icon.svg" alt=""><span class="brand-text"><strong>SYNARA</strong><small>Bem-estar &amp; Educação</small></span></a>
     <button class="menu-toggle" id="menuToggle" type="button" aria-label="Abrir menu" aria-controls="mainNav" aria-expanded="false">☰</button>
     <nav class="main-nav" id="mainNav" aria-label="Navegação principal">
       <a href="#inicio">Início</a><a href="#como-funciona">Como funciona</a><a href="#recursos">Recursos</a><a href="#bem-estar">Bem-estar</a><a href="#ia-chat">Mentora</a>
@@ -34,7 +34,7 @@
     <section class="synthesis-section"><div class="synthesis-copy"><span class="eyebrow">A nossa ideia</span><h2>Educação e tecnologia podem caminhar junto com o <em>bem-estar.</em></h2></div><div class="formula"><div><span>📚</span><strong>Estudos</strong></div><b>+</b><div><span>✦</span><strong>Inteligência</strong></div><b>+</b><div><span>◎</span><strong>Organização</strong></div><b>+</b><div><span>♡</span><strong>Bem-estar</strong></div><b>=</b><div class="formula-result"><img src="assets/icon.svg" alt=""><strong>SYNARA</strong></div></div></section>
     <section class="final-cta"><div><span class="eyebrow">Seu próximo capítulo</span><h2>Seu próximo passo<br><em>começa aqui.</em></h2><p>Organize seus estudos, acompanhe sua evolução e encontre um ritmo que funcione para você.</p></div><a id="finalCta" class="button-light" href="login.html">Começar gratuitamente <span>→</span></a></section>
   </main>
-  <footer class="footer"><div class="footer-main"><a class="brand" href="#inicio"><img class="brand-icon" src="assets/icon.svg" alt=""><span class="brand-text"><strong>SYNARA</strong><small>Bem-estar &amp; Aprendizado</small></span></a><p>Educação que cuida.<br>Tecnologia que acompanha.</p><nav aria-label="Links do rodapé"><a href="#inicio">Início</a><a href="#como-funciona">Como funciona</a><a href="#recursos">Recursos</a><a href="#ia-chat">Mentora</a><a href="#bem-estar">Bem-estar</a></nav></div><div class="footer-bottom"><span>© 2026 SYNARA | Bem-estar &amp; Aprendizado</span><a href="login.html">Acessar minha conta <span>→</span></a></div></footer>
+  <footer class="footer"><div class="footer-main"><a class="brand" href="#inicio"><img class="brand-icon" src="assets/icon.svg" alt=""><span class="brand-text"><strong>SYNARA</strong><small>Bem-estar &amp; Educação</small></span></a><p>Educação que cuida.<br>Tecnologia que acompanha.</p><nav aria-label="Links do rodapé"><a href="#inicio">Início</a><a href="#como-funciona">Como funciona</a><a href="#recursos">Recursos</a><a href="#ia-chat">Mentora</a><a href="#bem-estar">Bem-estar</a></nav></div><div class="footer-bottom"><span>© 2026 SYNARA | Bem-estar &amp; Educação</span><a href="login.html">Acessar minha conta <span>→</span></a></div></footer>
   <script src="auth.js"></script><script src="script.js"></script>
   <script>
     const menuToggle=document.getElementById('menuToggle'),mainNav=document.getElementById('mainNav');menuToggle?.addEventListener('click',()=>{const open=mainNav.classList.toggle('is-open');menuToggle.setAttribute('aria-expanded',String(open));menuToggle.setAttribute('aria-label',open?'Fechar menu':'Abrir menu')});mainNav?.querySelectorAll('a').forEach(link=>link.addEventListener('click',()=>{mainNav.classList.remove('is-open');menuToggle?.setAttribute('aria-expanded','false')}));document.querySelectorAll('.subject-option').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('.subject-option').forEach(item=>item.classList.remove('active'));button.classList.add('active');window.synaraSubject=button.dataset.subject||'Geral'}));const finalCta=document.getElementById('finalCta');if(window.auth?.getCurrentUser()){finalCta.href='dashboard.html';finalCta.innerHTML='Ir para meu dashboard <span>→</span>'}const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting)entry.target.classList.add('is-visible')}),{threshold:.12});document.querySelectorAll('.pillar-card,.step,.feature-item,.progress-preview,.wellbeing-cards article').forEach(element=>{element.classList.add('scroll-reveal');observer.observe(element)});
