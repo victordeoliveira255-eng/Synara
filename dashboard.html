@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Central de Estudos da SYNARA: planejamento, progresso e uma Mentora por IA que se adapta a como você aprende.">
   <title>Central de Estudos | SYNARA</title>
-  <link rel="icon" href="assets/icon.svg">
+  <link rel="icon" href="assets/icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
@@ -18,7 +18,7 @@
   <div class="dashboard-shell" id="dashboardShell">
     <aside class="dashboard-sidebar" id="dashboardSidebar" aria-label="Navegação da Central de Estudos">
       <div class="dashboard-sidebar__brand">
-        <img src="assets/icon.svg" alt="">
+        <img src="assets/synara-mark.png" alt="">
         <span class="brand-copy"><strong>SYNARA</strong><small>Bem-estar &amp; Educação</small></span>
       </div>
       <button class="dashboard-sidebar__toggle" id="sidebarToggle" type="button" aria-label="Recolher menu lateral" aria-expanded="true" aria-controls="dashboardShell">
@@ -124,6 +124,9 @@
               <p id="homeSubtitle">Vamos continuar de onde você parou.</p>
             </div>
             <div class="dashboard-view__head-actions">
+              <button class="d-btn d-btn--ghost" type="button" data-action="pomodoro-open">
+                <span class="dashboard-icon-slot" data-icon="timer"></span> Começar sessão de foco
+              </button>
               <button class="d-btn d-btn--accent" type="button" data-goto="mentora">
                 <span class="dashboard-icon-slot" data-icon="mentor"></span> Falar com a Mentora
               </button>
@@ -373,6 +376,9 @@
               </div>
               <span class="d-mentor__status"><i></i> Online</span>
               <div class="d-mentor__head-actions">
+                <button class="d-btn d-btn--ghost d-btn--sm" type="button" data-action="pomodoro-from-mentor">
+                  <span class="dashboard-icon-slot" data-icon="timer"></span> Iniciar bloco de foco
+                </button>
                 <button class="d-btn d-btn--ghost d-btn--sm" type="button" id="mentorNewChat">
                   <span class="dashboard-icon-slot" data-icon="reset"></span> Nova conversa
                 </button>
@@ -455,23 +461,106 @@
 
               <article class="d-card">
                 <div class="d-card__head">
-                  <div><span class="d-eyebrow">Foco</span><h2>Bloco de estudo com pausa</h2><p>Ao concluir, registramos uma sessão de estudo real no seu progresso.</p></div>
-                  <span class="d-card__mark"><span class="dashboard-icon-slot" data-icon="timer"></span></span>
+                  <div><span class="d-eyebrow">Ritmo</span><h2>Orientação de equilíbrio</h2><p>Baseada no seu uso real do Pomodoro.</p></div>
+                  <span class="d-card__mark"><span class="dashboard-icon-slot" data-icon="balance"></span></span>
                 </div>
-                <div class="d-row" style="align-items:center;gap:1rem">
-                  <strong class="d-stat__value" id="focusTimerValue" style="font-size:2.4rem">25:00</strong>
-                  <div class="d-form-actions">
-                    <button class="d-btn d-btn--primary" type="button" id="focusStart"><span class="dashboard-icon-slot" data-icon="play"></span> Iniciar 25 min</button>
-                    <button class="d-btn d-btn--quiet" type="button" id="focusReset" hidden>Reiniciar</button>
-                  </div>
-                </div>
-                <div class="d-field" style="margin-top:.8rem">
-                  <label for="focusSubject">Matéria da sessão</label>
-                  <select class="d-select" id="focusSubject"></select>
-                </div>
-                <p class="d-muted" id="focusNote" style="margin-top:.6rem">Dica: 25 minutos de foco seguidos de 5 de pausa ajudam a manter a atenção.</p>
+                <div id="wellbeingOrientation"></div>
               </article>
             </div>
+
+            <article class="d-card d-pomodoro" id="pomodoro" data-state="idle" aria-label="Pomodoro">
+              <div class="d-card__head">
+                <div>
+                  <span class="d-eyebrow">Foco e pausa</span>
+                  <h2>Pomodoro</h2>
+                  <p>Blocos reais de foco com pausas. A sessão só é registrada quando um bloco de foco é concluído integralmente.</p>
+                </div>
+                <span class="d-badge d-badge--navy" id="pomodoroState">Pronto para começar</span>
+              </div>
+
+              <div class="d-pomodoro__body">
+                <div class="d-pomodoro__ring">
+                  <svg viewBox="0 0 200 200" aria-hidden="true">
+                    <circle class="d-pomodoro__track" cx="100" cy="100" r="88"></circle>
+                    <circle class="d-pomodoro__progress" id="pomodoroProgress" cx="100" cy="100" r="88"
+                            stroke-dasharray="552.9" stroke-dashoffset="0"></circle>
+                  </svg>
+                  <div class="d-pomodoro__center">
+                    <strong id="pomodoroTime">25:00</strong>
+                    <span id="pomodoroPhase">Foco</span>
+                  </div>
+                </div>
+
+                <div class="d-pomodoro__panel">
+                  <div class="d-field">
+                    <label for="pomodoroSubject">Matéria da sessão</label>
+                    <select class="d-select" id="pomodoroSubject"></select>
+                  </div>
+                  <div class="d-field">
+                    <label for="pomodoroTopic">Conteúdo (opcional)</label>
+                    <input class="d-input" id="pomodoroTopic" type="text" maxlength="120" placeholder="Ex.: Funções do 2º grau">
+                  </div>
+
+                  <div class="d-pomodoro__cycles">
+                    <span class="d-eyebrow">Ciclos concluídos nesta sessão</span>
+                    <div class="d-pomodoro__dots" id="pomodoroCycles"></div>
+                    <small class="d-help" id="pomodoroCycleNote"></small>
+                  </div>
+
+                  <div class="d-form-actions">
+                    <button class="d-btn d-btn--primary" type="button" id="pomodoroStart">
+                      <span class="dashboard-icon-slot" data-icon="play"></span> Iniciar foco
+                    </button>
+                    <button class="d-btn d-btn--ghost" type="button" id="pomodoroPause" hidden>
+                      <span class="dashboard-icon-slot" data-icon="pause"></span> Pausar
+                    </button>
+                    <button class="d-btn d-btn--accent" type="button" id="pomodoroResume" hidden>
+                      <span class="dashboard-icon-slot" data-icon="play"></span> Continuar
+                    </button>
+                    <button class="d-btn d-btn--quiet" type="button" id="pomodoroSkip" hidden>
+                      <span class="dashboard-icon-slot" data-icon="chevron-right"></span> Pular pausa
+                    </button>
+                    <button class="d-btn d-btn--quiet" type="button" id="pomodoroReset" hidden>
+                      <span class="dashboard-icon-slot" data-icon="reset"></span> Reiniciar
+                    </button>
+                    <button class="d-btn d-btn--quiet" type="button" id="pomodoroStop" hidden>
+                      <span class="dashboard-icon-slot" data-icon="stop"></span> Encerrar
+                    </button>
+                  </div>
+
+                  <p class="d-help" id="pomodoroHint" role="status" aria-live="polite">Selecione uma matéria para começar.</p>
+                </div>
+              </div>
+
+              <div class="d-pomodoro__stats" id="pomodoroStats"></div>
+
+              <details class="d-pomodoro__config">
+                <summary>Configurações do Pomodoro</summary>
+                <form class="d-form d-form--inline" id="pomodoroConfigForm">
+                  <div class="d-field">
+                    <label for="pomodoroFocusMinutes">Foco (min)</label>
+                    <input class="d-input" id="pomodoroFocusMinutes" type="number" min="5" max="90" step="1">
+                  </div>
+                  <div class="d-field">
+                    <label for="pomodoroShortBreak">Pausa curta (min)</label>
+                    <input class="d-input" id="pomodoroShortBreak" type="number" min="1" max="30" step="1">
+                  </div>
+                  <div class="d-field">
+                    <label for="pomodoroLongBreak">Pausa longa (min)</label>
+                    <input class="d-input" id="pomodoroLongBreak" type="number" min="5" max="60" step="1">
+                  </div>
+                  <div class="d-field">
+                    <label for="pomodoroCyclesBefore">Ciclos antes da pausa longa</label>
+                    <input class="d-input" id="pomodoroCyclesBefore" type="number" min="2" max="8" step="1">
+                  </div>
+                  <div class="d-form-actions">
+                    <button class="d-btn d-btn--primary" type="submit">Salvar configurações</button>
+                    <span class="d-success" id="pomodoroConfigSaved" hidden>Configurações salvas.</span>
+                  </div>
+                </form>
+                <p class="d-help" style="margin-top:.6rem">As configurações ficam salvas no seu perfil. Elas são aplicadas ao próximo bloco.</p>
+              </details>
+            </article>
 
             <div class="d-grid d-grid--3" id="wellbeingTips"></div>
           </div>
@@ -724,6 +813,7 @@
     </div>
   </div>
 
+  <script src="icons.js"></script>
   <script src="auth.js"></script>
   <script src="dashboard.js"></script>
 </body>

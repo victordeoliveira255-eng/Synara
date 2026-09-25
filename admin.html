@@ -5,663 +5,292 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Painel administrativo da SYNARA.">
   <title>Painel Administrativo | SYNARA</title>
-  <link rel="icon" href="assets/icon.svg">
+  <link rel="icon" href="assets/icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="dashboard.css">
-  <style>
-    :root {
-      --admin-accent: #e74c3c;
-    }
-
-    .admin-header-banner {
-      background: linear-gradient(135deg, #073b5c 0%, #00aeb1 100%);
-      color: white;
-      padding: 1.5rem;
-      border-radius: 12px;
-      margin-bottom: 1.5rem;
-    }
-
-    .admin-header-banner h1 {
-      color: white;
-      margin: 0;
-    }
-
-    .admin-section-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .admin-stat-card {
-      background: white;
-      border: 1px solid var(--dash-border);
-      border-radius: 12px;
-      padding: 1.5rem;
-      text-align: center;
-      box-shadow: var(--dash-shadow);
-    }
-
-    .admin-stat-card strong {
-      display: block;
-      font-size: 2rem;
-      color: var(--dash-navy);
-      margin: 0.5rem 0;
-    }
-
-    .admin-stat-card span {
-      color: var(--dash-muted);
-      font-size: 0.9rem;
-    }
-
-    .admin-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 1rem;
-    }
-
-    .admin-table th {
-      background: var(--dash-bg);
-      color: var(--dash-navy);
-      padding: 1rem;
-      text-align: left;
-      font-weight: 700;
-      border-bottom: 2px solid var(--dash-border);
-    }
-
-    .admin-table td {
-      padding: 1rem;
-      border-bottom: 1px solid var(--dash-border);
-      color: var(--dash-text);
-    }
-
-    .admin-table tr:hover {
-      background: var(--dash-bg);
-    }
-
-    .admin-empty-state {
-      text-align: center;
-      padding: 2rem;
-      color: var(--dash-muted);
-    }
-
-    .admin-loading {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 2rem;
-      gap: 0.5rem;
-    }
-
-    .admin-loading::after {
-      content: '';
-      animation: spinner 0.6s linear infinite;
-    }
-
-    @keyframes spinner {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    .badge {
-      display: inline-block;
-      padding: 0.25rem 0.75rem;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: 600;
-    }
-
-    .badge-admin {
-      background: #e8f4f1;
-      color: var(--dash-navy);
-    }
-
-    .badge-user {
-      background: #f0f8fb;
-      color: var(--dash-muted);
-    }
-
-    .role-select {
-      padding: 0.5rem;
-      border: 1px solid var(--dash-border);
-      border-radius: 6px;
-      background: white;
-      color: var(--dash-text);
-      cursor: pointer;
-    }
-
-    .admin-actions {
-      display: flex;
-      gap: 0.5rem;
-      justify-content: flex-end;
-    }
-
-    .action-btn {
-      padding: 0.5rem 1rem;
-      border: 1px solid var(--dash-border);
-      border-radius: 6px;
-      background: white;
-      color: var(--dash-text);
-      cursor: pointer;
-      font-size: 0.85rem;
-      transition: all 0.2s;
-    }
-
-    .action-btn:hover {
-      background: var(--dash-bg);
-      border-color: var(--dash-teal);
-      color: var(--dash-teal);
-    }
-
-    .health-status {
-      padding: 1rem;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      margin-bottom: 1rem;
-    }
-
-    .health-status.ok {
-      background: #e8f8f6;
-      color: #27ae60;
-    }
-
-    .health-status.error {
-      background: #fadbd8;
-      color: #e74c3c;
-    }
-
-    .health-status.unknown {
-      background: #fef9e7;
-      color: #f39c12;
-    }
-
-    .health-indicator {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      animation: pulse 2s infinite;
-    }
-
-    .health-status.ok .health-indicator {
-      background: #27ae60;
-    }
-
-    .health-status.error .health-indicator {
-      background: #e74c3c;
-    }
-
-    .health-status.unknown .health-indicator {
-      background: #f39c12;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.6; }
-    }
-
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.5);
-      z-index: 1000;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .modal.visible {
-      display: flex;
-    }
-
-    .modal-content {
-      background: white;
-      border-radius: 12px;
-      padding: 2rem;
-      max-width: 500px;
-      width: 90%;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-    }
-
-    .modal-content h2 {
-      margin-top: 0;
-    }
-
-    .modal-actions {
-      display: flex;
-      gap: 1rem;
-      margin-top: 1.5rem;
-      justify-content: flex-end;
-    }
-
-    @media (max-width: 768px) {
-      .admin-section-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-
-      .admin-table {
-        font-size: 0.9rem;
-      }
-
-      .admin-table td, .admin-table th {
-        padding: 0.75rem 0.5rem;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="admin.css">
 </head>
-<body class="dashboard-page">
-  <header class="dashboard-header">
-    <a class="brand" href="index.html" aria-label="SYNARA, voltar ao início">
-      <img class="brand-icon" src="assets/icon.svg" alt="">
-      <span class="brand-text"><strong>SYNARA</strong><small>Bem-estar &amp; Aprendizado</small></span>
-    </a>
-    <nav class="top-nav" aria-label="Navegação principal">
-      <a class="top-nav-link" href="/dashboard.html">Voltar ao Dashboard</a>
-      <button class="profile-trigger" id="profileTrigger" aria-expanded="false" aria-controls="profileMenu">
-        <span class="avatar avatar-small" id="headerAvatar">A</span><span id="headerName">Admin</span><span aria-hidden="true">⌄</span>
-      </button>
-      <div class="profile-menu" id="profileMenu" hidden>
-        <span id="profileEmail"></span>
-        <button id="headerLogout" type="button">Sair da conta</button>
-      </div>
-    </nav>
-    <button class="menu-toggle" id="menuToggle" type="button" aria-label="Abrir menu" aria-expanded="false">☰</button>
-  </header>
+<body class="admin-page">
+  <button class="admin-backdrop" id="sidebarBackdrop" type="button" aria-label="Fechar menu" hidden></button>
 
-  <div class="dashboard-layout">
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar-heading"><span class="avatar" id="sidebarAvatar">A</span><div><strong>Administrador</strong><small>Gerenciar plataforma</small></div></div>
-      <nav class="sidebar-nav" aria-label="Painel administrativo">
-        <button class="sidebar-link active" data-section="overview"><span>▣</span>Visão Geral</button>
-        <button class="sidebar-link" data-section="users"><span>👥</span>Usuários</button>
-        <button class="sidebar-link" data-section="health"><span>⚙</span>Sistema</button>
-        <button class="sidebar-link" data-section="logs"><span>📋</span>Logs</button>
-        <button class="sidebar-link" data-section="bncc"><span>📚</span>BNCC</button>
+  <div class="admin-shell" id="adminShell">
+    <aside class="admin-sidebar" id="adminSidebar" aria-label="Navegação do painel administrativo">
+      <div class="admin-sidebar__brand">
+        <img src="assets/icon.png" alt="">
+        <span class="brand-copy"><strong>SYNARA</strong><small>Painel administrativo</small></span>
+      </div>
+      <span class="admin-sidebar__badge"><span class="dashboard-icon-slot" data-icon="shield"></span> Acesso restrito</span>
+      <button class="admin-sidebar__toggle" id="sidebarToggle" type="button" aria-label="Recolher menu lateral" aria-expanded="true" aria-controls="adminShell">
+        <span class="dashboard-icon-slot" data-icon="chevron-left"></span>
+      </button>
+
+      <nav class="admin-sidebar__nav" aria-label="Seções administrativas">
+        <button class="admin-nav-link" type="button" data-section="overview" aria-label="Visão geral">
+          <span class="dashboard-icon-slot" data-icon="chart"></span><span class="nav-label">Visão geral</span>
+        </button>
+        <button class="admin-nav-link" type="button" data-section="users" aria-label="Usuários">
+          <span class="dashboard-icon-slot" data-icon="users"></span><span class="nav-label">Usuários</span>
+        </button>
+        <button class="admin-nav-link" type="button" data-section="mentor" aria-label="Mentora">
+          <span class="dashboard-icon-slot" data-icon="mentor"></span><span class="nav-label">Mentora</span>
+        </button>
+        <button class="admin-nav-link" type="button" data-section="health" aria-label="Sistema">
+          <span class="dashboard-icon-slot" data-icon="server"></span><span class="nav-label">Sistema</span>
+        </button>
+        <button class="admin-nav-link" type="button" data-section="logs" aria-label="Logs">
+          <span class="dashboard-icon-slot" data-icon="list"></span><span class="nav-label">Logs</span>
+        </button>
+        <button class="admin-nav-link" type="button" data-section="bncc" aria-label="BNCC">
+          <span class="dashboard-icon-slot" data-icon="layers"></span><span class="nav-label">BNCC</span>
+        </button>
       </nav>
-      <div class="sidebar-note"><strong>Acesso restrito</strong><span>Apenas administradores podem acessar este painel.</span></div>
+
+      <div class="admin-sidebar__footer">
+        <div class="admin-sidebar__note">
+          <strong>Acesso restrito</strong>
+          Somente administradores. Todas as ações são registradas nos logs.
+        </div>
+      </div>
     </aside>
 
-    <main class="dashboard-main">
-      <div id="statusMessage" class="status-message" role="status" aria-live="polite"></div>
-
-      <!-- Overview Section -->
-      <section class="app-section active" data-view="overview">
-        <div class="admin-header-banner">
-          <h1>Painel Administrativo</h1>
-          <p>Gerenciar usuários, conteúdo e monitorar o sistema.</p>
+    <div class="admin-main">
+      <header class="admin-topbar">
+        <button class="admin-icon-btn admin-menu-toggle" id="menuToggle" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="adminSidebar">
+          <span class="dashboard-icon-slot" data-icon="menu"></span>
+        </button>
+        <div class="admin-topbar__context">
+          <span class="admin-topbar__eyebrow">Painel administrativo</span>
+          <span class="admin-topbar__title" id="topbarTitle">Visão geral</span>
         </div>
-
-        <div class="admin-section-grid" id="statsGrid">
-          <div class="admin-stat-card">
-            <span>Total de Usuários</span>
-            <strong id="statTotalUsers">-</strong>
-          </div>
-          <div class="admin-stat-card">
-            <span>Usuários Ativos</span>
-            <strong id="statActiveUsers">-</strong>
-          </div>
-          <div class="admin-stat-card">
-            <span>Interações da IA</span>
-            <strong id="statMentorInteractions">-</strong>
-          </div>
-          <div class="admin-stat-card">
-            <span>Conteúdos</span>
-            <strong id="statContentItems">-</strong>
-          </div>
-        </div>
-
-        <div class="panel">
-          <div class="panel-heading">
-            <h2>Status do Sistema</h2>
-          </div>
-          <div id="systemStatus">
-            <div class="admin-loading">Carregando status do sistema...</div>
+        <div class="admin-topbar__actions">
+          <a class="a-btn a-btn--ghost a-btn--sm" href="/dashboard.html">
+            <span class="dashboard-icon-slot" data-icon="home"></span> Voltar à Central
+          </a>
+          <div class="admin-account">
+            <button class="admin-account__trigger" id="accountTrigger" type="button" aria-expanded="false" aria-controls="accountMenu">
+              <span class="admin-avatar" id="accountAvatar">A</span>
+              <span class="admin-account__meta"><strong id="accountName">Administrador</strong><small>Conta administrativa</small></span>
+              <span class="dashboard-icon-slot" data-icon="chevron-down"></span>
+            </button>
+            <div class="admin-menu" id="accountMenu" hidden>
+              <div class="admin-menu__head">
+                <strong id="accountMenuName">Administrador</strong>
+                <span id="accountMenuEmail">-</span>
+              </div>
+              <button class="admin-menu__item is-danger" type="button" id="logoutButton">
+                <span class="dashboard-icon-slot" data-icon="logout"></span> Sair da conta
+              </button>
+            </div>
           </div>
         </div>
-      </section>
+      </header>
 
-      <!-- Users Section -->
-      <section class="app-section" data-view="users">
-        <div class="section-heading">
-          <div>
-            <span class="eyebrow">Gerenciamento</span>
-            <h1>Usuários</h1>
-            <p>Lista completa de usuários cadastrados no sistema.</p>
-          </div>
-        </div>
+      <main class="admin-page-content">
 
-        <div class="panel">
-          <div id="usersContainer">
-            <div class="admin-loading">Carregando usuários...</div>
+        <!-- ===================== VISAO GERAL ===================== -->
+        <section class="admin-view" data-view="overview" aria-label="Visão geral">
+          <div class="a-banner">
+            <h1>Painel Administrativo</h1>
+            <p id="overviewSubtitle">Indicadores gerais da plataforma.</p>
           </div>
-        </div>
-      </section>
+          <div class="a-grid a-grid--stats" id="statsGrid">
+            <article class="a-card a-stat"><span class="a-stat__label">Total de usuários</span><span class="a-stat__value" id="statTotalUsers">-</span></article>
+            <article class="a-card a-stat"><span class="a-stat__label">Administradores</span><span class="a-stat__value" id="statActiveUsers">-</span></article>
+            <article class="a-card a-stat"><span class="a-stat__label">Interações da Mentora</span><span class="a-stat__value" id="statMentorInteractions">-</span></article>
+            <article class="a-card a-stat"><span class="a-stat__label">Itens de conteúdo (BNCC)</span><span class="a-stat__value" id="statContentItems">-</span></article>
+          </div>
+          <div class="a-grid a-grid--2" style="margin-top:1rem">
+            <article class="a-card">
+              <div class="a-card__head">
+                <div><h2>Atividade da Mentora</h2><p>Eventos reais registrados por tipo.</p></div>
+                <span class="a-card__mark"><span class="dashboard-icon-slot" data-icon="mentor"></span></span>
+              </div>
+              <div id="overviewMentor"></div>
+            </article>
+            <article class="a-card">
+              <div class="a-card__head">
+                <div><h2>Sistema</h2><p>Status real reportado pela API.</p></div>
+                <span class="a-card__mark"><span class="dashboard-icon-slot" data-icon="server"></span></span>
+              </div>
+              <div id="overviewSystem"></div>
+            </article>
+          </div>
+        </section>
 
-      <!-- Health Section -->
-      <section class="app-section" data-view="health">
-        <div class="section-heading">
-          <div>
-            <span class="eyebrow">Monitoramento</span>
-            <h1>Status do Sistema</h1>
-            <p>Informações sobre saúde da API, banco de dados e serviços.</p>
+        <!-- ===================== USUARIOS ===================== -->
+        <section class="admin-view" data-view="users" aria-label="Usuários">
+          <div class="admin-view__head">
+            <div>
+              <h1>Usuários</h1>
+              <p>Contas cadastradas na plataforma. Somente dados fornecidos pela API.</p>
+            </div>
+            <div class="a-toolbar" style="margin:0">
+              <div class="a-field">
+                <label for="usersSearch">Buscar por nome ou e-mail</label>
+                <input class="a-input" id="usersSearch" type="search" placeholder="Digite para filtrar" autocomplete="off">
+              </div>
+            </div>
           </div>
-        </div>
+          <p class="a-stat__label" id="usersCount" style="margin-bottom:.7rem"></p>
+          <div id="usersContainer"></div>
+        </section>
 
-        <div class="panel">
-          <h2>Saúde da API</h2>
-          <div id="apiStatus">
-            <div class="admin-loading">Verificando status...</div>
+        <!-- ===================== MENTORA ===================== -->
+        <section class="admin-view" data-view="mentor" aria-label="Mentora">
+          <div class="admin-view__head">
+            <div>
+              <h1>Mentora</h1>
+              <p>Resumo real dos eventos de uso da Mentora, por tipo, e os eventos mais recentes.</p>
+            </div>
           </div>
-        </div>
+          <div class="a-grid a-grid--2">
+            <article class="a-card">
+              <div class="a-card__head">
+                <div><h2>Eventos por tipo</h2><p>Agrupamento retornado pela API.</p></div>
+                <span class="a-card__mark"><span class="dashboard-icon-slot" data-icon="activity"></span></span>
+              </div>
+              <div id="mentorSummary"></div>
+            </article>
+            <article class="a-card">
+              <div class="a-card__head">
+                <div><h2>Eventos recentes</h2><p>Últimos registros de interação.</p></div>
+                <span class="a-card__mark"><span class="dashboard-icon-slot" data-icon="clock"></span></span>
+              </div>
+              <div id="mentorLatest"></div>
+            </article>
+          </div>
+        </section>
 
-        <div class="panel" style="margin-top: 1.5rem;">
-          <h2>Informações do Sistema</h2>
-          <div id="systemInfo" style="margin-top: 1rem;">
-            <div class="admin-empty-state">Aguarde...</div>
+        <!-- ===================== SISTEMA ===================== -->
+        <section class="admin-view" data-view="health" aria-label="Sistema">
+          <div class="admin-view__head">
+            <div>
+              <h1>Sistema</h1>
+              <p>Resultado real do endpoint de verificação de saúde da API.</p>
+            </div>
+            <div class="a-toolbar" style="margin:0">
+              <button class="a-btn a-btn--ghost" type="button" id="healthRefresh">
+                <span class="dashboard-icon-slot" data-icon="reset"></span> Verificar novamente
+              </button>
+            </div>
           </div>
-        </div>
-      </section>
+          <div class="a-grid a-grid--2">
+            <article class="a-card">
+              <div class="a-card__head">
+                <div><h2>Status da API</h2><p>Resposta de /api/admin/health.</p></div>
+                <span class="a-card__mark"><span class="dashboard-icon-slot" data-icon="server"></span></span>
+              </div>
+              <div id="healthStatus"></div>
+            </article>
+            <article class="a-card">
+              <div class="a-card__head">
+                <div><h2>Informações do ambiente</h2><p>Contexto da sessão administrativa.</p></div>
+                <span class="a-card__mark"><span class="dashboard-icon-slot" data-icon="database"></span></span>
+              </div>
+              <div id="systemInfo"></div>
+            </article>
+          </div>
+        </section>
 
-      <!-- Logs Section -->
-      <section class="app-section" data-view="logs">
-        <div class="section-heading">
-          <div>
-            <span class="eyebrow">Auditoria</span>
-            <h1>Registros Administrativos</h1>
-            <p>Histórico de ações administrativas no sistema.</p>
+        <!-- ===================== LOGS ===================== -->
+        <section class="admin-view" data-view="logs" aria-label="Logs">
+          <div class="admin-view__head">
+            <div>
+              <h1>Logs</h1>
+              <p>Registro de ações administrativas. Últimos 50 eventos.</p>
+            </div>
+            <div class="a-toolbar" style="margin:0">
+              <button class="a-btn a-btn--ghost" type="button" id="logsRefresh">
+                <span class="dashboard-icon-slot" data-icon="reset"></span> Atualizar
+              </button>
+            </div>
           </div>
-        </div>
+          <div id="logsContainer"></div>
+        </section>
 
-        <div class="panel">
-          <div id="logsContainer">
-            <div class="admin-loading">Carregando logs...</div>
+        <!-- ===================== BNCC ===================== -->
+        <section class="admin-view" data-view="bncc" aria-label="BNCC">
+          <div class="admin-view__head">
+            <div>
+              <h1>BNCC</h1>
+              <p>Conteúdos da Base Nacional Comum Curricular cadastrados na plataforma.</p>
+            </div>
+            <div class="a-toolbar" style="margin:0">
+              <button class="a-btn a-btn--ghost" type="button" id="bnccToggleForm">
+                <span class="dashboard-icon-slot" data-icon="plus"></span> Novo item
+              </button>
+            </div>
           </div>
-        </div>
-      </section>
 
-      <!-- BNCC Section -->
-      <section class="app-section" data-view="bncc">
-        <div class="section-heading">
-          <div>
-            <span class="eyebrow">Conteúdo</span>
-            <h1>BNCC</h1>
-            <p>Gerenciar itens da Base Nacional Comum Curricular.</p>
-          </div>
-        </div>
+          <article class="a-card" id="bnccFormCard" hidden style="margin-bottom:1rem">
+            <form id="bnccForm">
+              <div class="a-grid a-grid--2">
+                <div class="a-field">
+                  <label for="bnccDisciplina">Disciplina (obrigatório)</label>
+                  <input class="a-input" id="bnccDisciplina" type="text" maxlength="120" required>
+                </div>
+                <div class="a-field">
+                  <label for="bnccArea">Área (obrigatório)</label>
+                  <input class="a-input" id="bnccArea" type="text" maxlength="120" required>
+                </div>
+                <div class="a-field">
+                  <label for="bnccEtapa">Etapa</label>
+                  <input class="a-input" id="bnccEtapa" type="text" maxlength="120">
+                </div>
+                <div class="a-field">
+                  <label for="bnccSerie">Série</label>
+                  <input class="a-input" id="bnccSerie" type="text" maxlength="120">
+                </div>
+                <div class="a-field">
+                  <label for="bnccCodigo">Código da habilidade</label>
+                  <input class="a-input" id="bnccCodigo" type="text" maxlength="60">
+                </div>
+                <div class="a-field">
+                  <label for="bnccHabilidade">Habilidade</label>
+                  <input class="a-input" id="bnccHabilidade" type="text" maxlength="400">
+                </div>
+              </div>
+              <div style="display:flex;gap:.55rem;flex-wrap:wrap;margin-top:1rem">
+                <button class="a-btn a-btn--primary" type="submit">Salvar item</button>
+                <button class="a-btn a-btn--quiet" type="button" id="bnccCancel">Cancelar</button>
+              </div>
+              <p class="a-error" id="bnccError" hidden style="margin-top:.7rem"></p>
+            </form>
+          </article>
 
-        <div class="panel">
-          <div id="bnccContainer">
-            <div class="admin-loading">Carregando BNCC...</div>
-          </div>
-        </div>
-      </section>
-    </main>
+          <div id="bnccContainer"></div>
+        </section>
+      </main>
+    </div>
   </div>
 
-  <!-- Confirmation Modal -->
-  <div class="modal" id="confirmModal">
-    <div class="modal-content">
+  <div class="a-toast" id="toast" role="status" aria-live="polite">
+    <span class="dashboard-icon-slot" data-icon="check"></span>
+    <span id="toastText"></span>
+  </div>
+
+  <div class="a-modal" id="confirmModal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle" hidden>
+    <button class="a-modal__backdrop" type="button" id="confirmBackdrop" aria-label="Fechar"></button>
+    <div class="a-modal__panel">
+      <button class="admin-icon-btn a-modal__close" type="button" id="confirmClose" aria-label="Fechar">
+        <span class="dashboard-icon-slot" data-icon="close"></span>
+      </button>
       <h2 id="confirmTitle">Confirmação</h2>
       <p id="confirmMessage"></p>
-      <div class="modal-actions">
-        <button class="action-btn" id="confirmCancel">Cancelar</button>
-        <button class="action-btn" id="confirmOk" style="background: var(--dash-navy); color: white;">Confirmar</button>
+      <div class="a-modal__actions">
+        <button class="a-btn a-btn--quiet" type="button" id="confirmCancel">Cancelar</button>
+        <button class="a-btn a-btn--primary" type="button" id="confirmOk">Confirmar</button>
       </div>
     </div>
   </div>
 
+  <script src="icons.js"></script>
   <script src="auth.js"></script>
-  <script>
-    const auth = new SynaraAuth();
-    const $ = (s) => document.querySelector(s);
-    const $$ = (s) => [...document.querySelectorAll(s)];
-
-    let adminUser = null;
-    let currentConfirmAction = null;
-
-    const sections = $$('[data-section]');
-    const sidebarLinks = $$('.sidebar-link');
-    const appSections = $$('.app-section');
-
-    // Navigation
-    function showSection(name) {
-      appSections.forEach(s => s.classList.remove('active'));
-      document.querySelector(`[data-view="${name}"]`)?.classList.add('active');
-      sidebarLinks.forEach(l => l.classList.remove('active'));
-      document.querySelector(`[data-section="${name}"]`)?.classList.add('active');
-    }
-
-    sections.forEach(btn => {
-      btn.addEventListener('click', () => showSection(btn.dataset.section));
-    });
-
-    // Sidebar toggle for mobile
-    $('#menuToggle').addEventListener('click', () => {
-      $('#sidebar').classList.toggle('visible');
-    });
-
-    // Auth & User
-    async function ensureAdmin() {
-      try {
-        const user = await auth.hydrateFromServer();
-        if (!user || user.role !== 'admin') {
-          window.location.href = 'login.html';
-          return null;
-        }
-        adminUser = user;
-        renderUser();
-        loadStats();
-        return user;
-      } catch (e) {
-        console.error('Auth error:', e);
-        window.location.href = 'login.html';
-      }
-    }
-
-    function renderUser() {
-      const name = adminUser.name || 'Admin';
-      const short = name.split(' ')[0];
-      $('#headerAvatar').textContent = name.split(' ').slice(0, 2).map(p => p[0]).join('').toUpperCase();
-      $('#headerName').textContent = short;
-      $('#sidebarAvatar').textContent = $('#headerAvatar').textContent;
-      $('#profileEmail').textContent = adminUser.email;
-    }
-
-    $('#headerLogout').addEventListener('click', async () => {
-      try {
-        await auth.request('/api/auth/logout', { method: 'POST' });
-        window.location.href = 'login.html';
-      } catch (e) {
-        console.error('Logout error:', e);
-      }
-    });
-
-    // Status message
-    function showStatus(msg, type = 'success') {
-      const el = $('#statusMessage');
-      el.textContent = msg;
-      el.classList.add('visible');
-      if (type === 'error') el.style.background = '#e74c3c';
-      setTimeout(() => el.classList.remove('visible'), 3000);
-    }
-
-    // Load Stats
-    async function loadStats() {
-      try {
-        const data = await auth.request('/api/admin/stats');
-        if (data.success) {
-          const stats = data.stats || {};
-          $('#statTotalUsers').textContent = stats.totalUsers || '0';
-          $('#statActiveUsers').textContent = stats.activeUsers || '0';
-          $('#statMentorInteractions').textContent = stats.totalMentorInteractions || '0';
-          $('#statContentItems').textContent = stats.totalContentItems || '0';
-        }
-      } catch (e) {
-        console.error('Stats error:', e);
-      }
-    }
-
-    // Load Users
-    async function loadUsers() {
-      const container = $('#usersContainer');
-      container.innerHTML = '<div class="admin-loading">Carregando usuários...</div>';
-      try {
-        const data = await auth.request('/api/admin/users');
-        if (!data.users || data.users.length === 0) {
-          container.innerHTML = '<div class="admin-empty-state">Nenhum usuário cadastrado.</div>';
-          return;
-        }
-
-        let html = '<table class="admin-table"><thead><tr><th>Nome</th><th>E-mail</th><th>Role</th><th>Criado em</th></tr></thead><tbody>';
-        data.users.forEach(user => {
-          const created = new Date(user.created_at).toLocaleDateString('pt-BR');
-          const badge = user.role === 'admin' ? 'badge-admin' : 'badge-user';
-          html += `
-            <tr>
-              <td>${escapeHtml(user.name)}</td>
-              <td>${escapeHtml(user.email)}</td>
-              <td><span class="badge ${badge}">${user.role.toUpperCase()}</span></td>
-              <td>${created}</td>
-            </tr>
-          `;
-        });
-        html += '</tbody></table>';
-        container.innerHTML = html;
-      } catch (e) {
-        container.innerHTML = `<div class="admin-empty-state">Erro ao carregar usuários: ${e.message}</div>`;
-      }
-    }
-
-    // Load Health
-    async function loadHealth() {
-      const container = $('#apiStatus');
-      const infoContainer = $('#systemInfo');
-      container.innerHTML = '<div class="admin-loading">Verificando...</div>';
-      infoContainer.innerHTML = '<div class="admin-loading">Carregando...</div>';
-
-      try {
-        const data = await auth.request('/api/admin/health');
-        if (data.success && data.ok) {
-          container.innerHTML = `
-            <div class="health-status ok">
-              <span class="health-indicator"></span>
-              <div>
-                <strong>API: Online</strong>
-                <span>Servidor respondendo normalmente</span>
-              </div>
-            </div>
-          `;
-          infoContainer.innerHTML = `
-            <div style="display: grid; gap: 0.5rem;">
-              <div><span>Ambiente:</span> <strong>${['localhost', '127.0.0.1'].includes(window.location.hostname) ? 'development' : 'production'}</strong></div>
-              <div><span>Admin:</span> <strong>${adminUser.email}</strong></div>
-              <div><span>Timestamp:</span> <strong>${new Date().toLocaleString('pt-BR')}</strong></div>
-            </div>
-          `;
-        } else {
-          container.innerHTML = '<div class="health-status error"><span class="health-indicator"></span><div><strong>API: Offline</strong></div></div>';
-        }
-      } catch (e) {
-        container.innerHTML = '<div class="health-status error"><span class="health-indicator"></span><div><strong>Erro ao verificar status</strong><p>' + e.message + '</p></div></div>';
-      }
-    }
-
-    // Load Logs
-    async function loadLogs() {
-      const container = $('#logsContainer');
-      container.innerHTML = '<div class="admin-loading">Carregando logs...</div>';
-      try {
-        const data = await auth.request('/api/admin/logs');
-        if (!data.logs || data.logs.length === 0) {
-          container.innerHTML = '<div class="admin-empty-state">Nenhum log administrativo registrado.</div>';
-          return;
-        }
-
-        let html = '<table class="admin-table"><thead><tr><th>Ação</th><th>Recurso</th><th>Admin</th><th>Data</th></tr></thead><tbody>';
-        data.logs.forEach(log => {
-          const date = new Date(log.created_at).toLocaleString('pt-BR');
-          html += `
-            <tr>
-              <td>${escapeHtml(log.action)}</td>
-              <td>${escapeHtml(log.resource || '-')}</td>
-              <td>${escapeHtml(log.admin_email || '-')}</td>
-              <td>${date}</td>
-            </tr>
-          `;
-        });
-        html += '</tbody></table>';
-        container.innerHTML = html;
-      } catch (e) {
-        container.innerHTML = `<div class="admin-empty-state">Erro ao carregar logs: ${e.message}</div>`;
-      }
-    }
-
-    // Load BNCC
-    async function loadBNCC() {
-      const container = $('#bnccContainer');
-      container.innerHTML = '<div class="admin-loading">Carregando BNCC...</div>';
-      try {
-        const data = await auth.request('/api/admin/bncc');
-        const items = Array.isArray(data.items) ? data.items : [];
-        if (items.length === 0) {
-          container.innerHTML = '<div class="admin-empty-state">Nenhum item BNCC cadastrado.</div>';
-          return;
-        }
-
-        let html = '<table class="admin-table"><thead><tr><th>Disciplina</th><th>Habilidade</th><th>Código</th><th>Status</th></tr></thead><tbody>';
-        items.slice(0, 50).forEach(item => {
-          html += `
-            <tr>
-              <td>${escapeHtml(item.disciplina || '-')}</td>
-              <td>${escapeHtml(item.habilidade || '-')}</td>
-              <td>${escapeHtml(item.codigo_habilidade || '-')}</td>
-              <td><span class="badge badge-user">${item.status || 'active'}</span></td>
-            </tr>
-          `;
-        });
-        html += '</tbody></table>';
-        html += items.length > 50 ? `<p class="muted" style="margin-top: 1rem;">Mostrando 50 de ${items.length} itens.</p>` : '';
-        container.innerHTML = html;
-      } catch (e) {
-        container.innerHTML = `<div class="admin-empty-state">Erro ao carregar BNCC: ${e.message}</div>`;
-      }
-    }
-
-    function escapeHtml(text) {
-      const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
-      return String(text).replace(/[&<>"']/g, c => map[c]);
-    }
-
-    // Load section data when section changes
-    const observer = new MutationObserver(() => {
-      const active = document.querySelector('.app-section.active');
-      if (!active) return;
-      const view = active.dataset.view;
-      if (view === 'overview') {
-        loadStats();
-        loadHealth();
-      } else if (view === 'users') {
-        loadUsers();
-      } else if (view === 'health') {
-        loadHealth();
-      } else if (view === 'logs') {
-        loadLogs();
-      } else if (view === 'bncc') {
-        loadBNCC();
-      }
-    });
-
-    observer.observe(document.querySelector('.app-section'), {
-      attributes: true,
-      attributeFilter: ['class']
-    });
-
-    // Init
-    ensureAdmin();
-  </script>
+  <script src="admin.js"></script>
 </body>
 </html>
+
+
+

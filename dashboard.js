@@ -90,52 +90,14 @@
     return t.content.firstElementChild;
   }
 
-  // ---------- 2. Icones (SVG unico e consistente) ----------
-  const ICON_PATHS = {
-    home: '<path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V10Z"/>',
-    mentor: '<path d="M12 3v3M12 18v3M4.5 7.5l2 2M17.5 14.5l2 2M3 12h3M18 12h3M4.5 16.5l2-2M17.5 9.5l2-2"/><circle cx="12" cy="12" r="3.2"/>',
-    book: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5V5.5Z"/><path d="M4 20.5V6.5A2.5 2.5 0 0 1 6.5 4H8v14H6.5A2.5 2.5 0 0 0 4 20.5Z"/>',
-    calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18M7 14h.01M12 14h.01M17 14h.01"/>',
-    target: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="m16 8 3-3M19 5h-3M19 5v3"/>',
-    chart: '<path d="M4 19V5M4 19h17M8 16v-4M12 16V8M16 16v-6M20 16v-9"/>',
-    heart: '<path d="M20.8 8.8c0 5.2-8.8 10.2-8.8 10.2S3.2 14 3.2 8.8A4.8 4.8 0 0 1 12 6a4.8 4.8 0 0 1 8.8 2.8Z"/>',
-    shield: '<path d="M12 3 20 6v5c0 5-3.3 8.4-8 10-4.7-1.6-8-5-8-10V6l8-3Z"/><path d="m8.5 12 2.2 2.2 4.8-5"/>',
-    settings: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>',
-    'chevron-left': '<path d="m15 5-7 7 7 7"/>',
-    'chevron-right': '<path d="m9 5 7 7-7 7"/>',
-    'chevron-down': '<path d="m6 9 6 6 6-6"/>',
-    menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
-    close: '<path d="m6 6 12 12M18 6 6 18"/>',
-    plus: '<path d="M12 5v14M5 12h14"/>',
-    edit: '<path d="m4 20 4.5-1 9.8-9.8a2.1 2.1 0 0 0-3-3L5.5 16 4 20ZM13.5 7.5l3 3"/>',
-    key: '<circle cx="8" cy="15" r="3"/><path d="m10.5 12.5 8-8M15 7l2 2M17 5l2 2"/>',
-    trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 14h10l1-14M9 7V4h6v3"/>',
-    check: '<path d="m5 12 4 4L19 6"/>',
-    send: '<path d="M4 12 20 4l-7 16-2.5-6.5L4 12Z"/>',
-    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
-    timer: '<path d="M9 3h6M12 3v3"/><circle cx="12" cy="14" r="7"/><path d="M12 14V11"/><path d="m5.5 8.5-1.5-1.5M18.5 8.5 20 7"/>',
-    play: '<path d="M7 5v14l12-7-12-7Z"/>',
-    reset: '<path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"/>',
-    compass: '<circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5 5-2Z"/>',
-    sparkle: '<path d="m12 3 1.6 6.4L20 11l-6.4 1.6L12 19l-1.6-6.4L4 11l6.4-1.6L12 3Z"/>',
-    award: '<circle cx="12" cy="9" r="5"/><path d="m8.5 13.5-1.5 8 5-3 5 3-1.5-8"/>',
-    document: '<path d="M6 3h8l4 4v14H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M14 3v5h5M8 12h6M8 16h6"/>',
-    user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/>',
-    logout: '<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l-5-5 5-5M5 12h11"/>',
-    leaf: '<path d="M20 4C10 4 4 9 4 16v4M20 4c0 9-6 14-13 14"/>',
-    balance: '<path d="M12 4v16M6 8l-3 6h6l-3-6ZM18 8l-3 6h6l-3-6ZM6 8h12"/>',
-    alert: '<path d="M12 4 3 20h18L12 4Z"/><path d="M12 10v4M12 17h.01"/>'
-  };
+  // ---------- 2. Icones ----------
+  // Fonte unica de verdade: icons.js (window.SynaraIcons).
+  // Mantido o mesmo contrato: icon(name, className) e hydrateIcons(root).
   function icon(name, className) {
-    const path = ICON_PATHS[name];
-    if (!path) return '';
-    return '<svg class="dashboard-icon ' + (className || '') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + path + '</svg>';
+    return (window.SynaraIcons && window.SynaraIcons.icon(name, className)) || '';
   }
   function hydrateIcons(root) {
-    $$('[data-icon]', root || document).forEach((node) => {
-      const svg = icon(node.getAttribute('data-icon'));
-      if (svg) node.innerHTML = svg;
-    });
+    if (window.SynaraIcons) window.SynaraIcons.hydrate(root || document);
   }
 
   // ---------- 3. Toast / Modal ----------
@@ -215,7 +177,16 @@
     user: null,
     section: 'inicio',
     mentor: { messages: [], pending: null, sending: false, lastStrategy: null },
-    focus: { interval: null, remaining: 25 * 60, running: false }
+    pomodoro: {
+      config: { focus: 25, shortBreak: 5, longBreak: 15, cyclesBeforeLong: 4 },
+      phase: 'idle',
+      paused: false,
+      remaining: 25 * 60,
+      duration: 25 * 60,
+      cycles: 0,
+      interval: null,
+      session: { focusMinutes: 0, breakMinutes: 0, cycles: 0, interrupted: 0 }
+    }
   };
 
   function refreshUser() {
@@ -376,6 +347,339 @@
   function strategyLabel(strategy) {
     return STRATEGY_LABELS[strategy] || 'estrategia de estudo';
   }
+
+  // ---------- 5b. Pomodoro (foco, pausa, ciclos e registro real) ----------
+  const POMODORO_DEFAULTS = { focus: 25, shortBreak: 5, longBreak: 15, cyclesBeforeLong: 4 };
+  const POMODORO_RING = 2 * Math.PI * 88;
+
+  function clampNumber(value, min, max, fallback) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return fallback;
+    return Math.min(max, Math.max(min, Math.round(n)));
+  }
+  function pomodoroConfig() {
+    const profile = (state.user && state.user.profile) || {};
+    const stored = (profile.pomodoro && profile.pomodoro.config) || {};
+    return {
+      focus: clampNumber(stored.focus, 5, 90, POMODORO_DEFAULTS.focus),
+      shortBreak: clampNumber(stored.shortBreak, 1, 30, POMODORO_DEFAULTS.shortBreak),
+      longBreak: clampNumber(stored.longBreak, 5, 60, POMODORO_DEFAULTS.longBreak),
+      cyclesBeforeLong: clampNumber(stored.cyclesBeforeLong, 2, 8, POMODORO_DEFAULTS.cyclesBeforeLong)
+    };
+  }
+  function pomodoroStatsStore() {
+    const profile = (state.user && state.user.profile) || {};
+    const stored = (profile.pomodoro && profile.pomodoro.stats) || {};
+    return {
+      sessions: Number(stored.sessions) || 0,
+      completedCycles: Number(stored.completedCycles) || 0,
+      focusMinutesTotal: Number(stored.focusMinutesTotal) || 0,
+      interrupted: Number(stored.interrupted) || 0,
+      longBreaks: Number(stored.longBreaks) || 0,
+      bySubject: stored.bySubject && typeof stored.bySubject === 'object' ? stored.bySubject : {}
+    };
+  }
+  function savePomodoro(partial) {
+    const profile = (state.user && state.user.profile) || {};
+    const current = profile.pomodoro && typeof profile.pomodoro === 'object' ? profile.pomodoro : {};
+    const next = Object.assign({}, current, partial);
+    state.user.profile = Object.assign({}, profile, { pomodoro: next });
+    auth.saveUser(state.user);
+    refreshUser();
+    return next;
+  }
+  function bumpPomodoroStats(patch, subjectName, minutes) {
+    const stats = pomodoroStatsStore();
+    if (patch) {
+      Object.keys(patch).forEach((key) => {
+        if (key === 'bySubject') return;
+        stats[key] = (Number(stats[key]) || 0) + Number(patch[key]);
+      });
+    }
+    if (subjectName && minutes) {
+      stats.bySubject[subjectName] = (Number(stats.bySubject[subjectName]) || 0) + Number(minutes);
+    }
+    savePomodoro({ stats: stats });
+    return stats;
+  }
+  function phaseDuration(phase) {
+    const cfg = state.pomodoro.config;
+    if (phase === 'focus') return cfg.focus * 60;
+    if (phase === 'shortBreak') return cfg.shortBreak * 60;
+    if (phase === 'longBreak') return cfg.longBreak * 60;
+    return cfg.focus * 60;
+  }
+  function phaseLabel(phase) {
+    if (phase === 'focus') return 'Foco';
+    if (phase === 'shortBreak') return 'Pausa curta';
+    if (phase === 'longBreak') return 'Pausa longa';
+    return 'Foco';
+  }
+  function formatClock(seconds) {
+    const total = Math.max(0, Math.round(seconds));
+    const m = Math.floor(total / 60);
+    const s = total % 60;
+    return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+  }
+  function isBreakPhase(phase) {
+    return phase === 'shortBreak' || phase === 'longBreak';
+  }
+  function pomodoroStateKey() {
+    const p = state.pomodoro;
+    if (p.paused && p.phase !== 'idle') return 'paused';
+    return p.phase;
+  }
+
+  function renderPomodoro() {
+    const card = $('#pomodoro');
+    if (!card) return;
+    const p = state.pomodoro;
+    p.config = pomodoroConfig();
+    card.setAttribute('data-state', pomodoroStateKey());
+    $('#pomodoroTime').textContent = formatClock(p.remaining);
+    $('#pomodoroPhase').textContent = (p.paused && p.phase !== 'idle') ? 'Pausado' : phaseLabel(p.phase);
+
+    const elapsed = p.duration > 0 ? (p.duration - p.remaining) / p.duration : 0;
+    $('#pomodoroProgress').setAttribute('stroke-dashoffset', String(POMODORO_RING * (1 - elapsed)));
+
+    const badgeMap = {
+      idle: ['Pronto para começar', 'd-badge--navy'],
+      focus: ['Em foco', 'd-badge--teal'],
+      paused: ['Pausado', 'd-badge--warm'],
+      shortBreak: ['Em pausa curta', 'd-badge--success'],
+      longBreak: ['Em pausa longa', 'd-badge--success'],
+      done: ['Sessão concluída', 'd-badge--success']
+    };
+    const badge = badgeMap[pomodoroStateKey()] || badgeMap.idle;
+    const stateBadge = $('#pomodoroState');
+    stateBadge.textContent = badge[0];
+    stateBadge.className = 'd-badge ' + badge[1];
+
+    const dots = Math.max(1, p.config.cyclesBeforeLong);
+    const inSet = p.cycles % dots;
+    let dotsHtml = '';
+    for (let i = 0; i < dots; i += 1) {
+      const done = i < inSet;
+      const current = !done && i === inSet && p.phase === 'focus';
+      dotsHtml += '<span class="d-pomodoro__dot' + (done ? ' is-done' : '') + (current ? ' is-current' : '') + '"></span>';
+    }
+    $('#pomodoroCycles').innerHTML = dotsHtml;
+    $('#pomodoroCycleNote').textContent = p.cycles
+      ? p.cycles + ' ciclo(s) nesta sessão · pausa longa a cada ' + p.config.cyclesBeforeLong
+      : 'A pausa longa acontece a cada ' + p.config.cyclesBeforeLong + ' ciclos.';
+
+    $('#pomodoroStart').hidden = !(p.phase === 'idle' || p.phase === 'done');
+    $('#pomodoroPause').hidden = p.phase === 'idle' || p.paused;
+    $('#pomodoroResume').hidden = !p.paused;
+    $('#pomodoroSkip').hidden = !(isBreakPhase(p.phase) && !p.paused);
+    $('#pomodoroReset').hidden = p.phase === 'idle';
+    $('#pomodoroStop').hidden = p.phase !== 'focus';
+
+    const hint = $('#pomodoroHint');
+    if (p.phase === 'idle') hint.textContent = subjects().length ? 'Selecione uma matéria e inicie um bloco de foco.' : 'Cadastre uma matéria para registrar suas sessões de estudo.';
+    else if (p.phase === 'focus' && !p.paused) hint.textContent = 'Foco em andamento. A sessão só é registrada ao concluir os ' + p.config.focus + ' minutos.';
+    else if (p.paused) hint.textContent = 'Bloco pausado. O tempo em pausa não conta como estudo.';
+    else if (isBreakPhase(p.phase)) hint.textContent = 'Pausa em andamento. Levante, respire e descanse a atenção.';
+    else if (p.phase === 'done') hint.textContent = 'Ciclo completo concluído. Você pode iniciar um novo bloco quando quiser.';
+
+    const stats = pomodoroStatsStore();
+    $('#pomodoroStats').innerHTML = [
+      { label: 'Foco nesta sessão', value: formatMinutes(p.session.focusMinutes) },
+      { label: 'Pausa nesta sessão', value: formatMinutes(p.session.breakMinutes) },
+      { label: 'Ciclos nesta sessão', value: String(p.session.cycles) },
+      { label: 'Sessões registradas', value: String(stats.sessions) },
+      { label: 'Tempo total de foco', value: formatMinutes(stats.focusMinutesTotal) },
+      { label: 'Blocos interrompidos', value: String(stats.interrupted) }
+    ].map((item) => '<div class="d-pomodoro__stat"><span>' + escapeHtml(item.label) + '</span><strong>' + escapeHtml(item.value) + '</strong></div>').join('');
+
+    $('#pomodoroFocusMinutes').value = p.config.focus;
+    $('#pomodoroShortBreak').value = p.config.shortBreak;
+    $('#pomodoroLongBreak').value = p.config.longBreak;
+    $('#pomodoroCyclesBefore').value = p.config.cyclesBeforeLong;
+
+    renderWellbeingOrientation();
+  }
+
+  function renderWellbeingOrientation() {
+    const box = $('#wellbeingOrientation');
+    if (!box) return;
+    const stats = pomodoroStatsStore();
+    const wellbeing = (state.user && state.user.wellbeing) || { mood: '' };
+    const notes = [];
+    if (stats.completedCycles > 0) notes.push('Você já concluiu ' + stats.completedCycles + ' bloco(s) de foco, somando ' + formatMinutes(stats.focusMinutesTotal) + '.');
+    if (stats.interrupted > stats.sessions && stats.interrupted > 0) notes.push('Você interrompeu ' + stats.interrupted + ' bloco(s). Se isso acontecer com frequência, um bloco mais curto pode ajudar.');
+    if (wellbeing.mood === 'sobrecarregado') notes.push('No seu último check-in você marcou um ritmo sobrecarregado. Considere uma pausa maior hoje.');
+    if (!notes.length) notes.push('Ainda sem registros de Pomodoro. Ao concluir blocos de foco, as orientações aparecem aqui.');
+    box.innerHTML = '<ul class="d-stack" style="gap:.5rem">' + notes.map((note) => '<li class="d-muted">' + escapeHtml(note) + '</li>').join('') + '</ul>';
+  }
+
+  function pomodoroClearTimer() {
+    if (state.pomodoro.interval) {
+      window.clearInterval(state.pomodoro.interval);
+      state.pomodoro.interval = null;
+    }
+  }
+  function pomodoroSetPhase(phase) {
+    const p = state.pomodoro;
+    p.phase = phase;
+    p.paused = false;
+    p.duration = phaseDuration(phase);
+    p.remaining = p.duration;
+    renderPomodoro();
+  }
+  function pomodoroSetSubject(name) {
+    const select = $('#pomodoroSubject');
+    if (!select || !name) return;
+    const list = subjects();
+    if (!list.some((s) => s.name === name)) return;
+    select.value = name;
+  }
+  function pomodoroTick() {
+    const p = state.pomodoro;
+    if (p.paused || p.phase === 'idle' || p.phase === 'done') return;
+    p.remaining -= 1;
+    if (p.remaining <= 0) {
+      p.remaining = 0;
+      pomodoroClearTimer();
+      if (p.phase === 'focus') pomodoroCompleteFocus();
+      else pomodoroCompleteBreak();
+      return;
+    }
+    renderPomodoro();
+  }
+  function pomodoroRun() {
+    pomodoroClearTimer();
+    state.pomodoro.interval = window.setInterval(pomodoroTick, 1000);
+  }
+
+  function pomodoroRegisterSession(subjectName, minutes, topic) {
+    const subject = subjects().find((s) => s.name === subjectName);
+    if (!subject) return false;
+    // Fluxo real existente: cria studySession, soma horas e recalcula progresso.
+    auth.addStudySession(subject.id, minutes, topic || 'Bloco de foco');
+    refreshUser();
+    bumpPomodoroStats({ sessions: 1, completedCycles: 1, focusMinutesTotal: minutes }, subjectName, minutes);
+    postMemory({
+      category: 'pomodoro',
+      title: subjectName,
+      content: 'Bloco de foco concluido: ' + minutes + ' min em ' + subjectName + (topic ? ' (' + topic + ')' : ''),
+      metadata: { subject: subjectName, topic: topic || null, minutes: minutes, source: 'pomodoro' }
+    });
+    return true;
+  }
+
+  function pomodoroCompleteFocus() {
+    const p = state.pomodoro;
+    const subjectName = $('#pomodoroSubject').value;
+    const topic = ($('#pomodoroTopic').value || '').trim();
+    const minutes = p.config.focus;
+    // Regra definida: SOMENTE bloco de foco concluido integralmente gera sessao.
+    const registered = pomodoroRegisterSession(subjectName, minutes, topic);
+    p.session.focusMinutes += minutes;
+    p.session.cycles += 1;
+    p.cycles += 1;
+    const isLong = p.cycles % Math.max(1, p.config.cyclesBeforeLong) === 0;
+    pomodoroSetPhase(isLong ? 'longBreak' : 'shortBreak');
+    pomodoroRun();
+    if (registered) {
+      toast('Bloco de ' + minutes + ' min concluído e registrado em ' + subjectName + '. ' + (isLong ? 'Hora da pausa longa.' : 'Faça uma pausa curta.'));
+    } else {
+      toast('Bloco concluído, mas não foi possível registrar a sessão.', true);
+    }
+  }
+
+  function pomodoroCompleteBreak() {
+    const p = state.pomodoro;
+    const wasLong = p.phase === 'longBreak';
+    p.session.breakMinutes += p.duration / 60;
+    if (wasLong) bumpPomodoroStats({ longBreaks: 1 });
+    pomodoroClearTimer();
+    if (wasLong) {
+      p.phase = 'done';
+      p.paused = false;
+      p.duration = phaseDuration('focus');
+      p.remaining = p.duration;
+      renderPomodoro();
+      toast('Ciclo completo concluído. Você pode começar um novo bloco quando quiser.');
+    } else {
+      pomodoroSetPhase('idle');
+      toast('Pausa concluída. Pronto para o próximo bloco de foco.');
+    }
+  }
+
+  function pomodoroStart() {
+    const p = state.pomodoro;
+    if (!subjects().length) {
+      toast('Cadastre uma matéria para registrar suas sessões de estudo.', true);
+      return;
+    }
+    const select = $('#pomodoroSubject');
+    if (!select.value) select.value = subjects()[0].name;
+    p.config = pomodoroConfig();
+    p.session = { focusMinutes: 0, breakMinutes: 0, cycles: 0, interrupted: 0 };
+    p.cycles = 0;
+    pomodoroSetPhase('focus');
+    pomodoroRun();
+    toast('Bloco de foco de ' + p.config.focus + ' min iniciado.');
+  }
+  function pomodoroPause() {
+    const p = state.pomodoro;
+    if (p.phase === 'idle' || p.paused) return;
+    p.paused = true;
+    pomodoroClearTimer();
+    renderPomodoro();
+  }
+  function pomodoroResume() {
+    const p = state.pomodoro;
+    if (!p.paused) return;
+    p.paused = false;
+    renderPomodoro();
+    pomodoroRun();
+  }
+  function pomodoroReset() {
+    const p = state.pomodoro;
+    if (p.phase === 'idle') return;
+    pomodoroClearTimer();
+    p.paused = false;
+    p.duration = phaseDuration(p.phase);
+    p.remaining = p.duration;
+    renderPomodoro();
+    if (p.phase === 'focus') pomodoroRun();
+    toast('Bloco reiniciado do começo.');
+  }
+  function pomodoroStop() {
+    const p = state.pomodoro;
+    if (p.phase !== 'focus') return;
+    pomodoroClearTimer();
+    // Encerramento antecipado NAO registra sessao (regra definida).
+    bumpPomodoroStats({ interrupted: 1 });
+    const elapsed = Math.round((p.duration - p.remaining) / 60);
+    p.phase = 'idle';
+    p.paused = false;
+    p.duration = phaseDuration('focus');
+    p.remaining = p.duration;
+    p.session = { focusMinutes: 0, breakMinutes: 0, cycles: 0, interrupted: p.session.interrupted + 1 };
+    renderPomodoro();
+    toast(elapsed > 0
+      ? 'Bloco encerrado após ' + elapsed + ' min. Nada foi registrado, pois a sessão só conta quando o bloco é concluído.'
+      : 'Bloco encerrado. Nada foi registrado.');
+  }
+  function pomodoroSkipBreak() {
+    if (!isBreakPhase(state.pomodoro.phase)) return;
+    pomodoroClearTimer();
+    pomodoroSetPhase('idle');
+    toast('Pausa encerrada. Pronto para o próximo bloco.');
+  }
+  function openPomodoro(subjectName) {
+    navigate('bem-estar');
+    if (subjectName) pomodoroSetSubject(subjectName);
+    renderPomodoro();
+    const card = $('#pomodoro');
+    if (card && card.scrollIntoView) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+
+
 
   // ---------- 6. Sidebar ----------
   function isMobile() { return window.matchMedia('(max-width: 900px)').matches; }
@@ -555,6 +859,7 @@
         '<p class="d-help" style="color:var(--d-teal-dark)">' + escapeHtml(recommendation) + '</p>' +
         '<div class="d-form-actions" style="margin-top:.9rem">' +
         '<button class="d-btn d-btn--primary d-btn--sm" type="button" data-action="mentor-subject" data-subject="' + escapeHtml(subject.name) + '">' + icon('mentor') + ' Estudar com a Mentora</button>' +
+        '<button class="d-btn d-btn--ghost d-btn--sm" type="button" data-action="pomodoro-subject" data-subject="' + escapeHtml(subject.name) + '">' + icon('timer') + ' Iniciar foco</button>' +
         '<button class="d-btn d-btn--ghost d-btn--sm" type="button" data-action="study-session" data-subject="' + escapeHtml(subject.name) + '">' + icon('plus') + ' Registrar estudo</button>' +
         '<button class="d-btn d-btn--quiet d-btn--sm" type="button" data-action="edit-subject" data-id="' + escapeHtml(subject.id) + '" aria-label="Editar matéria">' + icon('edit') + '</button>' +
         '<button class="d-btn d-btn--quiet d-btn--sm" type="button" data-action="remove-subject" data-id="' + escapeHtml(subject.id) + '" aria-label="Remover matéria">' + icon('trash') + '</button>' +
@@ -679,10 +984,13 @@
     $('#wellbeingMoodNote').textContent = wellbeing.mood
       ? 'Último check-in: ' + escapeHtml(wellbeing.mood) + (wellbeing.updatedAt ? ' · ' + formatDate(wellbeing.updatedAt) : '') + '.'
       : 'Você ainda não registrou como está se sentindo.';
-    $('#focusSubject').innerHTML = subjectsOptions();
-    $('#focusNote').textContent = auth.getStudyMinutes && auth.getStudyMinutes() > 300 && wellbeing.mood === 'sobrecarregado'
-      ? 'Você já estudou bastante e marcou um ritmo sobrecarregado. Considere uma pausa maior hoje.'
-      : 'Dica: 25 minutos de foco seguidos de 5 de pausa ajudam a manter a atenção.';
+    const pomodoroSelect = $('#pomodoroSubject');
+    if (pomodoroSelect) {
+      const previous = pomodoroSelect.value;
+      pomodoroSelect.innerHTML = subjectsOptions(previous);
+      if (!pomodoroSelect.value && subjects().length) pomodoroSelect.value = subjects()[0].name;
+    }
+    renderPomodoro();
     const tips = [
       { icon: 'clock', title: 'Blocos curtos', text: 'Estude em blocos de 25 a 50 minutos e faça pausas curtas entre eles.' },
       { icon: 'leaf', title: 'Pausa consciente', text: 'Levante, beba água e respire. A pausa faz parte do aprendizado.' },
@@ -1174,6 +1482,13 @@
         if (action === 'mentor-feedback') { mentorFeedback(Number(actionEl.getAttribute('data-id')), actionEl.getAttribute('data-value')); return; }
         if (action === 'mentor-rephrase') { mentorRephrase(Number(actionEl.getAttribute('data-id'))); return; }
         if (action === 'exercise-answer') { answerExercise(Number(actionEl.getAttribute('data-id')), Number(actionEl.getAttribute('data-index'))); return; }
+        if (action === 'pomodoro-open') { openPomodoro(''); return; }
+        if (action === 'pomodoro-subject') { openPomodoro(actionEl.getAttribute('data-subject') || ''); return; }
+        if (action === 'pomodoro-from-mentor') {
+          const mentorSelect = $('#mentorSubject');
+          openPomodoro(mentorSelect && mentorSelect.value !== 'Geral' ? mentorSelect.value : '');
+          return;
+        }
       }
       const mentorSubject = event.target.closest('[data-mentor-subject]');
       if (mentorSubject) { openMentorWith(mentorSubject.getAttribute('data-mentor-subject'), ''); return; }
@@ -1299,48 +1614,34 @@
         toast('Check-in registrado. Obrigado por compartilhar.');
       });
     });
-    const startBtn = $('#focusStart');
-    const resetBtn = $('#focusReset');
-    const valueEl = $('#focusTimerValue');
-    function paint() {
-      const minutes = Math.floor(state.focus.remaining / 60);
-      const seconds = state.focus.remaining % 60;
-      valueEl.textContent = String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
-    }
-    function stop(register) {
-      window.clearInterval(state.focus.interval);
-      state.focus.interval = null;
-      state.focus.running = false;
-      startBtn.hidden = false;
-      resetBtn.hidden = true;
-      if (register) {
-        const subjectName = $('#focusSubject').value;
-        const subject = subjects().find((s) => s.name === subjectName);
-        if (subject) {
-          auth.addStudySession(subject.id, 25, 'Bloco de foco');
-          renderAll();
-          toast('Bloco de 25 min registrado em ' + subjectName + '.');
-        } else {
-          toast('Bloco concluído. Cadastre uma matéria para registrar a sessão.', true);
-        }
+
+    $('#pomodoroStart').addEventListener('click', pomodoroStart);
+    $('#pomodoroPause').addEventListener('click', pomodoroPause);
+    $('#pomodoroResume').addEventListener('click', pomodoroResume);
+    $('#pomodoroReset').addEventListener('click', pomodoroReset);
+    $('#pomodoroStop').addEventListener('click', pomodoroStop);
+    $('#pomodoroSkip').addEventListener('click', pomodoroSkipBreak);
+
+    $('#pomodoroConfigForm').addEventListener('submit', (event) => {
+      event.preventDefault();
+      const config = {
+        focus: clampNumber($('#pomodoroFocusMinutes').value, 5, 90, POMODORO_DEFAULTS.focus),
+        shortBreak: clampNumber($('#pomodoroShortBreak').value, 1, 30, POMODORO_DEFAULTS.shortBreak),
+        longBreak: clampNumber($('#pomodoroLongBreak').value, 5, 60, POMODORO_DEFAULTS.longBreak),
+        cyclesBeforeLong: clampNumber($('#pomodoroCyclesBefore').value, 2, 8, POMODORO_DEFAULTS.cyclesBeforeLong)
+      };
+      savePomodoro({ config: config });
+      state.pomodoro.config = config;
+      if (state.pomodoro.phase === 'idle' || state.pomodoro.phase === 'done') {
+        state.pomodoro.duration = phaseDuration('focus');
+        state.pomodoro.remaining = state.pomodoro.duration;
       }
-      state.focus.remaining = 25 * 60;
-      paint();
-    }
-    startBtn.addEventListener('click', () => {
-      if (state.focus.running) return;
-      state.focus.running = true;
-      startBtn.hidden = true;
-      resetBtn.hidden = false;
-      state.focus.interval = window.setInterval(() => {
-        state.focus.remaining -= 1;
-        paint();
-        if (state.focus.remaining <= 0) stop(true);
-      }, 1000);
-      paint();
+      $('#pomodoroConfigSaved').hidden = false;
+      renderPomodoro();
+      toast('Configurações do Pomodoro salvas.');
     });
-    resetBtn.addEventListener('click', () => stop(false));
-    paint();
+
+    renderPomodoro();
   }
 
   function wirePrivacy() {
