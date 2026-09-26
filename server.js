@@ -18,7 +18,35 @@ dotenv.config();
 const app = express();
 app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET || 'synara-dev-secret-change-me';
+// ---------------------------------------------------------------------------
+// Segredo de assinatura das sessoes (JWT).
+// Vem EXCLUSIVAMENTE de process.env.JWT_SECRET: nao ha fallback hardcoded.
+// Um valor padrao versionado permitiria a qualquer pessoa forjar cookies de
+// sessao, entao a aplicacao falha no startup (fail-closed) quando a variavel
+// nao esta configurada, em vez de assumir um segredo conhecido.
+// O valor do segredo NUNCA e impresso em logs nem devolvido em respostas HTTP.
+// ---------------------------------------------------------------------------
+function resolveJwtSecret() {
+  const configured = process.env.JWT_SECRET;
+  if (typeof configured !== 'string' || !configured.trim()) return null;
+  return configured;
+}
+
+const JWT_SECRET = resolveJwtSecret();
+
+if (!JWT_SECRET) {
+  const guidance = process.env.NODE_ENV === 'production'
+    ? 'Defina JWT_SECRET no ambiente de producao (painel do Render -> servico -> Environment).'
+    : 'Defina JWT_SECRET no seu .env ou exporte a variavel antes de iniciar.';
+  console.error(
+    '[FATAL] Configuracao ausente: a variavel de ambiente JWT_SECRET nao esta definida.\n' +
+    '[FATAL] A aplicacao nao inicia sem um segredo proprio para assinar as sessoes.\n' +
+    '[FATAL] ' + guidance + '\n' +
+    '[FATAL] Gere um valor forte com: openssl rand -hex 32'
+  );
+  process.exit(1);
+}
+
 const SESSION_COOKIE = 'synara_session';
 const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || '').trim().toLowerCase(); // Empty by default - admin must be configured explicitly
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
