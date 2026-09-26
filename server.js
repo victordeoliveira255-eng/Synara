@@ -54,6 +54,16 @@ const STORE_PATH = path.resolve('./memory_store.json');
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000').split(',').map(o => o.trim());
 const USER_ROLE = { USER: 'user', ADMIN: 'admin' };
 
+// ---------------------------------------------------------------------------
+// Raiz estatica publica.
+// SOMENTE arquivos dentro desta pasta sao servidos por HTTP. Tudo que fica
+// fora dela (server.js, package.json, .git, .data, .env, node_modules,
+// relatorios internos, pastas de negocio) e inacessivel pela web por
+// construcao: nao ha lista de bloqueios para manter, basta nao colocar nada
+// interno aqui dentro.
+// ---------------------------------------------------------------------------
+const PUBLIC_DIR = path.resolve('./public');
+
 // Security headers via Helmet
 app.use(helmet({
   contentSecurityPolicy: {
@@ -115,18 +125,21 @@ async function requirePageAuth(req, res, next) {
 }
 
 app.get('/dashboard', requirePageAuth, (req, res) => {
-  res.sendFile(path.resolve('./dashboard.html'));
+  res.sendFile(path.join(PUBLIC_DIR, 'dashboard.html'));
 });
 
 app.get('/dashboard.html', requirePageAuth, (req, res) => {
-  res.sendFile(path.resolve('./dashboard.html'));
+  res.sendFile(path.join(PUBLIC_DIR, 'dashboard.html'));
 });
 
 app.get('/admin.html', requireAuth, requireRole(USER_ROLE.ADMIN), (req, res) => {
-  res.sendFile(path.resolve('./admin.html'));
+  res.sendFile(path.join(PUBLIC_DIR, 'admin.html'));
 });
 
-app.use(express.static('.'));
+// Somente a pasta public/ e exposta. Middleware registrado DEPOIS das rotas
+// protegidas acima, para que /dashboard.html e /admin.html continuem passando
+// por autenticacao/autorizacao antes de qualquer acesso ao arquivo.
+app.use(express.static(PUBLIC_DIR, { dotfiles: 'deny' }));
 
 const openAiKey = process.env.OPENAI_API_KEY;
 const openai = openAiKey ? new OpenAI({ apiKey: openAiKey }) : null;
@@ -665,7 +678,7 @@ app.get('/api/auth/me', async (req, res) => {
 });
 
 app.get('/admin', requireAuth, requireRole(USER_ROLE.ADMIN), (req, res) => {
-  res.sendFile(path.resolve('./admin.html'));
+  res.sendFile(path.join(PUBLIC_DIR, 'admin.html'));
 });
 
 app.get('/api/admin/stats', requireAuth, requireRole(USER_ROLE.ADMIN), async (req, res) => {
