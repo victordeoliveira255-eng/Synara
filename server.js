@@ -176,6 +176,138 @@ const strictLimiter = rateLimit({
   skip: (req) => process.env.NODE_ENV !== 'production' && req.ip === '::1'
 });
 
+// FASE 3B — Rate limiting dos endpoints de IA (anti-abuso / anti-custo).
+// Executados DEPOIS do requireAuth: a chave e por usuario (req.user.id),
+// nao apenas por IP (que puniria todos atras do mesmo NAT).
+function aiKeyGenerator(req) {
+  if (req.user && req.user.id != null) return `ai-user-${req.user.id}`;
+  return rateLimit.ipKeyGenerator(req.ip);
+}
+
+function makeAiLimiter({ windowMs, max, message }) {
+  return rateLimit({
+    windowMs,
+    max,
+    message,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: aiKeyGenerator,
+  });
+}
+
+const chatLimiter = makeAiLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  message: 'Limite de mensagens da Mentora atingido. Aguarde alguns minutos.',
+});
+
+const exerciseLimiter = makeAiLimiter({
+  windowMs: 60 * 60 * 1000,
+  max: 20,
+  message: 'Limite de exercicios gerados atingido. Tente novamente em uma hora.',
+});
+
+const embeddingsLimiter = makeAiLimiter({
+  windowMs: 60 * 60 * 1000,
+  max: 30,
+  message: 'Limite de buscas de conteudo atingido. Tente novamente em uma hora.',
+});
+
+// FASE 3B — Limites de entrada dos endpoints de IA.
+// Validados ANTES de qualquer chamada a OpenAI.
+const AI_INPUT_LIMITS = {
+  chatMessage: 4000,
+  shortText: 120,
+  chatHistory: 2000,
+  historyItems: 10,
+  historyChars: 1000,
+  listItems: 20,
+  scheduleItems: 10,
+  embeddingsContent: 5000,
+  embeddingsQuery: 1000,
+  topKMin: 1,
+  topKMax: 10,
+};
+
+const CHAT_DIFFICULTIES = ['fácil', 'médio', 'difícil'];
+const CHAT_MODES = ['auto', 'explain', 'understand', 'summary', 'practice', 'review', 'tip', 'exam'];
+
+function validateStringList(value, owner, maxItems, maxChars) {
+  if (value == null) return null;
+  if (!Array.isArray(value)) return `${owner} deve ser uma lista.`;
+  if (value.length > maxItems) return `${owner}: maximo de ${maxItems} itens.`;
+  for (const item of value) {
+    if (typeof item !== 'string' || item.length > maxChars) {
+      return `${owner}: cada item com no maximo ${maxChars} caracteres.`;
+    }
+  }
+  return null;
+}
+
+function validateChatInput(body) {
+  const { message, subject, topic, difficulty, mode } = body || {};
+  const { history, messageHistory, subjects, goals, recentSchedule } = body || {};
+  const { clarification, originalMessage } = body || {};
+  if (!message || typeof message !== 'string') return 'Mensagem inválida.';
+  if (message.length > AI_INPUT_LIMITS.chatMessage) {
+    return `Mensagem muito longa: maximo de ${AI_INPUT_LIMITS.chatMessage} caracteres.`;
+  }
+  if (subject != null && subject !== '' && (typeof subject !== 'string' || subject.length > 120)) {
+    return 'Materia muito longa: maximo de 120 caracteres.';
+  }
+  if (topic != null && topic !== '' && (typeof topic !== 'string' || topic.length > 120)) {
+    return 'Conteudo muito longo: maximo de 120 caracteres.';
+  }
+  if (difficulty != null && difficulty !== '' && !CHAT_DIFFICULTIES.includes(difficulty)) {
+    return 'Nivel de dificuldade invalido.';
+  }
+  if (mode != null && mode !== '' && !CHAT_MODES.includes(mode)) {
+    return 'Modo de conversa invalido.';
+  }
+  if (history != null && typeof history === 'string' && history.length > 2000) {
+    return 'Historico muito longo: maximo de 2000 caracteres.';
+  }
+  if (messageHistory != null) {
+    if (!Array.isArray(messageHistory)) return 'Historico de mensagens invalido.';
+    if (messageHistory.length > 10) return 'Historico com no maximo 10 mensagens.';
+    for (const entry of messageHistory) {
+      const content = typeof entry === 'string' ? entry : entry?.content;
+      if (typeof content === 'string' && content.length > 1000) {
+        return 'Cada mensagem do historico com no maximo 1000 caracteres.';
+      }
+    }
+  }
+  const sErr = validateStringList(subjects, 'Materias', 20, 120);
+  if (sErr) return sErr;
+  const gErr = validateStringList(goals, 'Metas', 20, 120);
+  if (gErr) return gErr;
+  if (recentSchedule != null) {
+    if (!Array.isArray(recentSchedule)) return 'Cronograma invalido.';
+    if (recentSchedule.length > 10) return 'Cronograma com no maximo 10 itens.';
+  }
+  if (typeof clarification === 'string' && clarification.length > 4000) {
+    return 'Esclarecimento muito longo: maximo de 4000 caracteres.';
+  }
+  if (typeof originalMessage === 'string' && originalMessage.length > 4000) {
+    return 'Mensagem original muito longa: maximo de 4000 caracteres.';
+  }
+  return null;
+}
+
+function validateExerciseInput(body) {
+  const { subject, topic, difficulty } = body || {};
+  if (subject != null && subject !== '' && (typeof subject !== 'string' || subject.length > 120)) {
+    return 'Materia muito longa: maximo de 120 caracteres.';
+  }
+  if (topic != null && topic !== '' && (typeof topic !== 'string' || topic.length > 120)) {
+    return 'Conteudo muito longo: maximo de 120 caracteres.';
+  }
+  if (difficulty != null && difficulty !== '' && !CHAT_DIFFICULTIES.includes(difficulty)) {
+    return 'Nivel de dificuldade invalido.';
+  }
+  return null;
+}
+
 let pgPool = null;
 let sqliteDb = null;
 let memoryStore = {};
@@ -1113,7 +1245,7 @@ async function createEmbedding(text) {
   return response.data[0].embedding;
 }
 
-app.post('/api/embeddings/index', requireAuth, async (req, res) => {
+app.post('/api/embeddings/index', requireAuth, embeddingsLimiter, async (req, res) => {
   const { userEmail, content, metadata } = req.body;
   
   // Verify user owns this email (prevent users from indexing data for other users)
@@ -1122,6 +1254,14 @@ app.post('/api/embeddings/index', requireAuth, async (req, res) => {
   }
 
   if (!userEmail || !content) return res.status(400).json({ error: 'Missing userEmail or content' });
+
+  // FASE 3B — limite de entrada antes de qualquer chamada a OpenAI.
+  if (typeof content !== 'string' || !content) {
+    return res.status(400).json({ error: 'Conteudo invalido.' });
+  }
+  if (content.length > AI_INPUT_LIMITS.embeddingsContent) {
+    return res.status(400).json({ error: `Conteudo muito longo: maximo de ${AI_INPUT_LIMITS.embeddingsContent} caracteres.` });
+  }
 
   try {
     const embedding = await createEmbedding(content);
@@ -1143,7 +1283,7 @@ app.post('/api/embeddings/index', requireAuth, async (req, res) => {
   }
 });
 
-app.post('/api/embeddings/query', requireAuth, async (req, res) => {
+app.post('/api/embeddings/query', requireAuth, embeddingsLimiter, async (req, res) => {
   const { userEmail, query, topK = 3 } = req.body;
   
   // Verify user owns this email
@@ -1152,6 +1292,17 @@ app.post('/api/embeddings/query', requireAuth, async (req, res) => {
   }
 
   if (!userEmail || !query) return res.status(400).json({ error: 'Missing userEmail or query' });
+
+  // FASE 3B — limites de entrada antes de qualquer chamada a OpenAI.
+  if (typeof query !== 'string' || !query) {
+    return res.status(400).json({ error: 'Consulta invalida.' });
+  }
+  if (query.length > AI_INPUT_LIMITS.embeddingsQuery) {
+    return res.status(400).json({ error: `Consulta muito longa: maximo de ${AI_INPUT_LIMITS.embeddingsQuery} caracteres.` });
+  }
+  if (!Number.isInteger(topK) || topK < AI_INPUT_LIMITS.topKMin || topK > AI_INPUT_LIMITS.topKMax) {
+    return res.status(400).json({ error: `topK deve ser um inteiro entre ${AI_INPUT_LIMITS.topKMin} e ${AI_INPUT_LIMITS.topKMax}.` });
+  }
 
   try {
     const qEmb = await createEmbedding(query);
@@ -1222,11 +1373,17 @@ function fallbackResponse(message, subject = 'Geral') {
   ]);
 }
 
-app.post('/api/chat', requireAuth, async (req, res) => {
+app.post('/api/chat', requireAuth, chatLimiter, async (req, res) => {
   const { message, subject, history, subjects, goals, messageHistory, mode, topic, difficulty, progress, contentStats, recentSchedule } = req.body;
 
   if (!message || typeof message !== 'string') {
     return res.status(400).json({ error: 'Mensagem inválida' });
+  }
+
+  // FASE 3B — limites de entrada antes de qualquer chamada a OpenAI.
+  const chatError = validateChatInput(req.body || {});
+  if (chatError) {
+    return res.status(400).json({ error: chatError });
   }
 
   const isAmbiguous = (text) => {
@@ -1322,12 +1479,18 @@ app.post('/api/chat', requireAuth, async (req, res) => {
   }
 });
 
-app.post('/api/generate-exercise', requireAuth, async (req, res) => {
+app.post('/api/generate-exercise', requireAuth, exerciseLimiter, async (req, res) => {
   const { userEmail, subject, topic, difficulty = 'médio' } = req.body;
   if (userEmail && userEmail !== req.user.email) {
     return res.status(403).json({ success: false, message: 'Acesso não autorizado.' });
   }
   if (!subject && !topic) return res.status(400).json({ success: false, message: 'Faltam parâmetros (subject/topic)' });
+
+  // FASE 3B — limites de entrada antes de qualquer chamada a OpenAI.
+  const exerciseError = validateExerciseInput(req.body || {});
+  if (exerciseError) {
+    return res.status(400).json({ success: false, message: exerciseError });
+  }
 
   try {
     if (!openai) {
