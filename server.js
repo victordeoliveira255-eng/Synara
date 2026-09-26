@@ -96,6 +96,19 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
 
+// ---------------------------------------------------------------------------
+// FASE 3A — Anti-cache das respostas da API.
+// Impede que navegadores/proxies armazenem respostas com dados de usuario,
+// autenticacao, IA ou administracao. Aplica-se a todas as rotas /api/*
+// atuais e futuras. Nao afeta o express.static(PUBLIC_DIR): assets publicos
+// (CSS/JS/imagens) continuam cacheaveis normalmente.
+// ---------------------------------------------------------------------------
+app.use('/api/', (req, res, next) => {
+  res.set('Cache-Control', 'no-store');
+  res.set('Pragma', 'no-cache');
+  next();
+});
+
 async function requirePageAuth(req, res, next) {
   const token = req.cookies?.[SESSION_COOKIE];
   if (!token) {
