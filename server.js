@@ -141,6 +141,13 @@ async function requirePageAuth(req, res, next) {
       }
       return res.status(401).json({ success: false, message: 'Usuário não encontrado.' });
     }
+    // FASE 3D — token com versão divergente foi revogado (mensagem generica, sem revelar o motivo)
+    if ((payload.tv ?? 0) !== (user.token_version ?? 0)) {
+      if (req.accepts('html')) {
+        return res.redirect('/login.html');
+      }
+      return res.status(401).json({ success: false, message: 'Sessão expirada ou não autenticada.' });
+    }
     req.user = buildSafeUser(user);
     return next();
   } catch {
@@ -325,7 +332,6 @@ function validateExerciseInput(body) {
 let pgPool = null;
 let sqliteDb = null;
 let memoryStore = {};
-let userSessions = {}; // Track active sessions for account deletion and security
 
 function persistStore() {
   try {
@@ -377,11 +383,12 @@ function buildSafeUser(row) {
   return user;
 }
 
-function signToken(id, email, role = USER_ROLE.USER) {
-  return jwt.sign({ sub: id, email, role }, JWT_SECRET, { expiresIn: '7d' });
+function signToken(id, email, role = USER_ROLE.USER, tv = 0) {
+  // FASE 3D — claim 'tv' (token_version do banco) permite revogar tokens antigos
+  return jwt.sign({ sub: id, email, role, tv }, JWT_SECRET, { expiresIn: '7d' });
 }
 
-function setAuthCookie(res, token, userId) {
+function setAuthCookie(res, token) {
   res.cookie(SESSION_COOKIE, token, {
     httpOnly: true,
     sameSite: 'lax',
@@ -389,22 +396,10 @@ function setAuthCookie(res, token, userId) {
     maxAge: ONE_WEEK_MS,
     path: '/'
   });
-  // Track session for account deletion
-  if (userId) {
-    if (!userSessions[userId]) userSessions[userId] = [];
-    userSessions[userId].push({ token, createdAt: Date.now() });
-  }
 }
 
 function clearAuthCookie(res) {
   res.clearCookie(SESSION_COOKIE, { path: '/' });
-}
-
-function invalidateUserSessions(userId) {
-  // Clear all sessions for a user (used on account deletion or password reset)
-  if (userSessions[userId]) {
-    delete userSessions[userId];
-  }
 }
 
 async function initDatabase() {
@@ -423,12 +418,15 @@ async function initDatabase() {
         email TEXT NOT NULL UNIQUE,
         password_hash TEXT NOT NULL,
         role TEXT NOT NULL DEFAULT 'user',
+        token_version INTEGER NOT NULL DEFAULT 0,
         profile JSONB NOT NULL DEFAULT '{}'::jsonb,
         created_at TIMESTAMPTZ DEFAULT now(),
         updated_at TIMESTAMPTZ DEFAULT now()
       );
     `);
     await pgPool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'user';`)
+    // FASE 3D — migration idempotente: usuarios existentes ficam com token_version = 0
+    await pgPool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS token_version INTEGER NOT NULL DEFAULT 0;`)
     await pgPool.query(`
       CREATE TABLE IF NOT EXISTS password_reset_tokens (
         id SERIAL PRIMARY KEY,
@@ -515,6 +513,7 @@ async function initDatabase() {
           email TEXT NOT NULL UNIQUE,
           password_hash TEXT NOT NULL,
           role TEXT NOT NULL DEFAULT 'user',
+          token_version INTEGER NOT NULL DEFAULT 0,
           profile TEXT NOT NULL DEFAULT '{}',
           created_at TEXT DEFAULT CURRENT_TIMESTAMP,
           updated_at TEXT DEFAULT CURRENT_TIMESTAMP
@@ -524,14 +523,23 @@ async function initDatabase() {
         sqliteDb.all('PRAGMA table_info(users)', (pragmaError, tableInfo) => {
           if (pragmaError) return reject(pragmaError);
           const hasRole = Array.isArray(tableInfo) && tableInfo.some((column) => column.name === 'role');
+          const hasTokenVersion = Array.isArray(tableInfo) && tableInfo.some((column) => column.name === 'token_version');
+          // FASE 3D — migration idempotente: usuarios existentes ficam com token_version = 0
+          const ensureTokenVersion = (done) => {
+            if (hasTokenVersion) return done();
+            sqliteDb.run('ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0', (tvError) => {
+              if (tvError) return reject(tvError);
+              done();
+            });
+          };
           if (!hasRole) {
             sqliteDb.run('ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT "user"', (alterError) => {
               if (alterError) return reject(alterError);
-              continueSetup();
+              ensureTokenVersion(continueSetup);
             });
             return;
           }
-          continueSetup();
+          ensureTokenVersion(continueSetup);
         });
       });
 
@@ -662,6 +670,10 @@ async function requireAuth(req, res, next) {
     if (!user) {
       return res.status(401).json({ success: false, message: 'Usuário não encontrado.' });
     }
+    // FASE 3D — token com versão divergente foi revogado (mensagem generica, sem revelar o motivo)
+    if ((payload.tv ?? 0) !== (user.token_version ?? 0)) {
+      return res.status(401).json({ success: false, message: 'Sessão expirada ou não autenticada.' });
+    }
     req.user = buildSafeUser(user);
     return next();
   } catch {
@@ -756,11 +768,13 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
     const role = USER_ROLE.USER; // All new accounts start as users
 
     let user;
+    let registerTokenVersion = 0;
     if (pgPool) {
       const result = await pgPool.query(
-        'INSERT INTO users (name, email, password_hash, role, profile) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, role, profile, created_at, updated_at',
+        'INSERT INTO users (name, email, password_hash, role, profile) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, role, profile, created_at, updated_at, token_version',
         [cleanName, cleanEmail, passwordHash, role, JSON.stringify({})]
       );
+      registerTokenVersion = result.rows[0].token_version ?? 0;
       user = buildSafeUser(result.rows[0]);
     } else {
       const insertResult = await new Promise((resolve, reject) => {
@@ -778,11 +792,12 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
         sqliteDb.get('SELECT * FROM users WHERE id = ?', [insertResult.lastID], (error, row) => error ? reject(error) : resolve(row));
       });
 
+      registerTokenVersion = created.token_version ?? 0;
       user = buildSafeUser(created);
     }
 
-    const token = signToken(user.id, user.email, user.role);
-    setAuthCookie(res, token, user.id);
+    const token = signToken(user.id, user.email, user.role, registerTokenVersion);
+    setAuthCookie(res, token);
     return res.status(201).json({ success: true, user, message: 'Cadastro realizado com sucesso.' });
   } catch (error) {
     console.error('Register error:', error);
@@ -810,8 +825,8 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
     }
 
     const user = buildSafeUser(row);
-    const token = signToken(user.id, user.email, user.role);
-    setAuthCookie(res, token, user.id);
+    const token = signToken(user.id, user.email, user.role, row.token_version ?? 0);
+    setAuthCookie(res, token);
     return res.json({ success: true, user, message: 'Login realizado com sucesso.' });
   } catch (error) {
     console.error('Login error:', error);
@@ -835,6 +850,10 @@ app.get('/api/auth/me', async (req, res) => {
     const user = await fetchUserById(payload.sub);
     if (!user) {
       return res.status(401).json({ success: false, message: 'Usuário não encontrado.' });
+    }
+    // FASE 3D — token com versão divergente foi revogado (mensagem generica, sem revelar o motivo)
+    if ((payload.tv ?? 0) !== (user.token_version ?? 0)) {
+      return res.status(401).json({ success: false, message: 'Sessão expirada ou não autenticada.' });
     }
     return res.json({ success: true, user: buildSafeUser(user) });
   } catch {
@@ -1154,14 +1173,13 @@ app.put('/api/user/password', requireAuth, async (req, res) => {
     const passwordHash = await bcrypt.hash(String(newPassword), 10);
 
     if (pgPool) {
-      await pgPool.query('UPDATE users SET password_hash = $1, updated_at = now() WHERE id = $2', [passwordHash, req.user.id]);
+      await pgPool.query('UPDATE users SET password_hash = $1, token_version = token_version + 1, updated_at = now() WHERE id = $2', [passwordHash, req.user.id]);
     } else {
       await new Promise((resolve, reject) => {
-        sqliteDb.run('UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [passwordHash, req.user.id], (error) => error ? reject(error) : resolve());
+        sqliteDb.run('UPDATE users SET password_hash = ?, token_version = token_version + 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [passwordHash, req.user.id], (error) => error ? reject(error) : resolve());
       });
     }
 
-    invalidateUserSessions(req.user.id);
     clearAuthCookie(res);
 
     return res.json({ success: true, message: 'Senha alterada com sucesso. Faça login novamente.' });
@@ -1230,19 +1248,18 @@ app.post('/api/auth/reset-password', strictLimiter, async (req, res) => {
 
     const passwordHash = await bcrypt.hash(String(password), 10);
     if (pgPool) {
-      await pgPool.query('UPDATE users SET password_hash = $1, updated_at = now() WHERE id = $2', [passwordHash, resetRecord.user_id]);
+      await pgPool.query('UPDATE users SET password_hash = $1, token_version = token_version + 1, updated_at = now() WHERE id = $2', [passwordHash, resetRecord.user_id]);
       await pgPool.query('UPDATE password_reset_tokens SET used_at = now() WHERE id = $1', [resetRecord.id]);
     } else {
       await new Promise((resolve, reject) => {
-        sqliteDb.run('UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [passwordHash, resetRecord.user_id], (error) => error ? reject(error) : resolve());
+        sqliteDb.run('UPDATE users SET password_hash = ?, token_version = token_version + 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [passwordHash, resetRecord.user_id], (error) => error ? reject(error) : resolve());
       });
       await new Promise((resolve, reject) => {
         sqliteDb.run('UPDATE password_reset_tokens SET used_at = CURRENT_TIMESTAMP WHERE id = ?', [resetRecord.id], (error) => error ? reject(error) : resolve());
       });
     }
 
-    // Invalidate all sessions for this user (security best practice after password reset)
-    invalidateUserSessions(resetRecord.user_id);
+    // FASE 3D — invalidacao real dos tokens antigos: incremento de token_version no UPDATE acima
 
     return res.json({ success: true, message: 'Senha redefinida com sucesso. Por favor, faça login novamente.' });
   } catch (error) {
@@ -1570,8 +1587,7 @@ app.delete('/api/account', requireAuth, async (req, res) => {
       });
     }
     
-    // Invalidate all sessions for this user
-    invalidateUserSessions(userId);
+    // FASE 3D — usuario removido: tokens deixam de validar (fetchUserById retorna nulo)
     
     // Clear the auth cookie
     clearAuthCookie(res);
