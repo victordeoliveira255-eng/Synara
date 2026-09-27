@@ -1212,6 +1212,12 @@
       lastBot.feedback = 'nothelped';
     }
 
+    // FASE 4A — esclarecimento: consome o pending (uso unico) e reenvia a
+    // pergunta original junto com a resposta do estudante, para que a Mentora
+    // responda a duvida original considerando o esclarecimento. Declarado fora
+    // do try para continuar acessivel nos caminhos de erro (HTTP e excecao).
+    const pendingOriginal = state.mentor.pending || null;
+    if (pendingOriginal) state.mentor.pending = null;
     try {
       const knowledge = await fetchKnowledge(message);
       const body = {
@@ -1229,6 +1235,10 @@
         history: state.mentor.messages.slice(-4).map((m) => (m.role === 'user' ? 'USUARIO: ' : 'MENTORA: ') + m.text).join('\n'),
         knowledge: knowledge
       };
+      if (pendingOriginal) {
+        body.clarification = message;
+        body.originalMessage = pendingOriginal;
+      }
       const response = await fetch('/api/chat', {
         method: 'POST',
         credentials: 'include',
@@ -1238,6 +1248,8 @@
       const data = await response.json().catch(() => ({}));
       state.mentor.sending = false;
       if (!response.ok) {
+        // FASE 4A — a pergunta original nao foi perdida: volta para pending.
+        if (pendingOriginal) state.mentor.pending = pendingOriginal;
         addMentorMessage({ id: uid(), role: 'bot', kind: 'text', text: 'Não consegui responder agora. Verifique sua conexão e tente novamente.', strategy: strategy });
         renderMentorLog();
         return;
@@ -1245,7 +1257,9 @@
       if (data && data.clarify) {
         addMentorMessage({ id: uid(), role: 'bot', kind: 'text', text: data.question || 'Você prefere um resumo rápido, uma explicação passo a passo ou um exercício prático?', strategy: strategy, entry: entry });
         registerStrategyUse(entry);
-        state.mentor.pending = message;
+        // FASE 4A — mantem a PERGUNTA ORIGINAL (nao a ultima resposta) quando
+        // a Mentora pede esclarecimento novamente.
+        state.mentor.pending = pendingOriginal || message;
       } else {
         const reply = data && data.reply ? data.reply : 'Vou ajudar com isso. Pode me dar mais detalhes?';
         addMentorMessage({ id: uid(), role: 'bot', kind: 'text', text: reply, strategy: strategy, entry: entry });
@@ -1258,6 +1272,8 @@
       renderMentorLog();
     } catch (error) {
       state.mentor.sending = false;
+      // FASE 4A — falha de rede/tempo: preserva a pergunta original.
+      if (pendingOriginal) state.mentor.pending = pendingOriginal;
       addMentorMessage({ id: uid(), role: 'bot', kind: 'text', text: 'Tive um problema para responder agora. Tente novamente em instantes.', strategy: strategy });
       renderMentorLog();
       console.warn('Mentor error:', error);
