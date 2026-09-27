@@ -7,3 +7,18 @@ services:
     startCommand: "npm start"
     branch: main
     autoDeploy: true
+    envVars:
+      # Ambiente de producao reconhecido explicitamente pela aplicacao
+      # (cookie Secure, Helmet HTTPS, reset de senha sem expor token, rate limits).
+      - key: NODE_ENV
+        value: production
+      # Segredos: definidos SOMENTE no painel do Render (Environment),
+      # nunca com valores reais neste arquivo.
+      - key: JWT_SECRET
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false

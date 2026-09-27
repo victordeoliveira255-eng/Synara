@@ -51,7 +51,13 @@ const SESSION_COOKIE = 'synara_session';
 const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || '').trim().toLowerCase(); // Empty by default - admin must be configured explicitly
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const STORE_PATH = path.resolve('./memory_store.json');
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000').split(',').map(o => o.trim());
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean)
+  // '*' nunca e uma origem valida quando cookies/credenciais estao em uso:
+  // ignora silenciosamente em vez de refletir qualquer Origin.
+  .filter((o) => o !== '*');
 const USER_ROLE = { USER: 'user', ADMIN: 'admin' };
 
 // ---------------------------------------------------------------------------
@@ -80,13 +86,21 @@ app.use(helmet({
   }
 }));
 
-// CORS with whitelist
+// CORS with whitelist.
+// Por seguranca, '*' NUNCA e aceito como origem quando cookies/credenciais
+// estao em uso: somente origens explicitamente listadas em ALLOWED_ORIGINS
+// recebem headers CORS. Requisicoes same-origin (sem header Origin)
+// continuam funcionando normalmente.
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  if (ALLOWED_ORIGINS.includes(origin) || ALLOWED_ORIGINS.includes('*')) {
-    res.header('Access-Control-Allow-Origin', origin || ALLOWED_ORIGINS[0]);
+  if (origin) {
+    res.header('Vary', 'Origin');
   }
-  res.header('Access-Control-Allow-Credentials', 'true');
+  const isAllowed = Boolean(origin) && ALLOWED_ORIGINS.includes(origin);
+  if (isAllowed) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Credentials', 'true');
+  }
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
   if (req.method === 'OPTIONS') return res.sendStatus(204);
@@ -394,6 +408,12 @@ function invalidateUserSessions(userId) {
 }
 
 async function initDatabase() {
+  // FASE 3C — Producao nunca usa SQLite silencioso.
+  // Sem DATABASE_URL em producao: falha clara no startup em vez de criar
+  // um banco local efemero no Render (dados reais ficam no PostgreSQL).
+  if (process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL) {
+    throw new Error('DATABASE_URL e obrigatorio em producao. Configure DATABASE_URL no painel do Render (servico -> Environment) e faca redeploy. Nenhum banco SQLite foi criado.');
+  }
   if (process.env.DATABASE_URL) {
     pgPool = new Pool({ connectionString: process.env.DATABASE_URL });
     await pgPool.query(`
@@ -1573,6 +1593,18 @@ async function startServer() {
     console.log('✅ Banco de dados inicializado');
   } catch (error) {
     console.error('⚠️ Erro ao inicializar banco de dados:', error.message);
+    // FASE 3C — Em producao, nunca ficar "online" sem banco: encerrar para
+    // o deploy falhar de forma visivel em vez de servir degradado.
+    // Em desenvolvimento/teste, mantem o comportamento anterior.
+    if (process.env.NODE_ENV === 'production') {
+      console.error('[FATAL] Banco de dados de producao indisponivel. Encerrando o processo.');
+      try {
+        if (pgPool) await pgPool.end();
+      } catch {
+        // Ignora erro ao fechar o pool durante o fail-closed.
+      }
+      process.exit(1);
+    }
     console.log('Continuando com servidor disponível...');
   }
 
