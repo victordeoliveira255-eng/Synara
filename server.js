@@ -861,6 +861,25 @@ function clearAuthCookie(res) {
   res.clearCookie(SESSION_COOKIE, { path: '/' });
 }
 
+// FASE 5A — LOG SEGURO DE ERROS DO DRIVER POSTGRES.
+// Alguns erros do node-postgres podem, em tese, carregar a URL de conexao na
+// mensagem. Este sanitizador garante que QUALQUER log de erro do pool nunca
+// exponha connection string, usuario, senha, token ou cookie: encurta o texto
+// e substitui esses trechos por <REDACTED>. O codigo do erro (ex.: ECONNRESET,
+// 57P01) e preservado porque ajuda o diagnostico e nao e sensivel.
+function sanitizePgError(error) {
+  const message = error && error.message ? String(error.message) : (typeof error === 'string' ? error : '');
+  const raw = message || 'erro desconhecido';
+  const code = error && error.code ? ` [${String(error.code).slice(0, 24)}]` : '';
+  const clean = raw
+    .replace(/postgres(ql)?:\/\/[^\s]+/gi, 'postgres://<REDACTED>')
+    .replace(/(password|passwd|pwd|senha|token|secret|apikey|cookie)\s*[:=]\s*\S+/gi, '$1=<REDACTED>')
+    .replace(/[\r\n\t]+/g, ' ')
+    .trim()
+    .slice(0, 300);
+  return clean + code;
+}
+
 async function initDatabase() {
   // FASE 3C — Producao nunca usa SQLite silencioso.
   // Sem DATABASE_URL em producao: falha clara no startup em vez de criar
@@ -880,7 +899,28 @@ async function initDatabase() {
       : (process.env.PGSSL === 'require' || !isLocalDb);
     pgPool = new Pool({
       connectionString: process.env.DATABASE_URL,
+      max: 5, // pooler do Supabase limita sessoes; 5 cobre 2 instancias durante o deploy
+      application_name: 'synara-web', // util em conexao direta/local; o pooler Supabase (Supavisor) sobrescreve esse valor
+      // FASE 5B — sem esta opcao, uma requisicao que precise de conexao NOVA ou de
+      // um cliente do pool fica em _pendingQueue INDEFINIDAMENTE (pg-pool 3.14.0,
+      // index.js:206-232 e 240-284). 10 s limita a espera por conexao/slot e ainda
+      // define connect_timeout no protocolo (connection-parameters.js:129).
+      // Nao afeta consultas normais: um cliente ja conectado e entregue na hora.
+      connectionTimeoutMillis: 10000,
       ...(sslEnabled ? { ssl: { rejectUnauthorized: false } } : {})
+    });
+    // FASE 5A — ERRO EM CLIENTE OCIOSO DO POOL.
+    // pg-pool emite 'error' no proprio Pool quando um cliente OCIOSO falha
+    // (node_modules/pg-pool/index.js: makeIdleListener -> pool.emit('error')).
+    // Sem listener, o EventEmitter do Node trata 'error' como excecao nao
+    // capturada e ENCERRA o processo — derrubando a aplicacao inteira por causa
+    // de uma conexao ja descartada. Em Postgres gerenciado (Supabase + pooler)
+    // a sessao pode ser encerrada por manutencao, pausa do projeto, reinicio do
+    // pooler ou oscilacao de rede, entao o listener e obrigatorio.
+    // O cliente problematico ja foi removido do pool pelo pg-pool: basta
+    // registrar e seguir (a proxima query cria uma conexao nova).
+    pgPool.on('error', (error) => {
+      console.error('PG pool error (cliente ocioso descartado, aplicacao segue ativa):', sanitizePgError(error));
     });
     await pgPool.query(`
       CREATE TABLE IF NOT EXISTS users (
@@ -3797,26 +3837,70 @@ app.delete('/api/account', requireAuth, async (req, res) => {
   }
 });
 
+// FASE 5A — TIMEOUT DE INICIALIZACAO DO BANCO.
+// O ramo PostgreSQL do initDatabase executa 21 round-trips SEQUENCIAIS (11
+// CREATE TABLE, 2 ALTER TABLE, 8 CREATE INDEX) antes de o servidor escutar a
+// porta. Medido neste ambiente: ~0,9 s apenas para a conexao com o pooler do
+// Supabase aquecido, o que projetava a inicializacao quente para ~2-4 s. Com o
+// projeto pausado (o plano gratuito pausa apos 7 dias sem atividade) ou o
+// pooler frio, a primeira resposta ultrapassava 10 s e o deploy morria com
+// [FATAL] — falha visivel, porem desnecessaria.
+// 30 s cobre a retomada mantendo margem para o servico passar a escutar a porta.
+// O fail-closed e PRESERVADO: banco realmente inacessivel continua encerrando o
+// processo. Ajustavel por DB_INIT_TIMEOUT_MS, sem exigir novo deploy de codigo.
+const DB_INIT_TIMEOUT_MS = Number(process.env.DB_INIT_TIMEOUT_MS) > 0
+  ? Number(process.env.DB_INIT_TIMEOUT_MS)
+  : 30000;
+
+// FASE 5C — ENCERRAMENTO COM TETO DE TEMPO NO FAIL-CLOSED.
+// pgPool.end() (pg-pool/index.js:488-499) resolve APENAS quando todos os clientes
+// saem: _endCallback e chamado so com _clients.length === 0 (index.js:130-144).
+// Uma consulta em voo pendurada (rede morrendo depois do connect) faria o
+// encerramento esperar para sempre — justamente no caminho em que o processo
+// PRECISA encerrar. Aqui a espera tem teto explicito de 3 s e o timer e unref()
+// para nao segurar o event loop. O fail-closed continua garantido: encerrar o
+// pool e cortesia, nao condicao — o processo sai com codigo 1 de qualquer forma.
+const DB_SHUTDOWN_TIMEOUT_MS = 3000;
+
+async function closePoolWithin(pool, timeoutMs = DB_SHUTDOWN_TIMEOUT_MS) {
+  if (!pool) return;
+  let timer = null;
+  try {
+    await Promise.race([
+      pool.end(),
+      new Promise((resolve) => {
+        timer = setTimeout(resolve, timeoutMs);
+        if (timer.unref) timer.unref(); // nao mantem o processo vivo
+      })
+    ]);
+  } catch {
+    // Falha ao fechar o pool nao muda o desfecho: o processo encerra de qualquer forma.
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 async function startServer() {
   try {
     console.log('Inicializando banco de dados...');
     await Promise.race([
       initDatabase(),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Database init timeout')), 10000))
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Database init timeout')), DB_INIT_TIMEOUT_MS))
     ]);
     console.log('✅ Banco de dados inicializado');
   } catch (error) {
-    console.error('⚠️ Erro ao inicializar banco de dados:', error.message);
+    // Erro ORIGINAL da inicializacao preservado no log, porem sanitizado: o
+    // sanitizador remove connection string/usuario/senha/token/cookie e mantem
+    // a mensagem e o codigo do erro (ex.: ECONNREFUSED, 57P01).
+    console.error('⚠️ Erro ao inicializar banco de dados:', sanitizePgError(error));
     // FASE 3C — Em producao, nunca ficar "online" sem banco: encerrar para
     // o deploy falhar de forma visivel em vez de servir degradado.
     // Em desenvolvimento/teste, mantem o comportamento anterior.
     if (process.env.NODE_ENV === 'production') {
       console.error('[FATAL] Banco de dados de producao indisponivel. Encerrando o processo.');
-      try {
-        if (pgPool) await pgPool.end();
-      } catch {
-        // Ignora erro ao fechar o pool durante o fail-closed.
-      }
+      // Encerramento com teto de tempo: nao depende de um cliente pendurado
+      // liberar. O processo sai com codigo 1 mesmo se o pool nao fechar.
+      await closePoolWithin(pgPool);
       process.exit(1);
     }
     console.log('Continuando com servidor disponível...');
