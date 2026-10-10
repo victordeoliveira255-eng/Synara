@@ -1418,6 +1418,16 @@ async function recordMentorEvent(userId, eventType, eventData = {}) {
   });
 }
 
+// Telemetria NUNCA substitui nem derruba a resposta: falha ao gravar o evento e
+// registrada no log e a conversa segue com a resposta ja gerada pela IA.
+async function safeRecordMentorEvent(userId, eventType, eventData = {}) {
+  try {
+    await recordMentorEvent(userId, eventType, eventData);
+  } catch (error) {
+    console.error('Mentor event record failed:', eventType, sanitizePgError(error));
+  }
+}
+
 // FASE 4A — a memoria e conteudo do usuario: normalizada (sem caracteres de
 // controle, sem quebras de linha), limitada item a item e no total, para nao
 // servir de canal de injecao nem de crescimento ilimitado do prompt.
@@ -3752,7 +3762,7 @@ app.post('/api/chat', requireAuth, chatLimiter, async (req, res) => {
       console.error('Learning observation error:', error.message);
     }
 
-await recordMentorEvent(req.user.id, mode || 'conversation', { subject: subject || topic || 'Geral', mode, messageLength: String(message).length, hasGoal: Array.isArray(goals) && goals.length > 0, knowledgeItems: educationalItems.length, knowledgeMode: knowledgeMode, learningSignals: learningSignals.length, learningTimeline: learningTimeline.length, pedagogicalObjective: pedagogicalDecision ? pedagogicalDecision.objective : null, pedagogicalApproach: pedagogicalDecision ? pedagogicalDecision.approach.id : null, pedagogicalPreviousApproach: pedagogicalDecision && pedagogicalDecision.previousApproach ? pedagogicalDecision.previousApproach.id : null, pedagogicalChangedApproach: pedagogicalDecision ? pedagogicalDecision.changeApproach : null });
+await safeRecordMentorEvent(req.user.id, mode || 'conversation', { subject: subject || topic || 'Geral', mode, messageLength: String(message).length, hasGoal: Array.isArray(goals) && goals.length > 0, knowledgeItems: educationalItems.length, knowledgeMode: knowledgeMode, learningSignals: learningSignals.length, learningTimeline: learningTimeline.length, pedagogicalObjective: pedagogicalDecision ? pedagogicalDecision.objective : null, pedagogicalApproach: pedagogicalDecision ? pedagogicalDecision.approach.id : null, pedagogicalPreviousApproach: pedagogicalDecision && pedagogicalDecision.previousApproach ? pedagogicalDecision.previousApproach.id : null, pedagogicalChangedApproach: pedagogicalDecision ? pedagogicalDecision.changeApproach : null });
     return res.json({ reply });
   } catch (error) {
     console.error('OpenAI error:', error);
@@ -3783,7 +3793,7 @@ app.post('/api/generate-exercise', requireAuth, exerciseLimiter, async (req, res
         'Evitar pausas para estudar sem parar.',
         'Decorar respostas sem entender o conceito.'
       ];
-      await recordMentorEvent(req.user.id, 'question', { subject: subject || topic || 'Geral', difficulty });
+      await safeRecordMentorEvent(req.user.id, 'question', { subject: subject || topic || 'Geral', difficulty });
       return res.json({
         exercise: `${question}\nA) ${options[0]}\nB) ${options[1]}\nC) ${options[2]}\nD) ${options[3]}`,
         question,
@@ -3796,7 +3806,7 @@ app.post('/api/generate-exercise', requireAuth, exerciseLimiter, async (req, res
     const prompt = `Gere 1 exercício prático sobre ${topic || subject}, nível ${difficulty}. Inclua enunciado claro, passos para resolver e a solução explicada.`;
     const response = await openai.responses.create({ model: 'gpt-4.1-mini', input: prompt, temperature: 0.6 });
     const exercise = response.output_text || (response.output || []).flatMap((item) => item?.content || []).map((chunk) => chunk?.text || '').join(' ');
-    await recordMentorEvent(req.user.id, 'question', { subject: subject || topic || 'Geral', difficulty, isGenerated: true });
+    await safeRecordMentorEvent(req.user.id, 'question', { subject: subject || topic || 'Geral', difficulty, isGenerated: true });
     return res.json({ exercise });
   } catch (error) {
     console.error('Generate exercise error:', error);
