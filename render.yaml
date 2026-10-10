@@ -16,6 +16,9 @@ services:
       # nunca com valores reais neste arquivo.
       - key: JWT_SECRET
         sync: false
+      # Database: o Postgres gratuito do Render foi descontinuado. Aponte para
+      # um Postgres gerenciado (ex.: Supabase). Use a connection string no modo
+      # "Session pooler" do Supabase (porta 5432). O SSL e ativado automaticamente.
       - key: DATABASE_URL
         sync: false
       - key: OPENAI_API_KEY

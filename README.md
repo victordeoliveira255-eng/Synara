@@ -129,6 +129,28 @@ Funcionalidades:
 - PostgreSQL em produção (`DATABASE_URL`)
 - SQLite como fallback local (`/.data/synara.db`)
 
+### Migrando para o Supabase (Postgres)
+
+O Postgres do plano gratuito do Render foi descontinuado. O caminho mais rápido é
+manter o app no Render e apontar o banco para o **Supabase**:
+
+1. No Supabase, abra **Project Settings → Database → Connection string** e copie a
+   string do modo **Session pooler** (porta `5432`, host `...pooler.supabase.com`).
+   Evite o modo *Transaction* (porta `6543`) e a conexão *direta* (pode exigir IPv6).
+2. Se não souber a senha do banco: **Project Settings → Database → Reset database password**.
+   Na URL, codifique caracteres especiais da senha (`@`→`%40`, `?`→`%3F`, `#`→`%23`, `&`→`%26`).
+3. No Render, troque a variável `DATABASE_URL` pela string do Supabase e salve (redeploy automático).
+4. O `server.js` cria todas as tabelas automaticamente no startup (`CREATE TABLE IF NOT EXISTS`),
+   então não é preciso rodar SQL manual. O SSL é ativado automaticamente para hosts remotos
+   (pode ser forçado/desligado com a variável `PGSSL=require` ou `PGSSL=disable`).
+5. Nos logs do Render deve aparecer `✅ Banco de dados inicializado`; as tabelas aparecem
+   no **Table Editor** do Supabase.
+6. Para virar admin: cadastre o usuário e rode no **SQL Editor** do Supabase:
+   `UPDATE users SET role = 'admin' WHERE email = 'seu-email@exemplo.com';`
+
+> Observação: no plano gratuito o projeto Supabase pausa após 7 dias sem atividade
+> (reativável com 1 clique) e tem limite de 500 MB.
+
 ### Tabelas principais
 - `users`: Contas de usuários com role
 - `admin_logs`: Registro de ações administrativas
@@ -165,7 +187,11 @@ NODE_ENV=production
 JWT_SECRET=seu-secret-aleatorio-seguro
 
 # URL do banco de dados PostgreSQL (opcional)
+# Producao: use a connection string do Supabase (modo Session pooler, porta 5432)
 DATABASE_URL=
+
+# Forca/desliga SSL na conexao do banco (Padrao: ativado automaticamente para host remoto)
+# PGSSL=require
 
 # Chave de API OpenAI (opcional)
 OPENAI_API_KEY=
