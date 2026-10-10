@@ -2857,11 +2857,14 @@ async function readLastPedagogicalApproach(userId, { subject } = {}) {
 }
 
 // FASE 4D — historico da conversa com ORCAMENTO POR MENSAGEM.
-// Monta o historico usando MENSAGENS COMPLETAS: nunca corta uma mensagem no
-// meio e nunca deixa um fragmento orfao. Quando o total excede o teto, descarta
-// as trocas MAIS ANTIGAS inteiras, preservando o turno mais recente. A pergunta
-// atual e removida do historico porque ja entra rotulada em
-// "PERGUNTA DO ESTUDANTE" (evitava-se a duplicacao).
+// Cada mensagem e limitada a AI_INPUT_LIMITS.historyMessageChars caracteres e,
+// quando o total excede AI_INPUT_LIMITS.historyTotalChars, as trocas MAIS
+// ANTIGAS sao descartadas inteiras, preservando o turno mais recente.
+// A pergunta atual e removida porque ja entra rotulada em "PERGUNTA DO
+// ESTUDANTE": a ultima entrada de usuario e a mensagem atual passam pelo MESMO
+// promptSafeLine antes da comparacao — sem isso, normalizacao (quebras de linha,
+// espacos repetidos) e corte em historyMessageChars faziam a remocao falhar e a
+// pergunta aparecia duas vezes no prompt.
 function buildConversationHistory(messageHistory, legacyHistory, currentMessage) {
   const entries = [];
   if (Array.isArray(messageHistory) && messageHistory.length) {
@@ -2872,7 +2875,7 @@ function buildConversationHistory(messageHistory, legacyHistory, currentMessage)
       entries.push({ role: role || 'MENSAGEM', content });
     }
     const last = entries[entries.length - 1];
-    if (last && last.role === 'USER' && currentMessage && last.content.trim() === String(currentMessage).trim()) {
+    if (last && last.role === 'USER' && currentMessage && last.content === promptSafeLine(currentMessage, AI_INPUT_LIMITS.historyMessageChars)) {
       entries.pop();
     }
     const totalChars = () => entries.reduce((sum, item) => sum + item.role.length + item.content.length + 2, 0);
@@ -3682,7 +3685,10 @@ app.post('/api/chat', requireAuth, chatLimiter, async (req, res) => {
     // A versao anterior juntava as ultimas mensagens e cortava os ultimos 800
     // caracteres do conjunto, o que apagava o inicio da conversa e podia comecar
     // no meio de uma palavra.
-    const historyContext = buildConversationHistory(messageHistory, history, effectiveMessage);
+    // Deduplicacao: no fluxo de esclarecimento a mensagem efetiva e a juncao
+    // (original + esclarecimento), mas a ultima entrada do historico e apenas o
+    // esclarecimento — comparar com a mensagem efetiva nunca removia a duplicata.
+    const historyContext = buildConversationHistory(messageHistory, history, clarification && originalMessage ? clarification : effectiveMessage);
 
     // FASE 4D — o `fewShot` canned foi REMOVIDO.
     // Ele fixava dois exemplos de formato ("Vamos passo a passo..." e um plano
