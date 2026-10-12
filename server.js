@@ -8,7 +8,14 @@ import jwt from 'jsonwebtoken';
 import cookieParser from 'cookie-parser';
 import sqlite3 from 'sqlite3';
 import { Pool } from 'pg';
-import { OpenAI } from 'openai';
+import {
+  createEmbedding,
+  generateExerciseText,
+  generateMentorReply,
+  isEmbeddingProviderAvailable,
+  isTextProviderAvailable,
+  sanitizeAiError
+} from './aiProvider.js';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import validator from 'validator';
@@ -344,11 +351,10 @@ app.get('/admin.html', requireAuth, requireRole(USER_ROLE.ADMIN), (req, res) => 
 // por autenticacao/autorizacao antes de qualquer acesso ao arquivo.
 app.use(express.static(PUBLIC_DIR, { dotfiles: 'deny' }));
 
-const openAiKey = process.env.OPENAI_API_KEY;
-// FASE 4B — permite um endpoint compativel com a API OpenAI via OPENAI_BASE_URL
-// (usado no ambiente de teste local com stub; em producao segue api.openai.com).
-const openAiBaseURL = (process.env.OPENAI_BASE_URL || '').trim();
-const openai = openAiKey ? new OpenAI({ apiKey: openAiKey, ...(openAiBaseURL ? { baseURL: openAiBaseURL } : {}) }) : null;
+// FASE 1 — Provedores de IA isolados em aiProvider.js (ver resolucao preguicosa
+// e fallbacks em server.js). O cliente OpenAI continua ativo quando ha
+// OPENAI_API_KEY; sem chave, a aplicacao segue com os fallbacks locais
+// (nenhuma chamada externa e feita).
 
 // Rate limiting for auth endpoints
 const authLimiter = rateLimit({
@@ -2000,11 +2006,8 @@ function cosine(a, b) {
   return dot / (na * nb);
 }
 
-async function createEmbedding(text) {
-  if (!openai) throw new Error('OpenAI API key not configured');
-  const response = await openai.embeddings.create({ model: 'text-embedding-3-small', input: text });
-  return response.data[0].embedding;
-}
+// FASE 1 — createEmbedding agora e importado de aiProvider.js (topo do arquivo).
+// O provedor de EMBEDDINGS e resolvido separadamente do provedor de TEXTO.
 
 app.post('/api/embeddings/index', requireAuth, embeddingsLimiter, async (req, res) => {
   const { userEmail, content, metadata } = req.body;
@@ -2041,7 +2044,7 @@ app.post('/api/embeddings/index', requireAuth, embeddingsLimiter, async (req, re
     persistStore();
     res.json({ ok: true, entry, source: 'local' });
   } catch (error) {
-    console.error('Indexing error:', error);
+    console.error('Indexing error:', sanitizeAiError(error));
     res.status(500).json({ error: 'Indexing failed' });
   }
 });
@@ -2084,7 +2087,7 @@ app.post('/api/embeddings/query', requireAuth, embeddingsLimiter, async (req, re
     const top = items.slice(0, topK);
     res.json({ items: top, source: 'local' });
   } catch (error) {
-    console.error('Query error:', error);
+    console.error('Query error:', sanitizeAiError(error));
     res.status(500).json({ error: 'Query failed' });
   }
 });
@@ -2353,7 +2356,7 @@ async function writeEducationalEmbedding(contentId, chunkText, embedding, conten
 async function setEducationalEmbedding(contentId, chunkText, contentHash) {
   const currentHash = await readEducationalEmbeddingHash(contentId);
   if (currentHash && currentHash === contentHash) return 'unchanged';
-  if (!openai) return 'pending';
+  if (!isEmbeddingProviderAvailable()) return 'pending';
   const embedding = await createEmbedding(chunkText);
   await writeEducationalEmbedding(contentId, chunkText, embedding, contentHash);
   return currentHash ? 'updated' : 'created';
@@ -3405,11 +3408,11 @@ function buildEducationalKnowledgeBlock(items, maxChars) {
 async function searchKnowledge({ query, rawQuery, subject, topic, level, types, limit, userEmail, includeUser }) {
   const queryText = [subject, topic, query].filter((value) => typeof value === 'string' && value.trim()).join(' ').slice(0, AI_INPUT_LIMITS.embeddingsQuery);
   let queryEmbedding = null;
-  if (openai) {
+  if (isEmbeddingProviderAvailable()) {
     try {
       queryEmbedding = await createEmbedding(queryText);
     } catch (error) {
-      console.error('Knowledge embedding error:', error.message);
+      console.error('Knowledge embedding error:', sanitizeAiError(error));
     }
   }
   const educational = await searchEducationalKnowledge({ query: (typeof rawQuery === 'string' && rawQuery.trim() ? rawQuery : query), queryEmbedding, subject, topic, level, types, limit });
@@ -3550,7 +3553,7 @@ app.post('/api/chat', requireAuth, chatLimiter, async (req, res) => {
     effectiveMessage = `${originalMessage}\n\nEsclarecimento do usuário: ${clarification}`;
   }
 
-  if (!openai) {
+  if (!isTextProviderAvailable()) {
     const modeHint = {
       explain: 'Vou explicar em etapas, começando pelo essencial.',
       understand: 'Antes de explicar tudo, vou fazer uma pergunta para descobrir o que você já sabe.',
@@ -3739,18 +3742,13 @@ app.post('/api/chat', requireAuth, chatLimiter, async (req, res) => {
       `PERGUNTA DO ESTUDANTE:\n${effectiveMessage}`
     ].filter(Boolean).join('\n\n');
 
-    const response = await openai.responses.create({
-      model: 'gpt-4.1-mini',
-      temperature: 0.8,
+    // FASE 1 — geracao de texto delegada ao provedor de IA (OpenAI hoje). A
+    // normalizacao da resposta permanece identica (aiProvider.js).
+    const reply = await generateMentorReply({
       instructions: systemPrompt,
-      input: userDataBlock
-    });
-
-    const reply = response.output_text || (response.output || [])
-      .flatMap((item) => item?.content || [])
-      .map((chunk) => chunk?.text || '')
-      .filter(Boolean)
-      .join(' ') || fallbackResponse(message, subject);
+      input: userDataBlock,
+      temperature: 0.8
+    }) || fallbackResponse(message, subject);
 
     // FASE 4C — observacao da interacao. Roda DEPOIS da resposta, sem segunda
     // chamada de IA: o observador le a mensagem do aluno e a resposta da
@@ -3765,7 +3763,7 @@ app.post('/api/chat', requireAuth, chatLimiter, async (req, res) => {
 await safeRecordMentorEvent(req.user.id, mode || 'conversation', { subject: subject || topic || 'Geral', mode, messageLength: String(message).length, hasGoal: Array.isArray(goals) && goals.length > 0, knowledgeItems: educationalItems.length, knowledgeMode: knowledgeMode, learningSignals: learningSignals.length, learningTimeline: learningTimeline.length, pedagogicalObjective: pedagogicalDecision ? pedagogicalDecision.objective : null, pedagogicalApproach: pedagogicalDecision ? pedagogicalDecision.approach.id : null, pedagogicalPreviousApproach: pedagogicalDecision && pedagogicalDecision.previousApproach ? pedagogicalDecision.previousApproach.id : null, pedagogicalChangedApproach: pedagogicalDecision ? pedagogicalDecision.changeApproach : null });
     return res.json({ reply });
   } catch (error) {
-    console.error('OpenAI error:', error);
+    console.error('Mentor AI error:', sanitizeAiError(error));
     return res.json({ reply: fallbackResponse(message, subject) });
   }
 });
@@ -3784,7 +3782,7 @@ app.post('/api/generate-exercise', requireAuth, exerciseLimiter, async (req, res
   }
 
   try {
-    if (!openai) {
+    if (!isTextProviderAvailable()) {
       const currentTopic = topic || subject;
       const question = `Qual é uma boa estratégia para estudar ${currentTopic}?`;
       const options = [
@@ -3804,12 +3802,12 @@ app.post('/api/generate-exercise', requireAuth, exerciseLimiter, async (req, res
     }
 
     const prompt = `Gere 1 exercício prático sobre ${topic || subject}, nível ${difficulty}. Inclua enunciado claro, passos para resolver e a solução explicada.`;
-    const response = await openai.responses.create({ model: 'gpt-4.1-mini', input: prompt, temperature: 0.6 });
-    const exercise = response.output_text || (response.output || []).flatMap((item) => item?.content || []).map((chunk) => chunk?.text || '').join(' ');
+    // FASE 1 — geracao de exercicio delegada ao provedor de IA (OpenAI hoje).
+    const exercise = await generateExerciseText({ input: prompt, temperature: 0.6 });
     await safeRecordMentorEvent(req.user.id, 'question', { subject: subject || topic || 'Geral', difficulty, isGenerated: true });
     return res.json({ exercise });
   } catch (error) {
-    console.error('Generate exercise error:', error);
+    console.error('Generate exercise error:', sanitizeAiError(error));
     return res.status(500).json({ success: false, message: 'Erro ao gerar exercício' });
   }
 });

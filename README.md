@@ -193,8 +193,15 @@ DATABASE_URL=
 # Forca/desliga SSL na conexao do banco (Padrao: ativado automaticamente para host remoto)
 # PGSSL=require
 
-# Chave de API OpenAI (opcional)
+# Chave de API OpenAI (opcional; provedor ALTERNATIVO de texto)
 OPENAI_API_KEY=
+
+# Google Gemini: provedor PRINCIPAL de geracao de texto (opcional).
+# GEMINI_API_KEY e um SEGREDO: defina no painel do provedor, nunca no repositorio.
+GEMINI_API_KEY=
+GEMINI_TEXT_MODEL=gemini-2.5-flash
+# Provedor de texto preferido: auto | gemini | openai
+AI_TEXT_PROVIDER=auto
 
 # Email para bootstrap do primeiro admin (opcional)
 ADMIN_EMAIL=
@@ -233,7 +240,7 @@ A Mentora é o motor de personalização e usa apenas o que o backend já oferec
 
 ## Observações
 
-- Se não houver `OPENAI_API_KEY`, o chat usa respostas de fallback locais
+- A Mentora usa o Google Gemini como provedor principal de texto; sem `GEMINI_API_KEY`, tenta a OpenAI e, sem nenhuma chave, usa respostas de fallback locais
 - O sistema suporta múltiplos dispositivos - sessão é global via JWT
 - Admin logs registram ações administrativas para auditoria
 - A plataforma está otimizada para dispositivos móveis

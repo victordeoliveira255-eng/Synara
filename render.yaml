@@ -23,5 +23,14 @@ services:
         sync: false
       - key: OPENAI_API_KEY
         sync: false
+      # Gemini: provedor PRINCIPAL de geracao de texto. A CHAVE e um segredo
+      # definido SOMENTE no painel do Render (sync: false). O modelo e a
+      # preferencia de provedor sao configuracao nao sensivel.
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_TEXT_MODEL
+        value: gemini-2.5-flash
+      - key: AI_TEXT_PROVIDER
+        value: auto
       - key: ALLOWED_ORIGINS
         sync: false
