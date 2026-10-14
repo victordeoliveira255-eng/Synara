@@ -32,6 +32,15 @@ import { GoogleGenAI } from '@google/genai';
 // OpenAI (alternativa de TEXTO e unico provedor de EMBEDDINGS nesta fase).
 const OPENAI_TEXT_MODEL = 'gpt-4.1-mini';
 const OPENAI_EMBEDDING_MODEL = 'text-embedding-3-small';
+// Dimensao declarada do modelo de embeddings da OpenAI. Compõe a IDENTIDADE DE
+// FORMATO (ver buildEmbeddingFormat) sem duplicar strings de modelo no
+// server.js; a dimensao REAL de cada vetor e conferida na gravacao.
+const OPENAI_EMBEDDING_DIM = 1536;
+// Versao do formato. Incrementar quando a SEMANTICA do vetor mudar sem que
+// provedor/modelo/dimensao mudem (ex.: troca do texto de entrada). Como entra na
+// identidade, vetores antigos deixam de ser comparados com os novos de forma
+// automatica — nunca por suposicao.
+const EMBEDDING_FORMAT_VERSION = 1;
 // Gemini (provedor PRINCIPAL de TEXTO). Modelo configuravel por
 // GEMINI_TEXT_MODEL. A lista de fallback so entra em acao quando o modelo
 // pedido NAO existe / nao esta disponivel para a chave (HTTP 404) — nunca em
@@ -158,6 +167,34 @@ export function createOpenAiTextProvider({ client, env = process.env } = {}) {
 }
 
 // ---------------------------------------------------------------------------
+// P0-10 (C1/C3) — VALIDACAO DO VETOR DE EMBEDDING.
+// ---------------------------------------------------------------------------
+// Um vetor so e aceito se for um array NAO VAZIO de numeros FINITOS e se a
+// dimensao coincidir EXATAMENTE com a declarada pelo formato. A dimensao
+// declarada NUNCA e "corrigida" para casar com um resultado inesperado: a
+// divergencia e um ERRO OPERACIONAL. As mensagens trazem apenas dimensoes/indices
+// — nunca chave de API, conteudo de material ou dado de estudante.
+// ---------------------------------------------------------------------------
+export function validateEmbeddingVector(vector, expectedDim) {
+  if (!Array.isArray(vector)) {
+    throw new Error('Embedding provider returned a non-array vector');
+  }
+  if (vector.length === 0) {
+    throw new Error('Embedding provider returned an empty vector');
+  }
+  if (Number.isInteger(expectedDim) && expectedDim > 0 && vector.length !== expectedDim) {
+    throw new Error(`Embedding dimension mismatch: expected ${expectedDim}, received ${vector.length}`);
+  }
+  for (let i = 0; i < vector.length; i += 1) {
+    const value = vector[i];
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+      throw new Error(`Embedding vector has a non-finite value at index ${i}`);
+    }
+  }
+  return vector;
+}
+
+// ---------------------------------------------------------------------------
 // PROVEDOR DE EMBEDDINGS — OpenAI. Caminho SEPARADO do texto (ver cabecalho):
 // a futura migracao de embeddings nao deve reutilizar o provedor de texto.
 // ---------------------------------------------------------------------------
@@ -170,9 +207,13 @@ export function createOpenAiEmbeddingProvider({ client, env = process.env } = {}
   return {
     id: 'openai',
     model: OPENAI_EMBEDDING_MODEL,
+    dimension: OPENAI_EMBEDDING_DIM,
     async embed(text) {
       const response = await ai.embeddings.create({ model: OPENAI_EMBEDDING_MODEL, input: text });
-      return response.data[0].embedding;
+      const vector = response && response.data && response.data[0] ? response.data[0].embedding : null;
+      // P0-10 (C1/C3) — nunca aceitar (nem persistir) um vetor invalido ou com
+      // dimensao divergente da declarada pelo formato.
+      return validateEmbeddingVector(vector, OPENAI_EMBEDDING_DIM);
     }
   };
 }
@@ -332,6 +373,49 @@ export function getTextProviderId() {
 export function getEmbeddingProviderId() {
   resolveActive();
   return activeEmbedding ? activeEmbedding.id : null;
+}
+
+// ---------------------------------------------------------------------------
+// P0-7 — IDENTIDADE DE FORMATO DAS EMBEDDINGS.
+// ---------------------------------------------------------------------------
+// Um vetor so pode ser comparado com outro se AMBOS vierem do MESMO formato.
+// Dimensao igual NAO basta: dois modelos distintos podem ter 1536 dimensoes e
+// espacos semanticos diferentes. O identificador e estavel e explicito:
+//
+//     <provider>:<model>:<dimension>:v<version>
+//     ex.: openai:text-embedding-3-small:1536:v1
+//
+// Ele e DERIVADO da configuracao efetiva do provedor (nunca de uma string de
+// modelo duplicada no server.js) e nao existe "default" adivinhado.
+// ---------------------------------------------------------------------------
+
+// Puro: permite testar a identidade sem tocar no singleton do modulo.
+export function buildEmbeddingFormat(provider, version = EMBEDDING_FORMAT_VERSION) {
+  if (!provider || !provider.id || !provider.model || !provider.dimension) return null;
+  const providerId = String(provider.id);
+  const model = String(provider.model);
+  const dimension = Number(provider.dimension);
+  if (!Number.isInteger(dimension) || dimension <= 0) return null;
+  return {
+    provider: providerId,
+    model,
+    dimension,
+    version,
+    key: `${providerId}:${model}:${dimension}:v${version}`
+  };
+}
+
+// Formato do provedor ATIVO (null quando nao ha provedor de embeddings).
+export function getEmbeddingFormat() {
+  resolveActive();
+  return buildEmbeddingFormat(activeEmbedding);
+}
+
+// Identificador estavel do formato ativo (null sem provedor). E o valor gravado
+// na coluna format_key das tabelas de embeddings.
+export function getEmbeddingFormatId() {
+  const format = getEmbeddingFormat();
+  return format ? format.key : null;
 }
 
 // ---------------------------------------------------------------------------

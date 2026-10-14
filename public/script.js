@@ -46,7 +46,11 @@ function appendMessage(sender, message) {
   if (!chatMessages) return;
   const messageEl = document.createElement('div');
   messageEl.className = `chat-message ${sender}`;
-  messageEl.innerHTML = `<div class="chat-bubble">${message}</div>`;
+  // Seguranca: o texto (do usuario ou do bot) entra como TEXTO, nunca como HTML.
+  const bubbleEl = document.createElement('div');
+  bubbleEl.className = 'chat-bubble';
+  bubbleEl.textContent = message == null ? '' : String(message);
+  messageEl.appendChild(bubbleEl);
   chatMessages.appendChild(messageEl);
   chatMessages.scrollTop = chatMessages.scrollHeight;
 }

@@ -104,12 +104,23 @@ test('texto: gera exercicio com os parametros atuais', async () => {
 
 test('embeddings: usa text-embedding-3-small e retorna o vetor', async () => {
   const calls = [];
-  const fake = { embeddings: { create: async (params) => { calls.push(params); return { data: [{ embedding: [0.1, 0.2, 0.3] }] }; } } };
+  // P0-10 (C1) — o provedor valida a dimensao contra a declarada pelo formato:
+  // o vetor do duble precisa ter a dimensao REAL do modelo (1536).
+  const embedding = new Array(1536).fill(0).map((_, index) => Number((index / 1536).toFixed(6)));
+  const fake = { embeddings: { create: async (params) => { calls.push(params); return { data: [{ embedding }] }; } } };
   const provider = createOpenAiEmbeddingProvider({ client: fake });
   assert.equal(provider.model, 'text-embedding-3-small');
+  assert.equal(provider.dimension, 1536);
   const vector = await provider.embed('texto');
-  assert.deepEqual(vector, [0.1, 0.2, 0.3]);
+  assert.equal(vector.length, 1536);
+  assert.deepEqual(vector, embedding);
   assert.deepEqual(calls[0], { model: 'text-embedding-3-small', input: 'texto' });
+});
+
+test('embeddings: dimensao divergente da declarada e rejeitada', async () => {
+  const fake = { embeddings: { create: async () => ({ data: [{ embedding: [0.1, 0.2, 0.3] }] }) } };
+  const provider = createOpenAiEmbeddingProvider({ client: fake });
+  await assert.rejects(() => provider.embed('texto'), /dimension mismatch/);
 });
 
 // ---------------------------------------------------------------------------

@@ -12,9 +12,11 @@ import {
   createEmbedding,
   generateExerciseText,
   generateMentorReply,
+  getEmbeddingFormat,
   isEmbeddingProviderAvailable,
   isTextProviderAvailable,
-  sanitizeAiError
+  sanitizeAiError,
+  validateEmbeddingVector
 } from './aiProvider.js';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -287,6 +289,110 @@ app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
 
 // ---------------------------------------------------------------------------
+// FASE 5D — PROTECAO CSRF POR ORIGEM (defesa em profundidade).
+// ---------------------------------------------------------------------------
+// O CORS acima apenas EMITE cabecalhos: ele nao impede o EFEITO de uma
+// requisicao cross-site (o navegador bloqueia a LEITURA da resposta, nao a acao
+// executada no servidor). Por isso a validacao explicita abaixo.
+//
+// Regra: toda requisicao MUTAVEL (POST/PUT/PATCH/DELETE) precisa apresentar
+// contexto de origem verificavel.
+//   1) `Origin` presente -> deve estar na lista confiavel (ALLOWED_ORIGINS ou a
+//      propria origem da aplicacao).
+//   2) `Origin` ausente  -> usa `Referer`; a origem do Referer deve estar na
+//      lista confiavel.
+//   2b) `Origin`/`Referer` presentes porem INVALIDOS ou opacos (ex.: "null")
+//      -> 403 imediato: header presente e sinal cross-site e NAO pode ser
+//      tratado como ausente (isso liberaria o caso permissivo do item 3).
+//   3) Ambos ausentes    -> 403, EXCETO quando a requisicao NAO traz o cookie de
+//      sessao. Justificativa: CSRF explora credencial ambiente (o cookie que o
+//      navegador anexa sozinho); sem cookie nao existe dado do usuario a forjar,
+//      e os fluxos PRE-autenticacao (cadastro, login, recuperacao de senha) sao
+//      exatamente os que rodam sem cookie. Navegadores enviam `Origin` em
+//      requisicoes mutaveis (inclusive same-origin), logo o caso "ambos
+//      ausentes" nao e alcancavel por uma pagina atacante.
+//   GET/HEAD/OPTIONS nunca sao bloqueados por esta politica.
+//
+// A origem da propria aplicacao e derivada do `Host` + do esquema observado pelo
+// servidor (`req.protocol`, que respeita `trust proxy`). Os DOIS esquemas sao
+// aceitos para o MESMO Host de forma DELIBERADA: atras do proxy do Render a
+// conexao interna e HTTP e a publica e HTTPS; se o proxy nao repassar
+// X-Forwarded-Proto, `req.protocol` seria 'http' e a origem HTTPS legitima seria
+// rejeitada. Isso NAO abre espaco para CSRF porque o valor de `Origin` e
+// definido pelo NAVEGADOR da vitima (a pagina atacante nao escolhe esse header).
+// O que NAO se faz aqui: aceitar qualquer Origin so porque o Host coincide, nem
+// refletir o Origin recebido sem conferir a lista confiavel.
+// ---------------------------------------------------------------------------
+const CSRF_SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+const CSRF_ORIGIN_REJECT = 'Origem não autorizada.';
+
+// Primeiro valor de um header (headers podem vir com lista separada por virgula).
+function firstHeaderValue(value) {
+  if (typeof value !== 'string') return '';
+  const comma = value.indexOf(',');
+  return (comma === -1 ? value : value.slice(0, comma)).trim();
+}
+
+// Normaliza Origin/Referer para "scheme://host[:port]". Devolve null para
+// ausente, opaco ("null") ou invalido — nunca "aceita" o que nao entende.
+function normalizeOrigin(value) {
+  const raw = firstHeaderValue(value);
+  if (!raw || raw === 'null') return null;
+  try {
+    const url = new URL(raw);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
+    return url.origin;
+  } catch {
+    return null;
+  }
+}
+
+// Origens confiaveis para ESTA requisicao: a lista explicita + a propria origem
+// da aplicacao derivada do Host (ver comentario acima).
+function trustedOrigins(req) {
+  const origins = new Set(ALLOWED_ORIGINS);
+  const host = firstHeaderValue(req.headers.host);
+  if (!host) return origins;
+  const scheme = req.protocol === 'https' ? 'https' : 'http';
+  origins.add(`${scheme}://${host}`);
+  origins.add(scheme === 'https' ? `http://${host}` : `https://${host}`);
+  return origins;
+}
+
+function requireTrustedOrigin(req, res, next) {
+  if (CSRF_SAFE_METHODS.has(req.method)) return next();
+
+  const allowed = trustedOrigins(req);
+
+  // 1) Origin presente: precisa ser valido E confiavel. Um Origin presente
+  //    porem invalido/opaco ("null") e um sinal cross-site: NAO pode ser tratado
+  //    como "ausente" e cair na politica permissiva do passo 3.
+  const rawOrigin = firstHeaderValue(req.headers.origin);
+  if (rawOrigin) {
+    const origin = normalizeOrigin(rawOrigin);
+    if (origin && allowed.has(origin)) return next();
+    return res.status(403).json({ success: false, message: CSRF_ORIGIN_REJECT });
+  }
+
+  // 2) Origin ausente: usa Referer com a mesma exigencia (valido E confiavel).
+  const rawReferer = firstHeaderValue(req.headers.referer);
+  if (rawReferer) {
+    const referer = normalizeOrigin(rawReferer);
+    if (referer && allowed.has(referer)) return next();
+    return res.status(403).json({ success: false, message: CSRF_ORIGIN_REJECT });
+  }
+
+  // 3) Sem Origin e sem Referer: so e aceitavel quando nao ha credencial ambiente.
+  const hasSessionCookie = Boolean(req.cookies && req.cookies[SESSION_COOKIE]);
+  if (hasSessionCookie) {
+    return res.status(403).json({ success: false, message: CSRF_ORIGIN_REJECT });
+  }
+  return next();
+}
+
+app.use(requireTrustedOrigin);
+
+// ---------------------------------------------------------------------------
 // FASE 3A — Anti-cache das respostas da API.
 // Impede que navegadores/proxies armazenem respostas com dados de usuario,
 // autenticacao, IA ou administracao. Aplica-se a todas as rotas /api/*
@@ -481,6 +587,11 @@ const CHAT_MODE_LABELS = {
 // public/dashboard.js (registerStrategyUse/setStrategyFeedback) grava 'strategy'
 // e 'general' e o default historico da rota POST /api/mentor/memory.
 const MENTOR_MEMORY_CATEGORIES = ['strategy', 'general'];
+// FASE 4A — valores de humor realmente usados pelo frontend
+// (public/dashboard.html: data-mood="tranquilo|normal|sobrecarregado") mais o
+// estado inicial vazio ('') usado por public/dashboard.js/auth.js quando ainda
+// nao houve check-in. Qualquer outro valor e rejeitado em PUT /api/user/profile.
+const WELLBEING_MOODS = ['', 'tranquilo', 'normal', 'sobrecarregado'];
 
 function validateStringList(value, owner, maxItems, maxChars) {
   if (value == null) return null;
@@ -526,6 +637,26 @@ function validateProgress(value) {
   if (value == null || value === '') return null;
   if (boundedNumber(value, AI_INPUT_LIMITS.progressMin, AI_INPUT_LIMITS.progressMax) === null) {
     return `Progresso invalido: informe um numero entre ${AI_INPUT_LIMITS.progressMin} e ${AI_INPUT_LIMITS.progressMax}.`;
+  }
+  return null;
+}
+
+// FASE 4A — bem-estar. Format realmente usado pelo frontend (public/auth.js:
+// setWellbeing e normalizeUser): { mood, updatedAt }. O unico campo exibido na
+// interface e `mood`, entao e ele que precisa ser um valor fechado
+// (WELLBEING_MOODS). A validacao e deliberadamente tolerante com campos extras
+// e com a AUSENCIA do objeto (mantem o valor atual), para nunca descartar dados
+// legitimos ja persistidos nem quebrar a persistencia do perfil.
+function validateWellbeing(value) {
+  if (value == null) return null; // ausente: o perfil atual e preservado
+  if (!isPlainObject(value)) return 'Bem-estar inválido.';
+  if (value.mood != null) {
+    if (typeof value.mood !== 'string' || !WELLBEING_MOODS.includes(value.mood)) {
+      return 'Bem-estar com humor inválido.';
+    }
+  }
+  if (value.updatedAt != null && (typeof value.updatedAt !== 'string' || value.updatedAt.length > 40)) {
+    return 'Bem-estar com data inválida.';
   }
   return null;
 }
@@ -853,18 +984,27 @@ function signToken(id, email, role = USER_ROLE.USER, tv = 0) {
   return jwt.sign({ sub: id, email, role, tv }, JWT_SECRET, { expiresIn: '7d' });
 }
 
-function setAuthCookie(res, token) {
-  res.cookie(SESSION_COOKIE, token, {
+// Atributos do cookie de sessao. Fonte unica de verdade: a CRIACAO e a REMOCAO
+// usam exatamente os mesmos atributos (httpOnly/SameSite/Secure/path). Sem isso,
+// o navegador podia nao casar o cookie no logout (ex.: Secure divergente) e a
+// sessao continuava valida no cliente. `maxAge` NAO entra aqui porque
+// res.clearCookie nao usa expiracao do cookie para apagar (o Express define
+// expires no passado); a duracao da sessao permanece inalterada.
+function authCookieOptions() {
+  return {
     httpOnly: true,
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
-    maxAge: ONE_WEEK_MS,
     path: '/'
-  });
+  };
+}
+
+function setAuthCookie(res, token) {
+  res.cookie(SESSION_COOKIE, token, { ...authCookieOptions(), maxAge: ONE_WEEK_MS });
 }
 
 function clearAuthCookie(res) {
-  res.clearCookie(SESSION_COOKIE, { path: '/' });
+  res.clearCookie(SESSION_COOKIE, authCookieOptions());
 }
 
 // FASE 5A — LOG SEGURO DE ERROS DO DRIVER POSTGRES.
@@ -1336,6 +1476,42 @@ async function initDatabase() {
   });
 
   console.log('Using SQLite database fallback');
+}
+
+// ---------------------------------------------------------------------------
+// P0-7 — COLUNAS DE IDENTIDADE DE FORMATO DAS EMBEDDINGS (migracao ADITIVA).
+// ---------------------------------------------------------------------------
+// Acrescenta `format_key` e `dim` as duas tabelas de vetores. NUNCA remove nem
+// reescreve coluna alguma e NAO relabela registros existentes: as linhas antigas
+// ficam com `format_key` NULL, ou seja, LEGADO/DESCONHECIDO (fora da busca
+// vetorial, preservadas e disponiveis ao fallback lexical).
+// Idempotente: pode rodar a cada boot. PostgreSQL usa ADD COLUMN IF NOT EXISTS;
+// SQLite confere PRAGMA table_info antes de alterar (nao suporta IF NOT EXISTS).
+const EMBEDDING_FORMAT_COLUMNS = [
+  ['embeddings', 'format_key', 'TEXT'],
+  ['embeddings', 'dim', 'INTEGER'],
+  ['educational_embeddings', 'format_key', 'TEXT'],
+  ['educational_embeddings', 'dim', 'INTEGER']
+];
+
+async function ensureEmbeddingFormatColumns() {
+  if (pgPool) {
+    for (const [table, column, type] of EMBEDDING_FORMAT_COLUMNS) {
+      await pgPool.query(`ALTER TABLE ${table} ADD COLUMN IF NOT EXISTS ${column} ${type}`);
+    }
+    return;
+  }
+  if (!sqliteDb) return;
+  for (const [table, column, type] of EMBEDDING_FORMAT_COLUMNS) {
+    const columns = await new Promise((resolve, reject) => {
+      sqliteDb.all(`PRAGMA table_info(${table})`, (error, rows) => (error ? reject(error) : resolve(Array.isArray(rows) ? rows : [])));
+    });
+    if (!columns.length) continue; // tabela inexistente: nada a migrar
+    if (columns.some((row) => row.name === column)) continue;
+    await new Promise((resolve, reject) => {
+      sqliteDb.run(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`, (error) => (error ? reject(error) : resolve()));
+    });
+  }
 }
 
 async function fetchUserById(id) {
@@ -1820,6 +1996,13 @@ app.get('/api/mentor/memory', requireAuth, async (req, res) => {
 
 app.put('/api/user/profile', requireAuth, async (req, res) => {
   const incomingProfile = req.body?.profile && typeof req.body.profile === 'object' ? req.body.profile : {};
+  // FASE 4A — bem-estar validado ANTES de persistir: `mood` e um valor fechado
+  // (WELLBEING_MOODS). Um valor invalido nao e descartado em silencio nem
+  // gravado: a requisicao recebe 400, como nas demais validacoes de entrada.
+  const wellbeingError = validateWellbeing(incomingProfile.wellbeing);
+  if (wellbeingError) {
+    return res.status(400).json({ success: false, message: wellbeingError });
+  }
   const mergedProfile = {
     ...((req.user?.profile) || {}),
     ...incomingProfile,
@@ -2029,16 +2212,21 @@ app.post('/api/embeddings/index', requireAuth, embeddingsLimiter, async (req, re
 
   try {
     const embedding = await createEmbedding(content);
+    // P0-7 — a identidade do formato acompanha o vetor desde a gravacao. `dim` e
+    // a dimensao REAL do vetor (nao a declarada no provedor).
+    const format = getEmbeddingFormat();
+    const formatKey = format ? format.key : null;
+    const dim = Array.isArray(embedding) ? embedding.length : 0;
     if (pgPool) {
       // educationalJsonb: node-postgres envia Array como array literal do
       // PostgreSQL, que nao e JSON valido para uma coluna JSONB.
-      const result = await pgPool.query('INSERT INTO embeddings (user_email, content, embedding, metadata) VALUES ($1, $2, $3, $4) RETURNING id, created_at', [userEmail, content, educationalJsonb(embedding), educationalJsonb(metadata || {})]);
-      const entry = { id: result.rows[0].id, content, embedding, metadata: metadata || {}, createdAt: result.rows[0].created_at };
+      const result = await pgPool.query('INSERT INTO embeddings (user_email, content, embedding, metadata, format_key, dim) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, created_at', [userEmail, content, educationalJsonb(embedding), educationalJsonb(metadata || {}), formatKey, dim]);
+      const entry = { id: result.rows[0].id, content, embedding, metadata: metadata || {}, format_key: formatKey, dim, createdAt: result.rows[0].created_at };
       res.json({ ok: true, entry, source: 'pg' });
       return;
     }
 
-    const entry = { id: Date.now(), content, embedding, metadata: metadata || {}, createdAt: new Date().toISOString() };
+    const entry = { id: Date.now(), content, embedding, metadata: metadata || {}, format_key: formatKey, dim, createdAt: new Date().toISOString() };
     memoryStore[userEmail] = memoryStore[userEmail] || [];
     memoryStore[userEmail].push(entry);
     persistStore();
@@ -2072,17 +2260,22 @@ app.post('/api/embeddings/query', requireAuth, embeddingsLimiter, async (req, re
 
   try {
     const qEmb = await createEmbedding(query);
+    // P0-8 — apenas vetores com o MESMO formato e dimensao entram na similaridade.
+    const currentFormat = getEmbeddingFormat();
+    const queryDim = Array.isArray(qEmb) ? qEmb.length : null;
+    const compatible = (entry) => Array.isArray(entry.embedding)
+      && isEmbeddingCompatible(entry.format_key, entry.dim, currentFormat, queryDim);
 
     if (pgPool) {
-      const dbRes = await pgPool.query('SELECT id, content, embedding, metadata FROM embeddings WHERE user_email = $1', [userEmail]);
-      const items = dbRes.rows.map((entry) => ({ id: entry.id, content: entry.content, score: cosine(qEmb, entry.embedding), metadata: entry.metadata }));
+      const dbRes = await pgPool.query('SELECT id, content, embedding, metadata, format_key, dim FROM embeddings WHERE user_email = $1', [userEmail]);
+      const items = dbRes.rows.filter(compatible).map((entry) => ({ id: entry.id, content: entry.content, score: cosine(qEmb, entry.embedding), metadata: entry.metadata }));
       items.sort((a, b) => b.score - a.score);
       const top = items.slice(0, topK);
       res.json({ items: top, source: 'pg' });
       return;
     }
 
-    const items = (memoryStore[userEmail] || []).map((entry) => ({ id: entry.id, content: entry.content, score: cosine(qEmb, entry.embedding), metadata: entry.metadata }));
+    const items = (memoryStore[userEmail] || []).filter(compatible).map((entry) => ({ id: entry.id, content: entry.content, score: cosine(qEmb, entry.embedding), metadata: entry.metadata }));
     items.sort((a, b) => b.score - a.score);
     const top = items.slice(0, topK);
     res.json({ items: top, source: 'local' });
@@ -2308,13 +2501,60 @@ async function deleteEducationalContentByKey(sourceKey) {
   });
 }
 
-async function readEducationalEmbeddingHash(contentId) {
+// ---------------------------------------------------------------------------
+// P0-8 — COMPATIBILIDADE ENTRE VETORES.
+// ---------------------------------------------------------------------------
+// Dimensao igual NAO basta: sem a MESMA identidade de formato (P0-7) o vetor nao
+// pode entrar numa comparacao de similaridade. Registros LEGADOS/desconhecidos
+// (format_key NULL) nao participam da busca vetorial — seguem disponiveis para o
+// fallback lexical e NUNCA sao apagados nem relabelados por suposicao.
+function isEmbeddingCompatible(storedFormatKey, storedDim, format, queryDim) {
+  if (!format || !format.key) return false;
+  if (typeof storedFormatKey !== 'string' || storedFormatKey !== format.key) return false;
+  const dim = Number(storedDim);
+  if (!Number.isInteger(dim) || dim <= 0) return false;
+  if (dim !== Number(format.dimension)) return false;
+  if (queryDim != null && dim !== Number(queryDim)) return false;
+  return true;
+}
+
+// ---------------------------------------------------------------------------
+// P0-9 — REINDEXACAO CONTROLADA (desligada por padrao).
+// ---------------------------------------------------------------------------
+// Por padrao NAO se regenera embedding de vetor ja existente — nem por conteudo
+// alterado, nem por formato divergente/legado: apenas DETECTA e registra a
+// necessidade (logs operacionais, sem conteudo de mensagem nem dado pessoal).
+// A reindexacao exige opt-in explicito (EMBEDDINGS_REINDEX) e tem teto por
+// execucao (EMBEDDINGS_REINDEX_MAX) para limitar custo.
+const EMBEDDING_REINDEX_ENABLED = ['1', 'true', 'yes', 'on']
+  .includes(String(process.env.EMBEDDINGS_REINDEX || '').trim().toLowerCase());
+const EMBEDDING_REINDEX_MAX = Number(process.env.EMBEDDINGS_REINDEX_MAX) > 0
+  ? Math.floor(Number(process.env.EMBEDDINGS_REINDEX_MAX))
+  : 50;
+// P0-10 (C6) — orcamento SEPARADO para a CRIACAO de embeddings de conteudo NOVO.
+// Nao e o mesmo limite da reindexacao: sao caminhos de custo distintos e
+// EMBEDDINGS_REINDEX_MAX NAO controla a criacao. Conservador por padrao (25 por
+// inicializacao); o que exceder fica PENDENTE e e retomado na proxima
+// inicializacao — nada e apagado e nada e contado como concluido.
+const EMBEDDING_CREATE_MAX = Number(process.env.EMBEDDINGS_CREATE_MAX) > 0
+  ? Math.floor(Number(process.env.EMBEDDINGS_CREATE_MAX))
+  : 25;
+
+// Sanitiza um erro para log OPERACIONAL cobrindo TANTO padroes de provedor de IA
+// (sk-/AIza/AQ./token) QUANTO de banco (connection string/senha). Nunca imprime
+// chave, conteudo de material ou dado de estudante.
+function sanitizeOperationalError(error) {
+  return sanitizeAiError(sanitizePgError(error));
+}
+
+// Metadados de identidade de um vetor educacional (sem trazer o vetor).
+async function readEducationalEmbeddingMeta(contentId) {
   if (pgPool) {
-    const result = await pgPool.query('SELECT content_hash FROM educational_embeddings WHERE content_id = $1 AND chunk_index = 0', [contentId]);
-    return result.rows[0] ? result.rows[0].content_hash : null;
+    const result = await pgPool.query('SELECT content_hash, model, format_key, dim FROM educational_embeddings WHERE content_id = $1 AND chunk_index = 0', [contentId]);
+    return result.rows[0] || null;
   }
   return new Promise((resolve, reject) => {
-    sqliteDb.get('SELECT content_hash FROM educational_embeddings WHERE content_id = ? AND chunk_index = 0', [contentId], (error, row) => (error ? reject(error) : resolve(row ? row.content_hash : null)));
+    sqliteDb.get('SELECT content_hash, model, format_key, dim FROM educational_embeddings WHERE content_id = ? AND chunk_index = 0', [contentId], (error, row) => (error ? reject(error) : resolve(row || null)));
   });
 }
 
@@ -2331,48 +2571,126 @@ function educationalJsonb(value) {
   return JSON.stringify(value);
 }
 
-async function writeEducationalEmbedding(contentId, chunkText, embedding, contentHash) {
+async function writeEducationalEmbedding(contentId, chunkText, embedding, contentHash, format) {
+  // P0-10 (C3) — defesa em profundidade: nunca persistir vetor vazio, malformado,
+  // com NaN/Infinity ou com dimensao divergente do formato. Reutiliza a MESMA
+  // regra do provedor (validateEmbeddingVector), sem duplicar a implementacao.
+  validateEmbeddingVector(embedding, format && format.dimension ? format.dimension : null);
   const embeddingJson = educationalJsonb(embedding);
+  // dim = dimensao REAL do vetor gravado (nao a declarada no provedor). E o que
+  // permite detectar divergencia entre o configurado e o efetivamente gerado.
+  const dim = Array.isArray(embedding) ? embedding.length : 0;
+  const formatKey = format && format.key ? format.key : null;
+  const model = format && format.model ? format.model : null;
   if (pgPool) {
     await pgPool.query(
-      `INSERT INTO educational_embeddings (content_id, chunk_index, chunk_text, embedding, content_hash) VALUES ($1, 0, $2, $3, $4)
-       ON CONFLICT (content_id, chunk_index) DO UPDATE SET chunk_text = EXCLUDED.chunk_text, embedding = EXCLUDED.embedding, content_hash = EXCLUDED.content_hash, updated_at = now()`,
-      [contentId, chunkText, embeddingJson, contentHash]
+      `INSERT INTO educational_embeddings (content_id, chunk_index, chunk_text, embedding, content_hash, model, format_key, dim) VALUES ($1, 0, $2, $3, $4, $5, $6, $7)
+       ON CONFLICT (content_id, chunk_index) DO UPDATE SET chunk_text = EXCLUDED.chunk_text, embedding = EXCLUDED.embedding, content_hash = EXCLUDED.content_hash, model = EXCLUDED.model, format_key = EXCLUDED.format_key, dim = EXCLUDED.dim, updated_at = now()`,
+      [contentId, chunkText, embeddingJson, contentHash, model, formatKey, dim]
     );
     return;
   }
   await new Promise((resolve, reject) => {
     sqliteDb.run(
-      `INSERT INTO educational_embeddings (content_id, chunk_index, chunk_text, embedding, content_hash) VALUES (?, 0, ?, ?, ?)
-       ON CONFLICT (content_id, chunk_index) DO UPDATE SET chunk_text = excluded.chunk_text, embedding = excluded.embedding, content_hash = excluded.content_hash, updated_at = CURRENT_TIMESTAMP`,
-      [contentId, chunkText, embeddingJson, contentHash],
+      `INSERT INTO educational_embeddings (content_id, chunk_index, chunk_text, embedding, content_hash, model, format_key, dim) VALUES (?, 0, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT (content_id, chunk_index) DO UPDATE SET chunk_text = excluded.chunk_text, embedding = excluded.embedding, content_hash = excluded.content_hash, model = excluded.model, format_key = excluded.format_key, dim = excluded.dim, updated_at = CURRENT_TIMESTAMP`,
+      [contentId, chunkText, embeddingJson, contentHash, model, formatKey, dim],
       (error) => (error ? reject(error) : resolve())
     );
   });
 }
 
-// CUSTO: um embedding so e gerado quando o hash do conteudo muda. Reexecutar a
-// ingestao com o mesmo arquivo nao faz nenhuma chamada a OpenAI.
-async function setEducationalEmbedding(contentId, chunkText, contentHash) {
-  const currentHash = await readEducationalEmbeddingHash(contentId);
-  if (currentHash && currentHash === contentHash) return 'unchanged';
-  if (!isEmbeddingProviderAvailable()) return 'pending';
+// CUSTO: so se gera embedding quando NAO ha vetor ou quando a reindexacao foi
+// autorizada explicitamente. Reexecutar a ingestao com o mesmo arquivo e o mesmo
+// formato nao faz nenhuma chamada a OpenAI.
+async function setEducationalEmbedding(contentId, chunkText, contentHash, format, policy) {
+  // Sem provedor/formato nao ha o que criar nem com que comparar.
+  if (!format) return 'pending';
+
+  const meta = await readEducationalEmbeddingMeta(contentId);
+
+  if (!meta) {
+    // Ingestao inicial de um conteudo NOVO: nao existe vetor a substituir.
+    if (!isEmbeddingProviderAvailable()) return 'pending';
+    // P0-10 (C6) — orcamento PROPRIO para criacao; NAO consome o da reindexacao.
+    const createBudget = policy && policy.createBudget ? policy.createBudget : { remaining: 0 };
+    if (createBudget.remaining <= 0) return 'deferred';
+    const embedding = await createEmbedding(chunkText);
+    await writeEducationalEmbedding(contentId, chunkText, embedding, contentHash, format);
+    createBudget.remaining -= 1;
+    return 'created';
+  }
+
+  const formatMatches = isEmbeddingCompatible(meta.format_key, meta.dim, format, null);
+  const hashMatches = Boolean(meta.content_hash) && meta.content_hash === contentHash;
+  if (formatMatches && hashMatches) return 'unchanged';
+
+  // Divergencia detectada: conteudo alterado e/ou formato legado ou diferente.
+  // O vetor antigo NAO e reutilizado silenciosamente (fica fora da busca por
+  // P0-8) e NAO e apagado.
+  const reason = formatMatches ? 'content' : (meta.format_key ? 'format' : 'legacy');
+  const reindexEnabled = Boolean(policy && policy.reindex);
+  const budget = policy && policy.budget ? policy.budget : { remaining: 0 };
+  if (!reindexEnabled) return `stale-${reason}`;
+  // P0-10 (C6) — teto de reindexacao esgotado: a unidade fica PENDENTE (retomada
+  // na proxima inicializacao), nunca contada como reindexada.
+  if (budget.remaining <= 0) return 'deferred';
+  if (!isEmbeddingProviderAvailable()) return `stale-${reason}`;
+
   const embedding = await createEmbedding(chunkText);
-  await writeEducationalEmbedding(contentId, chunkText, embedding, contentHash);
-  return currentHash ? 'updated' : 'created';
+  await writeEducationalEmbedding(contentId, chunkText, embedding, contentHash, format);
+  budget.remaining -= 1;
+  return `reindexed-${reason}`;
+}
+
+// ---------------------------------------------------------------------------
+// P0-10 (C2) — sincronizacao de UMA unidade, isolada do laco.
+// ---------------------------------------------------------------------------
+// Uma falha aqui (conteudo OU embedding) NAO interrompe as demais unidades: o
+// laco captura, conta em `failed` e segue. Nada e apagado e a unidade que falhou
+// NAO e contabilizada como criada/atualizada.
+async function syncEducationalUnit(unit, context) {
+  const { collection, version, format, policy } = context;
+  const metadataJson = JSON.stringify({ collection, version, origin: 'synara', language: 'pt-BR', tags: unit.tags });
+  const chunkText = buildEducationalEmbeddingText(unit);
+  const contentHash = educationalHash(chunkText);
+  const existing = await findEducationalContentByKey(unit.sourceKey);
+
+  if (existing) {
+    const changed = existing.content_hash !== contentHash;
+    if (changed) await updateEducationalContent(existing.id, unit, collection, metadataJson, contentHash);
+    const embedding = await setEducationalEmbedding(existing.id, chunkText, contentHash, format, policy);
+    return { content: changed ? 'updated' : 'unchanged', embedding };
+  }
+
+  const contentId = await insertEducationalContent(unit, collection, metadataJson, contentHash);
+  const embedding = await setEducationalEmbedding(contentId, chunkText, contentHash, format, policy);
+  return { content: 'inserted', embedding };
 }
 
 async function syncEducationalBase() {
   const seed = readEducationalSeed();
   if (!seed) {
     console.log('Base educacional: nenhum arquivo de conteudo encontrado em ' + EDUCATIONAL_SEED_PATH + ' (a busca usa o que ja estiver no banco).');
-    return { units: 0, inserted: 0, updated: 0, unchanged: 0, removed: 0, invalid: 0, embeddingsCreated: 0, embeddingsReused: 0, embeddingsPending: 0 };
+    return { units: 0, processed: 0, inserted: 0, updated: 0, unchanged: 0, removed: 0, invalid: 0, failed: 0, embeddingsCreated: 0, embeddingsReused: 0, embeddingsPending: 0, embeddingsDeferred: 0, embeddingsStale: 0, embeddingsReindexed: 0, embeddingFormat: null, complete: false };
   }
   const units = Array.isArray(seed.units) ? seed.units : [];
   const collection = typeof seed.collection === 'string' && seed.collection.trim() ? seed.collection.trim() : 'synara-base-inicial';
   const version = typeof seed.version === 'string' && seed.version.trim() ? seed.version.trim() : '0.0.0';
-  const stats = { collection, version, units: units.length, inserted: 0, updated: 0, unchanged: 0, removed: 0, invalid: 0, embeddingsCreated: 0, embeddingsReused: 0, embeddingsPending: 0 };
+  const stats = { collection, version, units: units.length, processed: 0, inserted: 0, updated: 0, unchanged: 0, removed: 0, invalid: 0, failed: 0, embeddingsCreated: 0, embeddingsReused: 0, embeddingsPending: 0, embeddingsDeferred: 0, embeddingsStale: 0, embeddingsReindexed: 0, embeddingFormat: null, complete: false };
   const syncedKeys = new Set();
+
+  // P0-7 — formato EFETIVO do provedor de embeddings (null sem provedor).
+  // P0-9 — politica de reindexacao: desligada por padrao, com teto por execucao.
+  // P0-10 (C6) — orcamento PROPRIO e independente para criacao de conteudo novo.
+  const format = getEmbeddingFormat();
+  stats.embeddingFormat = format ? format.key : null;
+  const policy = {
+    reindex: EMBEDDING_REINDEX_ENABLED,
+    budget: { remaining: EMBEDDING_REINDEX_ENABLED ? EMBEDDING_REINDEX_MAX : 0 },
+    createBudget: { remaining: EMBEDDING_CREATE_MAX }
+  };
+  const context = { collection, version, format, policy };
 
   for (const raw of units) {
     const validated = validateEducationalUnit(raw);
@@ -2383,30 +2701,31 @@ async function syncEducationalBase() {
     }
     const unit = validated.value;
     syncedKeys.add(unit.sourceKey);
-    const metadataJson = JSON.stringify({ collection, version, origin: 'synara', language: 'pt-BR', tags: unit.tags });
-    const chunkText = buildEducationalEmbeddingText(unit);
-    const contentHash = educationalHash(chunkText);
-    const existing = await findEducationalContentByKey(unit.sourceKey);
-    let contentId = existing ? existing.id : null;
-    let changed = true;
+    stats.processed += 1;
 
-    if (existing) {
-      changed = existing.content_hash !== contentHash;
-      if (changed) {
-        await updateEducationalContent(contentId, unit, collection, metadataJson, contentHash);
-        stats.updated += 1;
-      } else {
-        stats.unchanged += 1;
-      }
-    } else {
-      contentId = await insertEducationalContent(unit, collection, metadataJson, contentHash);
-      stats.inserted += 1;
+    let result;
+    try {
+      result = await syncEducationalUnit(unit, context);
+    } catch (error) {
+      // P0-10 (C2) — falha ISOLADA por unidade: as demais unidades independentes
+      // continuam; a unidade que falhou NAO entra em inserted/updated. Log
+      // operacional sanitizado (sem chave, sem conteudo, sem dado pessoal).
+      stats.failed += 1;
+      console.error(`Base educacional: falha ao sincronizar "${unit.sourceKey}": ${sanitizeOperationalError(error)}`);
+      continue;
     }
 
-    const embeddingResult = await setEducationalEmbedding(contentId, chunkText, contentHash);
-    if (embeddingResult === 'pending') stats.embeddingsPending += 1;
+    if (result.content === 'inserted') stats.inserted += 1;
+    else if (result.content === 'updated') stats.updated += 1;
+    else stats.unchanged += 1;
+
+    const embeddingResult = result.embedding;
+    if (embeddingResult === 'created') stats.embeddingsCreated += 1;
     else if (embeddingResult === 'unchanged') stats.embeddingsReused += 1;
-    else stats.embeddingsCreated += 1;
+    else if (embeddingResult === 'deferred') stats.embeddingsDeferred += 1;
+    else if (embeddingResult === 'pending') stats.embeddingsPending += 1;
+    else if (embeddingResult.startsWith('reindexed')) stats.embeddingsReindexed += 1;
+    else if (embeddingResult.startsWith('stale')) stats.embeddingsStale += 1;
   }
 
   // O seed e a fonte canonica: conteudo que saiu do arquivo e removido do banco
@@ -2420,7 +2739,24 @@ async function syncEducationalBase() {
     }
   }
 
-  console.log(`Base educacional ${collection} v${version}: ${stats.inserted} novos, ${stats.updated} atualizados, ${stats.unchanged} inalterados, ${stats.removed} removidos, ${stats.invalid} invalidos, ${stats.embeddingsCreated} embeddings gerados, ${stats.embeddingsReused} reaproveitados, ${stats.embeddingsPending} pendentes (sem OpenAI).`);
+  // P0-10 (C2) — resumo explicito: COMPLETA somente quando nada ficou pendente
+  // (falha, ausencia de provedor, limite de orcamento ou formato desatualizado).
+  stats.complete = stats.failed === 0
+    && stats.embeddingsPending === 0
+    && stats.embeddingsDeferred === 0
+    && stats.embeddingsStale === 0;
+
+  console.log(`Base educacional ${collection} v${version}: ${stats.processed} processadas, ${stats.inserted} novas, ${stats.updated} atualizadas, ${stats.unchanged} inalteradas, ${stats.removed} removidas, ${stats.invalid} invalidas, ${stats.failed} com falha, ${stats.embeddingsCreated} embeddings gerados, ${stats.embeddingsReused} reaproveitados, ${stats.embeddingsPending} pendentes (sem provedor), ${stats.embeddingsDeferred} pendentes por limite, ${stats.embeddingsReindexed} reindexados, ${stats.embeddingsStale} desatualizados. Formato: ${stats.embeddingFormat || 'nenhum (sem provedor)'}. Sincronizacao: ${stats.complete ? 'COMPLETA' : 'PARCIAL'}.`);
+
+  if (!stats.complete) {
+    // Log OPERACIONAL: apenas contagens e motivo agregado — sem conteudo, sem PII.
+    const reasons = [];
+    if (stats.failed) reasons.push(`${stats.failed} unidade(s) com falha`);
+    if (stats.embeddingsPending) reasons.push(`${stats.embeddingsPending} sem provedor de embeddings`);
+    if (stats.embeddingsDeferred) reasons.push(`${stats.embeddingsDeferred} pendentes por limite (retomadas na proxima inicializacao)`);
+    if (stats.embeddingsStale) reasons.push(`${stats.embeddingsStale} desatualizadas (reindexacao desligada: use EMBEDDINGS_REINDEX=1 + EMBEDDINGS_REINDEX_MAX para autorizar)`);
+    console.warn(`Base educacional: sincronizacao PARCIAL — ${reasons.join('; ')}. Nenhum registro foi apagado; a busca segue com o fallback lexical.`);
+  }
   return stats;
 }
 // --- busca ----------------------------------------------------------------
@@ -2441,12 +2777,19 @@ function mapEducationalRow(row) {
     strategies: educationalJsonArray(row.strategies),
     relatedTopics: educationalJsonArray(row.related_topics),
     prerequisites: educationalJsonArray(row.prerequisites),
-    embedding: educationalEmbeddingVector(row.embedding)
+    embedding: educationalEmbeddingVector(row.embedding),
+    // P0-7/P0-8 — identidade do vetor. `null` = LEGADO/desconhecido (nao entra
+    // em comparacao vetorial). `stale` = o hash do texto mudou depois do vetor.
+    embeddingFormatKey: typeof row.embedding_format_key === 'string' ? row.embedding_format_key : null,
+    embeddingDim: Number(row.embedding_dim) > 0 ? Number(row.embedding_dim) : null,
+    embeddingHash: typeof row.embedding_hash === 'string' ? row.embedding_hash : null,
+    contentHash: typeof row.content_hash === 'string' ? row.content_hash : null
   };
 }
 
 const EDUCATIONAL_SELECT = `SELECT c.id, c.source_key, c.subject, c.subject_key, c.topic, c.topic_key, c.title, c.type, c.level, c.content,
-  c.examples, c.common_errors, c.strategies, c.related_topics, c.prerequisites, e.embedding
+  c.examples, c.common_errors, c.strategies, c.related_topics, c.prerequisites, e.embedding,
+  e.format_key AS embedding_format_key, e.dim AS embedding_dim, e.content_hash AS embedding_hash, c.content_hash AS content_hash
   FROM educational_contents c
   LEFT JOIN educational_embeddings e ON e.content_id = c.id AND e.chunk_index = 0
   WHERE c.status = 'active'`;
@@ -2498,7 +2841,7 @@ function educationalPublicItem(row) {
   };
 }
 
-async function searchEducationalKnowledge({ query, queryEmbedding, subject, topic, level, types, limit }) {
+async function searchEducationalKnowledge({ query, queryEmbedding, subject, topic, level, types, limit, currentFormat }) {
   const rows = await loadEducationalRows();
   const wantedTypes = Array.isArray(types) && types.length ? types : null;
   const subjectKey = subject ? educationalNormalizeKey(subject) : null;
@@ -2511,8 +2854,21 @@ async function searchEducationalKnowledge({ query, queryEmbedding, subject, topi
   if (level) candidates = candidates.filter((row) => row.level === level);
 
   const tokens = educationalTokens(query);
+  const queryDim = queryEmbedding ? queryEmbedding.length : null;
+  let excludedEmbeddings = 0;
   const scored = candidates.map((row) => {
-    const usableEmbedding = queryEmbedding && row.embedding && row.embedding.length === queryEmbedding.length;
+    // P0-8 — a comparacao vetorial exige MESMO formato E mesma dimensao. Sem
+    // identidade comprovada (legado/desconhecido/divergente) ou com o texto
+    // alterado depois do vetor, o vetor e IGNORADO (a linha segue pelo sinal
+    // lexical). Nada e apagado.
+    const formatOk = isEmbeddingCompatible(row.embeddingFormatKey, row.embeddingDim, currentFormat, queryDim);
+    const hashOk = !row.embeddingHash || !row.contentHash || row.embeddingHash === row.contentHash;
+    const usableEmbedding = Boolean(queryEmbedding)
+      && Array.isArray(row.embedding)
+      && row.embedding.length === queryEmbedding.length
+      && formatOk
+      && hashOk;
+    if (!usableEmbedding && row.embedding) excludedEmbeddings += 1;
     const similarity = usableEmbedding ? Number(cosine(queryEmbedding, row.embedding).toFixed(6)) : lexicaRelevance(tokens, row);
     // Sinal lexical ANCORADO na pergunta do estudante (sem materia/topico): um
     // filtro explicito nao pode promover sozinho um conteudo irrelevante.
@@ -2552,31 +2908,41 @@ async function searchEducationalKnowledge({ query, queryEmbedding, subject, topi
   return {
     items: selected.map(educationalPublicItem),
     mode: scored.some((row) => row.matchMode === 'semantic') ? 'semantic' : 'lexical',
-    candidates: candidates.length
+    candidates: candidates.length,
+    excludedEmbeddings
   };
 }
 // Conteudo individual (source: 'user'): SEMPRE do dono do token autenticado,
 // nunca do e-mail enviado pelo frontend.
-async function searchUserKnowledge({ queryEmbedding, email, limit }) {
+async function searchUserKnowledge({ queryEmbedding, email, limit, currentFormat }) {
   if (!email) return [];
   let entries = [];
   if (pgPool) {
-    const result = await pgPool.query('SELECT id, content, embedding, metadata FROM embeddings WHERE user_email = $1', [email]);
+    // P0-7 — traz a identidade do vetor junto (format_key/dim) para a checagem.
+    const result = await pgPool.query('SELECT id, content, embedding, metadata, format_key, dim FROM embeddings WHERE user_email = $1', [email]);
     entries = result.rows;
   } else {
     entries = memoryStore[email] || [];
   }
+  const queryDim = queryEmbedding ? queryEmbedding.length : null;
   const scored = [];
+  let excludedEmbeddings = 0;
   for (const entry of entries) {
     const embedding = educationalEmbeddingVector(entry.embedding);
     if (!queryEmbedding || !embedding || embedding.length !== queryEmbedding.length) continue;
+    // P0-8 — sem identidade de formato comprovada, o vetor NAO entra na
+    // comparacao (legado/desconhecido/divergente). O registro permanece intacto.
+    if (!isEmbeddingCompatible(entry.format_key, entry.dim, currentFormat, queryDim)) {
+      excludedEmbeddings += 1;
+      continue;
+    }
     const similarity = Number(cosine(queryEmbedding, embedding).toFixed(6));
     if (similarity < MENTOR_KNOWLEDGE_LIMITS.minScore) continue;
     const score = similarity;
     scored.push({ id: entry.id, source: USER_SOURCE, content: entry.content, metadata: entry.metadata || null, score });
   }
   scored.sort((a, b) => (b.score - a.score) || String(a.id).localeCompare(String(b.id)));
-  return scored.slice(0, limit);
+  return { items: scored.slice(0, limit), excludedEmbeddings };
 }
 
 // ===========================================================================
@@ -3407,17 +3773,26 @@ function buildEducationalKnowledgeBlock(items, maxChars) {
 // recebe tambem a pergunta pura (rawQuery) para ancorar o sinal lexical.
 async function searchKnowledge({ query, rawQuery, subject, topic, level, types, limit, userEmail, includeUser }) {
   const queryText = [subject, topic, query].filter((value) => typeof value === 'string' && value.trim()).join(' ').slice(0, AI_INPUT_LIMITS.embeddingsQuery);
+  // P0-7 — formato EFETIVO do provedor de embeddings desta execucao. Sem ele nao
+  // existe consulta vetorial confiavel (a busca segue pelo fallback lexical).
+  const currentFormat = getEmbeddingFormat();
   let queryEmbedding = null;
-  if (isEmbeddingProviderAvailable()) {
+  if (currentFormat && isEmbeddingProviderAvailable()) {
     try {
       queryEmbedding = await createEmbedding(queryText);
     } catch (error) {
       console.error('Knowledge embedding error:', sanitizeAiError(error));
     }
   }
-  const educational = await searchEducationalKnowledge({ query: (typeof rawQuery === 'string' && rawQuery.trim() ? rawQuery : query), queryEmbedding, subject, topic, level, types, limit });
-  const user = includeUser ? await searchUserKnowledge({ queryEmbedding, email: userEmail, limit }) : [];
-  return { educational: educational.items, user, mode: educational.mode, candidates: educational.candidates };
+  const educational = await searchEducationalKnowledge({ query: (typeof rawQuery === 'string' && rawQuery.trim() ? rawQuery : query), queryEmbedding, subject, topic, level, types, limit, currentFormat });
+  const userResult = includeUser ? await searchUserKnowledge({ queryEmbedding, email: userEmail, limit, currentFormat }) : { items: [], excludedEmbeddings: 0 };
+  return {
+    educational: educational.items,
+    user: userResult.items,
+    mode: educational.mode,
+    candidates: educational.candidates,
+    excludedEmbeddings: educational.excludedEmbeddings + userResult.excludedEmbeddings
+  };
 }
 // Endpoint de LEITURA da base (somente autenticado). Nao existe escrita por
 // HTTP: os conteudos vem do arquivo versionado data/educational-content.json.
@@ -3462,7 +3837,7 @@ app.post('/api/mentor/knowledge', requireAuth, embeddingsLimiter, async (req, re
       success: true,
       mode: result.mode,
       items: [...result.educational, ...result.user],
-      counts: { educational: result.educational.length, user: result.user.length },
+      counts: { educational: result.educational.length, user: result.user.length, excludedEmbeddings: result.excludedEmbeddings },
       sources: [EDUCATIONAL_SOURCE, USER_SOURCE]
     });
   } catch (error) {
@@ -3852,10 +4227,13 @@ app.delete('/api/account', requireAuth, async (req, res) => {
 });
 
 // FASE 5A — TIMEOUT DE INICIALIZACAO DO BANCO.
-// O ramo PostgreSQL do initDatabase executa 21 round-trips SEQUENCIAIS (11
-// CREATE TABLE, 2 ALTER TABLE, 8 CREATE INDEX) antes de o servidor escutar a
-// porta. Medido neste ambiente: ~0,9 s apenas para a conexao com o pooler do
-// Supabase aquecido, o que projetava a inicializacao quente para ~2-4 s. Com o
+// O ramo PostgreSQL executa 21 round-trips SEQUENCIAIS (11
+// CREATE TABLE, 2 ALTER TABLE, 8 CREATE INDEX) e, em seguida, a migracao
+// aditiva das colunas de formato das embeddings (P0-7) acrescenta 4
+// `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` — 25 no total antes de o servidor
+// escutar a porta. Medido neste ambiente: ~0,9 s apenas para a conexao com o
+// pooler do Supabase aquecido, o que projetava a inicializacao quente para
+// ~2-4 s. Com o
 // projeto pausado (o plano gratuito pausa apos 7 dias sem atividade) ou o
 // pooler frio, a primeira resposta ultrapassava 10 s e o deploy morria com
 // [FATAL] — falha visivel, porem desnecessaria.
@@ -3894,11 +4272,19 @@ async function closePoolWithin(pool, timeoutMs = DB_SHUTDOWN_TIMEOUT_MS) {
   }
 }
 
+async function prepareDatabase() {
+  await initDatabase();
+  // P0-7 — migracao aditiva das colunas de identidade de formato. Roda no
+  // mesmo caminho do fail-closed: se falhar em producao, o boot encerra em vez
+  // de servir com o esquema incompleto.
+  await ensureEmbeddingFormatColumns();
+}
+
 async function startServer() {
   try {
     console.log('Inicializando banco de dados...');
     await Promise.race([
-      initDatabase(),
+      prepareDatabase(),
       new Promise((_, reject) => setTimeout(() => reject(new Error('Database init timeout')), DB_INIT_TIMEOUT_MS))
     ]);
     console.log('✅ Banco de dados inicializado');

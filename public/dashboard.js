@@ -1009,7 +1009,7 @@
       '<div class="d-info-row"><span>Metas</span><strong>' + goals().length + '</strong></div>' +
       '<div class="d-info-row"><span>Sessões de estudo</span><strong>' + sessions().length + '</strong></div>' +
       '<div class="d-info-row"><span>Exercícios respondidos</span><strong>' + ((state.user.exerciseResults || []).length) + '</strong></div>' +
-      '<div class="d-info-row"><span>Check-in de bem-estar</span><strong>' + ((state.user.wellbeing && state.user.wellbeing.mood) || 'Não registrado') + '</strong></div>';
+      '<div class="d-info-row"><span>Check-in de bem-estar</span><strong>' + escapeHtml((state.user.wellbeing && state.user.wellbeing.mood) || 'Não registrado') + '</strong></div>';
 
     const profile = learningProfile();
     const strategyKeys = Object.keys(profile.strategies).filter((k) => profile.strategies[k].uses);
@@ -1067,42 +1067,110 @@
       '</div>';
   }
 
-  function mentorMessageHtml(message) {
+  // ==========================================================================
+  // Renderizacao SEGURA das mensagens da Mentora.
+  // --------------------------------------------------------------------------
+  // O texto da IA e do usuario NUNCA passa por innerHTML: e escrito como texto
+  // (textContent) e as quebras de linha sao preservadas pelo `white-space:
+  // pre-wrap` de .d-msg__bubble (central.css). Os unicos innerHTML desta area
+  // recebem SVGs constantes de icons.js (window.SynaraIcons), que sao confiaveis.
+  // ==========================================================================
+
+  function mentorExerciseNode(message) {
+    const wrap = document.createElement('div');
+    wrap.className = 'd-exercise';
+    wrap.appendChild(document.createTextNode(message.exercise.question || ''));
+    const options = document.createElement('div');
+    options.className = 'd-exercise__options';
+    message.exercise.options.forEach((option, index) => {
+      const answered = message.answerIndex != null;
+      const isCorrect = index === message.exercise.correctOption;
+      let cls = '';
+      if (answered && isCorrect) cls = ' is-correct';
+      else if (answered && index === message.answerIndex) cls = ' is-wrong';
+      const button = document.createElement('button');
+      button.className = 'd-exercise__option' + cls;
+      button.type = 'button';
+      button.setAttribute('data-action', 'exercise-answer');
+      button.setAttribute('data-id', String(message.id));
+      button.setAttribute('data-index', String(index));
+      if (answered) button.disabled = true;
+      const key = document.createElement('span');
+      key.className = 'd-exercise__key';
+      key.textContent = String.fromCharCode(65 + index);
+      const label = document.createElement('span');
+      label.textContent = option == null ? '' : String(option);
+      button.appendChild(key);
+      button.appendChild(label);
+      options.appendChild(button);
+    });
+    wrap.appendChild(options);
+    if (message.answerIndex != null) {
+      const feedback = document.createElement('div');
+      feedback.className = 'd-exercise__feedback';
+      feedback.textContent = message.exercise.explanation || '';
+      wrap.appendChild(feedback);
+    }
+    return wrap;
+  }
+
+  function mentorToolsNode(message) {
+    const helped = message.feedback === 'helped';
+    const notHelped = message.feedback === 'nothelped';
+    const tools = document.createElement('div');
+    tools.className = 'd-msg__tools';
+    const addTool = (action, iconName, label, isActive, value) => {
+      const button = document.createElement('button');
+      button.className = 'd-msg__tool' + (isActive ? ' is-active' : '');
+      button.type = 'button';
+      button.setAttribute('data-action', action);
+      button.setAttribute('data-id', String(message.id));
+      if (value != null) button.setAttribute('data-value', value);
+      button.innerHTML = icon(iconName); // SVG constante e confiavel (icons.js)
+      button.appendChild(document.createTextNode(' ' + label));
+      tools.appendChild(button);
+    };
+    addTool('mentor-feedback', 'check', 'Ajudou', helped, 'helped');
+    addTool('mentor-feedback', 'alert', 'Não ajudou', notHelped, 'nothelped');
+    addTool('mentor-rephrase', 'reset', 'De outra forma', false, null);
+    return tools;
+  }
+
+  function mentorMessageNode(message) {
     const isUser = message.role === 'user';
-    const avatar = icon(isUser ? 'user' : 'mentor');
-    let tools = '';
-    if (!isUser && message.kind === 'text') {
-      const helped = message.feedback === 'helped';
-      const notHelped = message.feedback === 'nothelped';
-      tools = '<div class="d-msg__tools">' +
-        '<button class="d-msg__tool' + (helped ? ' is-active' : '') + '" type="button" data-action="mentor-feedback" data-id="' + message.id + '" data-value="helped">' + icon('check') + ' Ajudou</button>' +
-        '<button class="d-msg__tool' + (notHelped ? ' is-active' : '') + '" type="button" data-action="mentor-feedback" data-id="' + message.id + '" data-value="nothelped">' + icon('alert') + ' Não ajudou</button>' +
-        '<button class="d-msg__tool" type="button" data-action="mentor-rephrase" data-id="' + message.id + '">' + icon('reset') + ' De outra forma</button>' +
-        '</div>';
-    }
-    let exercise = '';
+    const node = document.createElement('div');
+    node.className = 'd-msg ' + (isUser ? 'd-msg--user' : 'd-msg--bot');
+    node.setAttribute('data-msg', String(message.id));
+
+    const avatar = document.createElement('span');
+    avatar.className = 'd-msg__avatar';
+    avatar.innerHTML = icon(isUser ? 'user' : 'mentor'); // SVG constante e confiavel
+
+    const content = document.createElement('div');
+    content.className = 'd-msg__content';
+
+    const author = document.createElement('span');
+    author.className = 'd-msg__author';
+    author.textContent = (isUser ? 'Você' : 'Mentora SYNARA') +
+      (message.strategy ? ' · ' + strategyLabel(message.strategy) : '');
+
+    const bubble = document.createElement('div');
+    bubble.className = 'd-msg__bubble';
+    // Ponto critico de seguranca: o texto vira TEXTO, nunca HTML.
+    bubble.textContent = message.text == null ? '' : String(message.text);
+
+    content.appendChild(author);
+    content.appendChild(bubble);
     if (!isUser && message.exercise && Array.isArray(message.exercise.options) && message.exercise.options.length) {
-      exercise = '<div class="d-exercise">' +
-        escapeHtml(message.exercise.question || '') +
-        '<div class="d-exercise__options">' + message.exercise.options.map((option, index) => {
-          const answered = message.answerIndex != null;
-          const isCorrect = index === message.exercise.correctOption;
-          let cls = '';
-          if (answered && isCorrect) cls = ' is-correct';
-          else if (answered && index === message.answerIndex) cls = ' is-wrong';
-          return '<button class="d-exercise__option' + cls + '" type="button" data-action="exercise-answer" data-id="' + message.id + '" data-index="' + index + '"' + (answered ? ' disabled' : '') + '>' +
-            '<span class="d-exercise__key">' + String.fromCharCode(65 + index) + '</span><span>' + escapeHtml(option) + '</span></button>';
-        }).join('') + '</div>' +
-        (message.answerIndex != null ? '<div class="d-exercise__feedback">' + escapeHtml(message.exercise.explanation || '') + '</div>' : '') +
-        '</div>';
+      content.appendChild(mentorExerciseNode(message));
     }
-    return '<div class="d-msg ' + (isUser ? 'd-msg--user' : 'd-msg--bot') + '" data-msg="' + message.id + '">' +
-      '<span class="d-msg__avatar">' + avatar + '</span>' +
-      '<div class="d-msg__content">' +
-      '<span class="d-msg__author">' + (isUser ? 'Você' : 'Mentora SYNARA') + (message.strategy ? ' · ' + escapeHtml(strategyLabel(message.strategy)) : '') + '</span>' +
-      '<div class="d-msg__bubble">' + (isUser ? escapeHtml(message.text) : message.text) + '</div>' +
-      exercise + tools +
-      '</div></div>';
+    if (!isUser && message.kind === 'text') {
+      content.appendChild(mentorToolsNode(message));
+    }
+
+    node.appendChild(avatar);
+    node.appendChild(content);
+    return node;
   }
 
   function scrollMentorLog() {
@@ -1110,15 +1178,42 @@
     if (log) log.scrollTop = log.scrollHeight;
   }
 
+  function mentorTypingNode() {
+    const node = document.createElement('div');
+    node.className = 'd-msg d-msg--bot';
+    const avatar = document.createElement('span');
+    avatar.className = 'd-msg__avatar';
+    avatar.innerHTML = icon('mentor'); // SVG constante e confiavel
+    const content = document.createElement('div');
+    content.className = 'd-msg__content';
+    const author = document.createElement('span');
+    author.className = 'd-msg__author';
+    author.textContent = 'Mentora SYNARA';
+    const bubble = document.createElement('div');
+    bubble.className = 'd-msg__bubble';
+    const typing = document.createElement('span');
+    typing.className = 'd-mentor__typing';
+    for (let i = 0; i < 3; i += 1) typing.appendChild(document.createElement('i'));
+    bubble.appendChild(typing);
+    content.appendChild(author);
+    content.appendChild(bubble);
+    node.appendChild(avatar);
+    node.appendChild(content);
+    return node;
+  }
+
   function renderMentorLog() {
     const log = $('#mentorLog');
     if (!log) return;
     if (!state.mentor.messages.length) {
+      // mentorWelcomeHtml() monta apenas estrutura estatica + rotulos escapados.
       log.innerHTML = mentorWelcomeHtml();
       return;
     }
-    log.innerHTML = state.mentor.messages.map(mentorMessageHtml).join('') +
-      (state.mentor.sending ? '<div class="d-msg d-msg--bot"><span class="d-msg__avatar">' + icon('mentor') + '</span><div class="d-msg__content"><span class="d-msg__author">Mentora SYNARA</span><div class="d-msg__bubble"><span class="d-mentor__typing"><i></i><i></i><i></i></span></div></div></div>' : '');
+    // Limpa e reconstroi com NOS DOM: nenhum texto de mensagem vira HTML.
+    log.textContent = '';
+    state.mentor.messages.forEach((message) => log.appendChild(mentorMessageNode(message)));
+    if (state.mentor.sending) log.appendChild(mentorTypingNode());
     scrollMentorLog();
   }
 
