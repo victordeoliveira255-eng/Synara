@@ -175,6 +175,9 @@
   // ---------- 4. Estado e acesso a dados ----------
   const state = {
     user: null,
+    // Fonte de verdade da interface administrativa: só é true depois que
+    // /api/auth/me confirma a sessão. O papel em sessionStorage não basta.
+    sessionVerified: false,
     section: 'inicio',
     mentor: { messages: [], pending: null, sending: false, lastStrategy: null },
     pomodoro: {
@@ -741,6 +744,15 @@
   }
 
   // ---------- 8. Renderizadores ----------
+  // A visibilidade do acesso administrativo é uma decisão de INTERFACE.
+  // Ela exige duas coisas: sessão confirmada pelo servidor nesta carga de
+  // página (`verified === true`) e papel admin vindo dessa resposta. Um valor
+  // em sessionStorage/localStorage nunca é suficiente. A autorização real
+  // continua no servidor (requireAuth + requireRole em todas as rotas).
+  function hasVerifiedAdminAccess(user, verified) {
+    return Boolean(verified === true && user && user.role === 'admin');
+  }
+
   function renderHeaderUser() {
     const user = state.user || {};
     const name = user.name || 'Estudante';
@@ -749,7 +761,12 @@
     $('#accountMenuName').textContent = name;
     $('#accountMenuEmail').textContent = user.email || '-';
     const adminLink = $('#adminQuickLink');
-    if (adminLink) adminLink.hidden = user.role !== 'admin';
+    if (adminLink) {
+      const allowed = hasVerifiedAdminAccess(state.user, state.sessionVerified);
+      adminLink.hidden = !allowed;
+      if (allowed) adminLink.removeAttribute('aria-hidden');
+      else adminLink.setAttribute('aria-hidden', 'true');
+    }
   }
   function emptyState(iconName, title, text, actionLabel, actionId) {
     return '<div class="d-empty"><span class="d-empty__mark">' + icon(iconName) + '</span><h3>' + escapeHtml(title) + '</h3><p>' + escapeHtml(text) + '</p>' +
@@ -796,12 +813,10 @@
     }
 
     const minutes = auth.getStudyMinutes ? auth.getStudyMinutes() : sessions().reduce((t, s) => t + Number(s.minutes || 0), 0);
-    const doneGoals = goals().filter((g) => g.completed).length;
     $('#homeStats').innerHTML = [
       { label: 'Progresso geral', value: totalProgress() + '<small>%</small>' },
       { label: 'Tempo estudado', value: escapeHtml(formatMinutes(minutes)) },
-      { label: 'Metas concluídas', value: doneGoals + '<small>/' + goals().length + '</small>' },
-      { label: 'Sequência', value: studyStreak() + '<small> dias</small>' }
+      { label: 'Sequência atual', value: studyStreak() + '<small> dias</small>' }
     ].map((item) => '<article class="d-card d-stat"><span class="d-stat__label">' + item.label + '</span><span class="d-stat__value">' + item.value + '</span></article>').join('');
 
     const upcoming = schedule().filter((s) => !s.completed).sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time)).slice(0, 4);
@@ -958,11 +973,6 @@
       ? '<div class="d-chart">' + days.map((d) => '<div class="d-chart__bar"><div class="d-chart__col" style="height:' + Math.max(4, Math.round((d.minutes / max) * 160)) + 'px" title="' + d.minutes + ' minutos"></div><span class="d-chart__label">' + d.label + '</span></div>').join('') + '</div>'
       : emptyState('chart', 'Ainda sem dados de estudo', 'Registre suas sessões de estudo para ver sua evolução aqui.', 'Registrar no Bem-estar', 'bem-estar');
 
-    const list = subjects();
-    $('#progressSubjects').innerHTML = list.length
-      ? '<div class="d-stack" style="gap:.9rem">' + list.map((s) => '<div class="d-progress-row"><div class="d-progress-row__head"><strong>' + escapeHtml(s.name) + '</strong><b>' + (Number(s.progress) || 0) + '%</b></div><div class="d-progress"><div class="d-progress__fill" style="width:' + (Number(s.progress) || 0) + '%"></div></div></div>').join('') + '</div>'
-      : emptyState('book', 'Sem matérias para acompanhar', 'Adicione matérias para visualizar seu progresso.', 'Adicionar matéria', 'materias');
-
     const achievements = [
       { icon: 'check', label: 'Primeiro estudo', unlocked: sessions().length > 0 },
       { icon: 'calendar', label: '5 dias de constância', unlocked: new Set(sessions().map((s) => String(s.completedAt || '').slice(0, 10))).size >= 5 },
@@ -1033,12 +1043,6 @@
   }
 
   function renderSettings() {
-    const user = state.user || {};
-    const name = user.name || 'Estudante';
-    $('#settingsName').textContent = name;
-    $('#settingsEmail').textContent = user.email || '-';
-    $('#settingsRole').textContent = user.role === 'admin' ? 'Administrador' : 'Estudante';
-    $('#settingsAvatar').textContent = initials(name);
     const prefs = learningProfile().preferences || {};
     $('#prefStyle').value = prefs.explanationStyle || '';
     $('#prefPace').value = prefs.pace || '';
@@ -1684,7 +1688,50 @@
   }
 
   function doLogout() {
+    // Esconde o acesso administrativo imediatamente, antes de qualquer espera
+    // de rede. A sessão no servidor é encerrada pelo logout; a interface não
+    // pode continuar exibindo um atalho que já não é válido.
+    state.sessionVerified = false;
+    renderHeaderUser();
     auth.logout().then(() => { window.location.href = 'login.html'; }).catch(() => { sessionStorage.clear(); window.location.href = 'login.html'; });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Revalidação da sessão ao voltar para a aba.
+  // 401 = sessão realmente expirada: esconde o acesso administrativo e
+  // redireciona. Falha de rede/servidor NÃO redireciona e NÃO promove ninguém:
+  // mantém o último estado confirmado (fail-closed para o atalho admin).
+  // ---------------------------------------------------------------------------
+  let lastSessionCheck = 0;
+  async function revalidateSession() {
+    if (document.hidden) return;
+    const now = Date.now();
+    if (now - lastSessionCheck < 60000) return;
+    lastSessionCheck = now;
+    try {
+      const response = await fetch('/api/auth/me', {
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (response.status === 401) {
+        state.sessionVerified = false;
+        state.user = null;
+        renderHeaderUser();
+        sessionStorage.clear();
+        window.location.href = 'login.html';
+        return;
+      }
+      if (!response.ok) return;
+      const data = await response.json().catch(() => ({}));
+      const user = auth.normalizeUser(data.user || {});
+      if (!user) return;
+      auth.setCurrentUser(user);
+      state.sessionVerified = true;
+      refreshUser();
+      renderHeaderUser();
+    } catch (error) {
+      // Sem rede: preserva o estado anterior; a autorização continua no servidor.
+    }
   }
 
   function wireShell() {
@@ -1715,6 +1762,10 @@
     $('#settingsLogout').addEventListener('click', doLogout);
     window.addEventListener('hashchange', navigateFromHash);
     window.addEventListener('resize', () => { if (!isMobile()) setMobileSidebar(false); });
+    document.addEventListener('visibilitychange', revalidateSession);
+    // Sessão longa em segundo plano: revalida também em intervalos, para que
+    // uma sessão expirada não mantenha o atalho administrativo visível.
+    window.setInterval(revalidateSession, 5 * 60 * 1000);
   }
 
   function wireWellbeing() {
@@ -1799,11 +1850,6 @@
   }
 
   function wireSettings() {
-    $('#settingsChangePassword').addEventListener('click', () => {
-      navigate('privacidade');
-      $('#passwordEditPanel').hidden = false;
-      $('#currentPassword').focus();
-    });
     $('#learningPrefsForm').addEventListener('submit', handleSavePrefs);
     $$('#prefFormats .d-choice').forEach((label) => {
       const input = label.querySelector('input');
@@ -1849,6 +1895,13 @@
 
   // ---------- 11. Boot ----------
   async function boot() {
+    // Fail-closed: o atalho administrativo começa oculto e só aparece depois
+    // que o servidor confirma a sessão e o papel.
+    state.sessionVerified = false;
+    state.user = null;
+    const initialAdminLink = $('#adminQuickLink');
+    if (initialAdminLink) initialAdminLink.hidden = true;
+
     hydrateIcons();
     wireModal();
     initSidebar();
@@ -1868,9 +1921,11 @@
       user = null;
     }
     if (!user) {
+      state.sessionVerified = false;
       window.location.href = 'login.html';
       return;
     }
+    state.sessionVerified = true;
     refreshUser();
     renderHeaderUser();
     $('#scheduleSubject').innerHTML = subjectsOptions();
@@ -1882,7 +1937,8 @@
   window.SynaraCentral = {
     navigate: navigate,
     getSection: () => state.section,
-    getStrategy: (subject) => chooseStrategy(subject || 'Geral', 'auto')
+    getStrategy: (subject) => chooseStrategy(subject || 'Geral', 'auto'),
+    isAdminAccessVisible: () => hasVerifiedAdminAccess(state.user, state.sessionVerified)
   };
 
   boot();

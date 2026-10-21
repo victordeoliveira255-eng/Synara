@@ -406,6 +406,32 @@
   }
 
   // ---------- Boot ----------
+  // Revalidação da sessão administrativa: o papel exibido nunca é decidido por
+  // sessionStorage. O servidor confirma em /api/auth/me; 401 encerra a
+  // interface e perda de papel volta para a Central.
+  let lastAdminCheck = 0;
+  async function revalidateAdminSession() {
+    if (document.hidden) return;
+    const now = Date.now();
+    if (now - lastAdminCheck < 60000) return;
+    lastAdminCheck = now;
+    try {
+      const response = await fetch('/api/auth/me', { credentials: 'include', headers: { 'Content-Type': 'application/json' } });
+      if (response.status === 401) {
+        sessionStorage.clear();
+        window.location.href = 'login.html';
+        return;
+      }
+      if (!response.ok) return;
+      const data = await response.json().catch(() => ({}));
+      if (!data.user || data.user.role !== 'admin') {
+        window.location.href = 'dashboard.html';
+      }
+    } catch (error) {
+      // Sem rede: mantém a tela; toda API administrativa continua protegida.
+    }
+  }
+
   async function ensureAdmin() {
     let user = null;
     try {
@@ -431,6 +457,8 @@
     wireModal();
     initSidebar();
     wireEvents();
+    document.addEventListener('visibilitychange', revalidateAdminSession);
+    window.setInterval(revalidateAdminSession, 5 * 60 * 1000);
     await ensureAdmin();
   }
 

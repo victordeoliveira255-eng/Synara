@@ -6,9 +6,9 @@
   <meta name="description" content="Painel administrativo da SYNARA.">
   <title>Painel Administrativo | SYNARA</title>
   <link rel="icon" href="assets/icon.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  <!-- Tipografia: a CSP do servidor não libera fonts.googleapis.com. A pilha
+       local de admin.css usa DM Sans/Plus Jakarta quando instaladas e
+       system-ui como fallback imediato. -->
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="admin.css">
 </head>
@@ -65,8 +65,8 @@
           <span class="admin-topbar__title" id="topbarTitle">Visão geral</span>
         </div>
         <div class="admin-topbar__actions">
-          <a class="a-btn a-btn--ghost a-btn--sm" href="/dashboard.html">
-            <span class="dashboard-icon-slot" data-icon="home"></span> Voltar à Central
+          <a class="a-btn a-btn--ghost a-btn--sm" href="/dashboard.html" aria-label="Voltar à Central de Estudos">
+            <span class="dashboard-icon-slot" data-icon="home"></span> <span class="admin-back-label">Voltar à Central</span>
           </a>
           <div class="admin-account">
             <button class="admin-account__trigger" id="accountTrigger" type="button" aria-expanded="false" aria-controls="accountMenu">
