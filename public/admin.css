@@ -6,25 +6,29 @@
    ============================================================ */
 
 .admin-page {
+  /* Trava de teste: test/dashboard-structure.test.js exige --a-bg/--a-navy
+     literais. Não tokenizar sem revisar a expectativa do teste. */
   --a-bg: #f7f7f2;
-  --a-surface: #ffffff;
+  --a-navy: #005b7f;
+
+  /* Superfícies, texto e estados -> camada semântica (tokens.css). */
+  --a-surface: var(--sy-surface);
   --a-surface-soft: #fbfbf8;
   --a-surface-muted: #f1f4ef;
-  --a-ink: #1d3a46;
-  --a-navy: #005b7f;
-  --a-navy-deep: #004a68;
+  --a-ink: var(--sy-text);
+  --a-navy-deep: var(--sy-brand-deep);
   --a-teal: #00cfc8;
-  --a-teal-dark: #047f7e;
-  --a-teal-soft: #e6f7f5;
-  --a-muted: #5c7074;
-  --a-line: #e3e8e2;
-  --a-success: #3e8e6a;
-  --a-success-soft: #e9f4ed;
-  --a-warn: #a8791d;
-  --a-danger: #b8463f;
-  --a-danger-soft: #fdeeec;
-  --a-shadow-sm: 0 4px 14px rgba(16, 58, 60, .05);
-  --a-shadow: 0 16px 36px rgba(16, 58, 60, .08);
+  --a-teal-dark: var(--sy-accent-ink);
+  --a-teal-soft: var(--sy-accent-soft);
+  --a-muted: var(--sy-text-muted);
+  --a-line: var(--sy-border);
+  --a-success: var(--sy-success);
+  --a-success-soft: var(--sy-success-soft);
+  --a-warn: var(--sy-warn);
+  --a-danger: var(--sy-danger);
+  --a-danger-soft: var(--sy-danger-soft);
+  --a-shadow-sm: var(--sy-shadow-sm);
+  --a-shadow: var(--sy-shadow-md);
   --a-shadow-lg: 0 30px 60px rgba(9, 45, 50, .16);
   --a-sidebar-w: 258px;
   --a-sidebar-collapsed: 80px;
@@ -58,7 +62,7 @@
 .admin-page input,
 .admin-page select { font: inherit; color: inherit; }
 .admin-page a { color: inherit; text-decoration: none; }
-.admin-page :focus-visible { outline: 3px solid rgba(0, 207, 200, .55); outline-offset: 2px; border-radius: 6px; }
+.admin-page :focus-visible { outline: var(--sy-focus-width) solid var(--sy-focus); outline-offset: 2px; border-radius: 6px; }
 
 /* Base dos icones (mesma regra da Central, sem depender de central.css) */
 .admin-page .dashboard-icon { display: inline-block; width: 1.15em; height: 1.15em; flex: 0 0 auto; vertical-align: -0.18em; }
@@ -130,7 +134,7 @@
 .admin-nav-link:hover { background: #f2f8f6; color: var(--a-navy-deep); }
 .admin-nav-link .dashboard-icon { width: 1.2rem; height: 1.2rem; opacity: .8; }
 .admin-nav-link .nav-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.admin-nav-link[aria-current="page"] { color: #004a68; background: linear-gradient(120deg, var(--a-teal-soft) 0%, #f4fbfa 100%); box-shadow: inset 0 0 0 1px rgba(0, 207, 200, .22); }
+.admin-nav-link[aria-current="page"] { color: #004a68; background: linear-gradient(120deg, var(--a-teal-soft) 0%, #f4fbfa 100%); box-shadow: inset 0 0 0 1px rgba(0, 207, 200, .22); font-weight: 800; }
 .admin-nav-link[aria-current="page"]:hover { color: #004a68; background: linear-gradient(120deg, #dcf4f1 0%, #f0faf8 100%); }
 .admin-nav-link[aria-current="page"] .dashboard-icon { opacity: 1; color: var(--a-teal-dark); }
 
@@ -260,9 +264,9 @@
 .admin-view.is-active { display: block; }
 @keyframes admin-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
-.admin-view__head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1.2rem; flex-wrap: wrap; margin-bottom: 1.3rem; }
-.admin-view__head h1 { font-size: clamp(1.45rem, 2.2vw, 1.9rem); margin-bottom: .3rem; }
-.admin-view__head p { color: var(--a-muted); font-size: .87rem; max-width: 62ch; }
+.admin-view__head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1.2rem; flex-wrap: wrap; margin-bottom: clamp(1.1rem, 2vw, 1.5rem); }
+.admin-view__head h1 { font-size: clamp(1.45rem, 2.2vw, 1.9rem); margin-bottom: .3rem; letter-spacing: -.015em; text-wrap: balance; }
+.admin-view__head p { color: var(--a-muted); font-size: .87rem; max-width: 62ch; text-wrap: pretty; }
 
 /* ---------- Botoes / campos ---------- */
 .a-btn {
@@ -301,21 +305,21 @@
   transition: border-color .18s, box-shadow .18s;
 }
 .a-input:focus,
-.a-select:focus { outline: none; border-color: var(--a-teal); box-shadow: 0 0 0 3px rgba(0, 207, 200, .18); }
+.a-select:focus { outline: none; border-color: var(--sy-focus); box-shadow: var(--sy-focus-ring); }
 .a-toolbar { display: flex; align-items: flex-end; gap: .7rem; flex-wrap: wrap; margin-bottom: 1rem; }
 .a-toolbar .a-field { min-width: 220px; flex: 1; }
 
 /* ---------- Cards / stats ---------- */
 .a-card { background: var(--a-surface); border: 1px solid var(--a-line); border-radius: 16px; box-shadow: 0 6px 18px rgba(16, 58, 60, .045); padding: 1.25rem; min-width: 0; }
 .a-card__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: .9rem; }
-.a-card__head h2 { font-size: 1rem; }
-.a-card__head p { color: var(--a-muted); font-size: .8rem; margin-top: .2rem; }
+.a-card__head h2 { font-size: 1rem; text-wrap: balance; }
+.a-card__head p { color: var(--a-muted); font-size: .8rem; margin-top: .2rem; text-wrap: pretty; }
 .a-card__mark { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; color: var(--a-teal-dark); background: rgba(0, 207, 200, .12); flex: 0 0 auto; }
 .a-card__mark .dashboard-icon { width: 1.25rem; height: 1.25rem; }
 
 .a-grid { display: grid; gap: 1rem; }
 .a-grid--stats { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
-.a-grid--2 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+.a-grid--2 { grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); }
 .a-stack { display: grid; gap: 1rem; }
 
 .a-stat { display: grid; gap: .35rem; }
@@ -334,8 +338,8 @@
   background: linear-gradient(120deg, #f1f9f8 0%, #fbfbf8 100%);
   color: var(--a-ink);
 }
-.a-banner h1 { color: var(--a-navy-deep); font-size: clamp(1.4rem, 2.2vw, 1.85rem); }
-.a-banner p { color: var(--a-muted); font-size: .88rem; }
+.a-banner h1 { color: var(--a-navy-deep); font-size: clamp(1.4rem, 2.2vw, 1.85rem); text-wrap: balance; }
+.a-banner p { color: var(--a-muted); font-size: .88rem; text-wrap: pretty; }
 
 /* ---------- Tabelas ---------- */
 .a-table-wrap { overflow-x: auto; border: 1px solid var(--a-line); border-radius: 12px; background: var(--a-surface); }
@@ -364,7 +368,7 @@
 .a-badge--warn { background: rgba(184, 130, 28, .16); color: var(--a-warn); }
 
 /* ---------- Estados ---------- */
-.a-empty { display: grid; gap: .7rem; justify-items: center; text-align: center; padding: 2.2rem 1.3rem; border: 1px dashed #c3d6e0; border-radius: 14px; background: var(--a-surface-soft); }
+.a-empty { display: grid; gap: .7rem; justify-items: center; text-align: center; padding: 2.2rem 1.3rem; border: 1px dashed var(--sy-border-strong); border-radius: 14px; background: var(--a-surface-soft); }
 .a-empty__mark { display: grid; place-items: center; width: 54px; height: 54px; border-radius: 18px; color: var(--a-teal-dark); background: rgba(0, 207, 200, .12); }
 .a-empty__mark .dashboard-icon { width: 1.6rem; height: 1.6rem; }
 .a-empty h3 { font-size: 1rem; }
@@ -456,3 +460,47 @@
   .admin-page *::before,
   .admin-page *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+/* ============================================================
+   TEMA ESCURO — Painel administrativo
+   Mesma estratégia da Central: sobrescrever só o que era literal
+   claro. As travas de teste do tema claro seguem intactas.
+   ============================================================ */
+[data-theme="dark"] .admin-page{
+  --a-bg:#081C25;
+  --a-navy:var(--sy-brand);
+  --a-navy-deep:var(--sy-brand);
+  --a-surface-soft:var(--sy-surface-soft);
+  --a-surface-muted:var(--sy-surface-muted);
+  --a-danger-soft:var(--sy-danger-soft);
+  --a-shadow-lg:0 30px 60px rgba(0,0,0,.5);
+}
+[data-theme="dark"] .admin-sidebar{background:radial-gradient(520px 240px at 12% 4%,rgba(47,227,211,.06),transparent 64%),linear-gradient(180deg,var(--sy-surface) 0%,var(--sy-surface-soft) 100%);border-right-color:var(--sy-border)}
+[data-theme="dark"] .admin-sidebar__toggle{background:var(--sy-surface);border-color:var(--sy-border);color:var(--sy-text-muted)}
+[data-theme="dark"] .admin-topbar{background:rgba(15,42,54,.93);border-bottom-color:var(--sy-border)}
+[data-theme="dark"] .admin-nav-link:hover{background:var(--sy-surface-muted)}
+[data-theme="dark"] .admin-nav-link[aria-current="page"]{background:linear-gradient(120deg,var(--sy-accent-soft) 0%,var(--sy-surface-soft) 100%)}
+[data-theme="dark"] .admin-nav-link[aria-current="page"]:hover{background:linear-gradient(120deg,var(--sy-surface-muted) 0%,var(--sy-accent-soft) 100%)}
+[data-theme="dark"] .a-banner{background:linear-gradient(120deg,var(--sy-surface-soft) 0%,var(--sy-surface) 100%)}
+[data-theme="dark"] .a-error{background:var(--sy-danger-soft);color:var(--sy-danger)}
+[data-theme="dark"] .a-badge--user{background:rgba(79,168,204,.18);color:#BFE3F2}
+[data-theme="dark"] .a-badge--warn{background:rgba(240,196,106,.18)}
+[data-theme="dark"] .a-modal__backdrop{background:rgba(2,12,18,.72)}
+[data-theme="dark"] .admin-backdrop{background:rgba(2,12,18,.55)}
+[data-theme="dark"] .a-toast{background:var(--sy-brand-deep);color:#fff}
+
+/* Textos literais escuros da sidebar que não passam por tokens */
+[data-theme="dark"] .admin-sidebar{color:var(--sy-text-muted)}
+[data-theme="dark"] .admin-nav-link[aria-current="page"],[data-theme="dark"] .admin-nav-link[aria-current="page"]:hover{color:var(--sy-accent-ink)}
+[data-theme="dark"] .admin-sidebar__note{color:var(--sy-text-muted);border-color:var(--sy-border)}
+[data-theme="dark"] .admin-sidebar__note strong{color:var(--sy-success)}
+
+/* Preenchimentos de marca com glifo branco (ver comentário na Central) */
+[data-theme="dark"] .admin-avatar{background:linear-gradient(135deg,var(--sy-brand-deep) 0%,#0E7FA6 100%);color:#fff}
+[data-theme="dark"] .a-btn--primary{background:linear-gradient(120deg,var(--sy-brand-deep) 0%,#0E7FA6 100%);color:#fff;box-shadow:0 12px 24px rgba(0,0,0,.4)}
+[data-theme="dark"] .a-btn--danger{background:#A63B35;color:#fff}
+
+/* Textos com cor literal clara na navegação e a borda do banner de erro.
+   (O item ativo já é tratado acima; o hover recupera o petróleo claro.) */
+[data-theme="dark"] .admin-nav-link{color:var(--sy-text-muted)}
+[data-theme="dark"] .admin-nav-link:hover{color:var(--sy-brand);background:var(--sy-surface-muted)}
+[data-theme="dark"] .a-error{border-color:rgba(255,154,144,.45)}

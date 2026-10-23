@@ -1,0 +1,201 @@
+/* ============================================================
+   SYNARA — Design tokens (camada semântica compartilhada)
+   ------------------------------------------------------------
+   Este arquivo é a FONTE ÚNICA dos valores de identidade visual.
+   Ele é carregado antes dos demais CSS (via @import no topo de
+   style.css) e é o único lugar que deve conhecer valores brutos.
+
+   Arquitetura em três camadas:
+     1. Primitivos/semânticos  → este arquivo (--sy-*)
+     2. Aliases legados        → style.css (:root), central.css
+                                 (.dashboard-page) e admin.css
+                                 (.admin-page) re-apontam os nomes
+                                 antigos (--navy, --d-*, --a-*) para
+                                 os tokens daqui
+     3. Componentes            → continuam usando os nomes antigos
+
+   TEMA ESCURO (fase futura): basta sobrescrever ESTES tokens em
+   `[data-theme="dark"]` (esqueleto comentado no fim do arquivo).
+   Nenhuma regra de componente precisa ser reescrita.
+
+   IMPORTANTE — valores deliberadamente NÃO tokenizados nesta fase:
+   • central.css: --d-bg, --d-navy, --d-teal e o gradiente da sidebar
+   • admin.css:   --a-bg, --a-navy e o gradiente da sidebar
+   Esses valores são verificados por test/dashboard-structure.test.js
+   (paleta e sidebar clara). Trocar por var() quebraria a suíte.
+   A unificação desses pontos fica para a fase em que a expectativa
+   do teste for revisada de forma explícita.
+   ============================================================ */
+
+:root {
+  /* ---------- Marca (identidade oficial) ---------- */
+  --sy-brand: #005B7F;         /* azul-petróleo institucional */
+  --sy-brand-deep: #004A68;    /* hover/pressed do institucional */
+  --sy-brand-soft: #E9F1F5;    /* realce sutil de marca */
+  --sy-accent: #00CFC0;        /* turquesa de PREENCHIMENTO (não usar como texto pequeno) */
+  --sy-accent-ink: #00706B;    /* turquesa para TEXTO e links (5,95:1 sobre branco) */
+  --sy-accent-soft: #E6F7F5;   /* fundo de chips e realces */
+  --sy-accent-on-dark: #7FF0E4;/* turquesa claro para TEXTO sobre superfícies escuras:
+                                  11,02:1 sobre #0b2940 e 4,77:1 sobre o fim claro do
+                                  gradiente do CTA (#0d6874). O #0bbeb1 anterior dava
+                                  6,41:1 sobre o navy mas apenas 2,77:1 nesse gradiente. */
+
+  /* ---------- Superfícies ---------- */
+  --sy-bg: #F5F8F8;            /* fundo principal */
+  --sy-surface: #FFFFFF;       /* cartões, modais, barras */
+  --sy-surface-soft: #F0F5F5;  /* superfícies secundárias */
+  --sy-surface-muted: #E9F0F0; /* hover, cabeçalhos de tabela, chips */
+
+  /* ---------- Texto ---------- */
+  --sy-text: #12303B;          /* 13,89:1 sobre branco */
+  --sy-text-muted: #566D74;    /* 5,48:1 sobre branco */
+  --sy-text-inverse: #FFFFFF;
+
+  /* ---------- Bordas e divisores ---------- */
+  --sy-border: #DCE6E6;
+  --sy-border-strong: #C9D8D8;
+
+  /* ---------- Estados ---------- */
+  --sy-success: #2A6B4F;       /* 5,57:1 sobre --sy-success-soft (badges) e 6,34:1 sobre branco.
+                                  O tom anterior (#2F7D5C) dava 3,53:1 no badge — reprovava AA. */
+  --sy-success-soft: #E8F3EC;
+  --sy-warn: #7A5910;          /* 5,33:1 sobre o fundo âmbar do badge (rgba(184,130,28,.16)) e 6,43:1 sobre branco.
+                                  O tom anterior (#8A6512) dava 4,40:1 no badge. */
+  --sy-warn-soft: #FBF1DA;
+  --sy-danger: #A63B35;
+  --sy-danger-soft: #FBEAE8;
+  --sy-warm: #E8C37A;          /* detalhe quente (sequência/destaque) */
+
+  /* ---------- Formulários ---------- */
+  --sy-field-bg: #FFFFFF;
+  --sy-field-bg-alt: #FBFDFE;
+  --sy-field-border: var(--sy-border);
+  --sy-field-placeholder: #6B8087;
+
+  /* ---------- Foco de teclado ---------- */
+  --sy-focus: #005B7F;
+  --sy-focus-width: 2px;
+  --sy-focus-ring: 0 0 0 3px rgba(0, 91, 127, .28);
+  --sy-focus-offset: 2px;
+
+  /* ---------- Raios ---------- */
+  --sy-radius-xs: 8px;
+  --sy-radius-sm: 10px;
+  --sy-radius-lg: 16px;
+  --sy-radius-xl: 22px;
+  --sy-radius-pill: 999px;
+
+  /* ---------- Sombras (uma definição por elevação) ---------- */
+  --sy-shadow-sm: 0 4px 14px rgba(16, 58, 60, .05);
+  --sy-shadow-md: 0 16px 38px rgba(16, 58, 60, .08);
+  --sy-shadow-lg: 0 24px 65px rgba(16, 55, 75, .09);
+
+  /* ---------- Espaçamento (grade de 4px) ---------- */
+  --sy-space-1: 4px;
+  --sy-space-2: 8px;
+  --sy-space-3: 12px;
+  --sy-space-4: 16px;
+  --sy-space-5: 24px;
+  --sy-space-6: 32px;
+  --sy-space-7: 48px;
+  --sy-space-8: 64px;
+
+  /* ---------- Layout ---------- */
+  --sy-container: 1200px;
+  --sy-measure: 68ch;
+
+  /* ---------- Tipografia (referência; famílias não alteradas nesta fase) ---------- */
+  --sy-font-body: 'DM Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --sy-font-heading: 'Plus Jakarta Sans', 'DM Sans', system-ui, -apple-system, sans-serif;
+
+  /* Escala tipográfica (8 degraus). Auditoria da Fase 2 encontrou forte
+     dispersão: só em style.css há .6/.65/.72/.78/.8/.82/.85/.9/.95/1/1.2/1.5rem
+     e o admin usa .78/.8/.84/.85/.86/.87/.88rem quase equivalentes.
+     Esta escala fica DISPONÍVEL para migração incremental; nenhum uso foi
+     alterado nesta fase para não mudar a tipografia das páginas. */
+  --sy-text-2xs: .6875rem;  /* 11px — rótulos e metadados */
+  --sy-text-xs: .75rem;     /* 12px — legendas */
+  --sy-text-sm: .875rem;    /* 14px — corpo secundário */
+  --sy-text-md: 1rem;       /* 16px — corpo */
+  --sy-text-lg: 1.125rem;   /* 18px — subtítulo */
+  --sy-text-xl: 1.375rem;   /* 22px — título de secção */
+  --sy-text-2xl: 1.75rem;   /* 28px — título de página */
+  --sy-text-3xl: 2.25rem;   /* 36px — display */
+
+  /* ---------- Movimento ---------- */
+  --sy-transition-fast: 150ms ease;
+  --sy-transition: 200ms ease;
+
+  /* ---------- Esquema de cores nativo (inputs, scrollbar) ---------- */
+  color-scheme: light;
+}
+
+/* ============================================================
+   TEMA ESCURO — ativado por [data-theme="dark"] no <html>
+   ------------------------------------------------------------
+   Apenas a camada semântica muda aqui. Os aliases legados
+   (--navy, --d-*, --a-*) continuam apontando para --sy-*, então
+   os componentes acompanham sem reescrita.
+
+   Contrastes medidos (WCAG 2.1):
+     texto #E8F2F4 / surface #0F2A36 = 13,13:1
+     secundário #A6BEC7 / surface     =  7,70:1
+     marca #4FA8CC / surface          =  5,56:1
+     sucesso #6FD3A5 / soft           =  7,42:1
+     aviso #F0C46A / soft             =  8,39:1
+     erro #FF9A90 / soft              =  7,49:1
+     destaque #2FE3D3 / surface       =  9,29:1
+     branco / #126A8A (botão)         =  6,08:1
+   ============================================================ */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Superfícies: separadas por tom, não por sombra */
+  --sy-bg: #081C25;
+  --sy-surface: #0F2A36;
+  --sy-surface-soft: #123341;
+  --sy-surface-muted: #173B4A;
+
+  /* Texto */
+  --sy-text: #E8F2F4;
+  --sy-text-muted: #A6BEC7;
+  --sy-text-inverse: #081C25;
+
+  /* Bordas */
+  --sy-border: #2B5A6B;
+  --sy-border-strong: #3A6B7D;
+
+  /* Marca */
+  --sy-brand: #4FA8CC;
+  --sy-brand-deep: #126A8A;
+  --sy-brand-soft: #12303C;
+
+  /* Destaque */
+  --sy-accent: #2FE3D3;
+  --sy-accent-ink: #7FF0E4;
+  --sy-accent-soft: #123C40;
+  --sy-accent-on-dark: #7FF0E4;
+  --sy-warm: #E8C37A;
+
+  /* Estados (fundos suaves próprios do escuro) */
+  --sy-success: #6FD3A5;
+  --sy-success-soft: #14342A;
+  --sy-warn: #F0C46A;
+  --sy-warn-soft: #362C14;
+  --sy-danger: #FF9A90;
+  --sy-danger-soft: #3A1D1B;
+
+  /* Formulários */
+  --sy-field-bg: #0F2A36;
+  --sy-field-bg-alt: #123341;
+  --sy-field-placeholder: #8FA9B3;
+
+  /* Foco: turquesa claro, visível sobre todas as superfícies escuras */
+  --sy-focus: #7FF0E4;
+  --sy-focus-ring: 0 0 0 3px rgba(127, 240, 228, .35);
+
+  /* Sombras mais densas (não substituem a diferenciação por tom) */
+  --sy-shadow-sm: 0 4px 14px rgba(0, 0, 0, .30);
+  --sy-shadow-md: 0 16px 38px rgba(0, 0, 0, .38);
+  --sy-shadow-lg: 0 24px 65px rgba(0, 0, 0, .45);
+}

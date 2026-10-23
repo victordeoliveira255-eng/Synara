@@ -6,28 +6,33 @@
    ============================================================ */
 
 .dashboard-page {
+  /* Trava de teste: test/dashboard-structure.test.js exige estes três
+     valores literais (--d-bg/--d-navy/--d-teal). Não tokenizar sem
+     revisar a expectativa do teste de forma explícita. */
   --d-bg: #f7f7f2;
-  --d-surface: #ffffff;
+  --d-navy: #005b7f;
+  --d-teal: #00cfc8;
+
+  /* Superfícies, texto e estados -> camada semântica (tokens.css). */
+  --d-surface: var(--sy-surface);
   --d-surface-soft: #fbfbf8;
   --d-surface-muted: #f1f4ef;
-  --d-ink: #1d3a46;
-  --d-navy: #005b7f;
-  --d-navy-deep: #004a68;
-  --d-teal: #00cfc8;
-  --d-teal-dark: #047f7e;
-  --d-teal-soft: #e6f7f5;
-  --d-muted: #5c7074;
-  --d-line: #e3e8e2;
-  --d-warm: #e8c37a;
-  --d-danger: #b8463f;
-  --d-success: #3e8e6a;
-  --d-success-soft: #e9f4ed;
-  --d-shadow-sm: 0 4px 14px rgba(16, 58, 60, .05);
-  --d-shadow: 0 16px 38px rgba(16, 58, 60, .08);
+  --d-ink: var(--sy-text);
+  --d-navy-deep: var(--sy-brand-deep);
+  --d-teal-dark: var(--sy-accent-ink);
+  --d-teal-soft: var(--sy-accent-soft);
+  --d-muted: var(--sy-text-muted);
+  --d-line: var(--sy-border);
+  --d-warm: var(--sy-warm);
+  --d-danger: var(--sy-danger);
+  --d-success: var(--sy-success);
+  --d-success-soft: var(--sy-success-soft);
+  --d-shadow-sm: var(--sy-shadow-sm);
+  --d-shadow: var(--sy-shadow-md);
   --d-shadow-lg: 0 30px 60px rgba(9, 45, 50, .14);
-  --d-radius-sm: 10px;
-  --d-radius: 16px;
-  --d-radius-lg: 22px;
+  --d-radius-sm: var(--sy-radius-sm);
+  --d-radius: var(--sy-radius-lg);
+  --d-radius-lg: var(--sy-radius-xl);
   --d-sidebar-w: 270px;
   --d-sidebar-collapsed: 82px;
   --d-topbar-h: 74px;
@@ -202,6 +207,8 @@
   color: #004a68;
   background: linear-gradient(120deg, var(--d-teal-soft) 0%, #f4fbfa 100%);
   box-shadow: inset 0 0 0 1px rgba(0, 207, 200, .22);
+  /* Peso maior = segunda pista de estado, além da cor. */
+  font-weight: 800;
 }
 .dashboard-nav-link[aria-current="page"]:hover { color: #004a68; background: linear-gradient(120deg, #dcf4f1 0%, #f0faf8 100%); }
 .dashboard-nav-link[aria-current="page"] .dashboard-icon { opacity: 1; color: var(--d-teal-dark); }
@@ -408,10 +415,10 @@
   justify-content: space-between;
   gap: 1.25rem;
   flex-wrap: wrap;
-  margin-bottom: 1.4rem;
+  margin-bottom: clamp(1.1rem, 2vw, 1.6rem);
 }
-.dashboard-view__head h1 { font-size: clamp(1.5rem, 2.4vw, 2rem); margin-bottom: .35rem; }
-.dashboard-view__head p { color: var(--d-muted); font-size: .9rem; max-width: 62ch; }
+.dashboard-view__head h1 { font-size: clamp(1.5rem, 2.4vw, 2rem); margin-bottom: .35rem; letter-spacing: -.015em; text-wrap: balance; }
+.dashboard-view__head p { color: var(--d-muted); font-size: .9rem; max-width: 62ch; text-wrap: pretty; }
 .dashboard-view__head-actions { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
 
 /* ---------- Botoes ---------- */
@@ -454,8 +461,8 @@
 .d-card--pad-lg { padding: 1.6rem; }
 .d-card--soft { background: var(--d-surface-soft); box-shadow: none; }
 .d-card__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
-.d-card__head h2 { font-size: 1.05rem; }
-.d-card__head p { color: var(--d-muted); font-size: .82rem; margin-top: .2rem; }
+.d-card__head h2 { font-size: 1.05rem; text-wrap: balance; }
+.d-card__head p { color: var(--d-muted); font-size: .82rem; margin-top: .2rem; text-wrap: pretty; }
 .d-card__mark {
   display: grid;
   place-items: center;
@@ -467,7 +474,7 @@
   flex: 0 0 auto;
 }
 .d-card__mark .dashboard-icon { width: 1.3rem; height: 1.3rem; }
-.d-card__mark--green { color: #2f7a58; background: var(--d-success-soft); }
+.d-card__mark--green { color: var(--d-success); background: var(--d-success-soft); }
 .d-card__foot {
   display: flex;
   justify-content: flex-end;
@@ -491,7 +498,7 @@
   transition: color .18s;
 }
 .d-link:hover { color: var(--d-teal-dark); text-decoration: underline; text-underline-offset: 3px; }
-.d-link:focus-visible { outline: 3px solid rgba(0, 207, 200, .45); outline-offset: 3px; }
+.d-link:focus-visible { outline: var(--sy-focus-width) solid var(--sy-focus); outline-offset: 3px; }
 .d-inline-row {
   display: flex;
   align-items: center;
@@ -508,9 +515,9 @@
 /* ---------- Grids ---------- */
 .d-grid { display: grid; gap: 1rem; }
 .d-grid--stats { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
-.d-grid--2 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+.d-grid--2 { grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); }
 .d-grid--3 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
-.d-grid--cards { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.d-grid--cards { grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr)); }
 .d-stack { display: grid; gap: 1rem; }
 .d-row { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
 .d-spread { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
@@ -535,7 +542,7 @@
 .d-badge .dashboard-icon { width: .9rem; height: .9rem; }
 .d-badge--teal { background: rgba(0, 207, 200, .14); color: var(--d-teal-dark); }
 .d-badge--navy { background: rgba(0, 91, 127, .12); color: var(--d-navy); }
-.d-badge--warm { background: rgba(242, 197, 104, .22); color: #a8791d; }
+.d-badge--warm { background: rgba(242, 197, 104, .22); color: var(--sy-warn); }
 .d-badge--success { background: var(--d-success-soft); color: var(--d-success); }
 .d-badge--danger { background: rgba(193, 75, 69, .12); color: var(--d-danger); }
 
@@ -564,7 +571,7 @@
 .d-textarea { min-height: 90px; resize: vertical; line-height: 1.5; }
 .d-input:focus,
 .d-select:focus,
-.d-textarea:focus { outline: none; border-color: var(--d-teal); box-shadow: 0 0 0 3px rgba(0, 207, 200, .18); }
+.d-textarea:focus { outline: none; border-color: var(--sy-focus); box-shadow: var(--sy-focus-ring); }
 .d-form { display: grid; gap: .9rem; }
 .d-form--inline { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); align-items: end; }
 .d-form-actions { display: flex; gap: .55rem; flex-wrap: wrap; align-items: center; }
@@ -628,7 +635,7 @@
   justify-items: center;
   text-align: center;
   padding: 2.4rem 1.4rem;
-  border: 1px dashed #c7dbe3;
+  border: 1px dashed var(--sy-border-strong);
   border-radius: var(--d-radius);
   background: var(--d-surface-soft);
 }
@@ -752,8 +759,8 @@
 .d-mentor__identity { display: grid; gap: .15rem; flex: 1; min-width: 0; }
 .d-mentor__identity h1 { font-size: 1.2rem; }
 .d-mentor__identity p { color: var(--d-muted); font-size: .84rem; }
-.d-mentor__status { display: inline-flex; align-items: center; gap: .4rem; color: var(--d-success); font-size: .76rem; font-weight: 700; }
-.d-mentor__status i { width: 8px; height: 8px; border-radius: 50%; background: var(--d-success); box-shadow: 0 0 0 4px rgba(31, 157, 122, .16); }
+.d-mentor__status { display: inline-flex; align-items: center; gap: .4rem; color: var(--d-teal-dark); font-size: .76rem; font-weight: 700; }
+.d-mentor__status i { width: 8px; height: 8px; border-radius: 50%; background: var(--d-teal-dark); box-shadow: 0 0 0 4px rgba(4, 127, 126, .16); }
 .d-mentor__head-actions { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
 
 .d-mentor__context {
@@ -853,7 +860,7 @@
   background: var(--d-surface);
   transition: border-color .18s, box-shadow .18s;
 }
-.d-mentor__composer-inner:focus-within { border-color: var(--d-teal); box-shadow: 0 0 0 3px rgba(0, 207, 200, .16); }
+.d-mentor__composer-inner:focus-within { border-color: var(--sy-focus); box-shadow: var(--sy-focus-ring); }
 .d-mentor__textarea {
   flex: 1;
   min-height: 44px;
@@ -864,7 +871,7 @@
   padding: .55rem .2rem;
   line-height: 1.5;
 }
-.d-mentor__textarea:focus { outline: none; }
+.d-mentor__textarea:focus { outline: none; box-shadow: var(--sy-focus-ring); }
 .d-mentor__send {
   display: grid;
   place-items: center;
@@ -910,7 +917,7 @@
 .d-pomodoro[data-state="shortBreak"] .d-pomodoro__center span,
 .d-pomodoro[data-state="longBreak"] .d-pomodoro__center span { color: var(--d-success); }
 .d-pomodoro[data-state="paused"] .d-pomodoro__progress { stroke: var(--d-warm); }
-.d-pomodoro[data-state="paused"] .d-pomodoro__center span { color: #a8791d; }
+.d-pomodoro[data-state="paused"] .d-pomodoro__center span { color: var(--sy-warn); }
 .d-pomodoro[data-state="done"] .d-pomodoro__progress { stroke: var(--d-success); }
 
 .d-pomodoro__panel { display: grid; gap: .85rem; min-width: 0; }
@@ -1012,3 +1019,59 @@
     transition-duration: .01ms !important;
   }
 }
+
+/* ============================================================
+   TEMA ESCURO — Central de Estudos
+   As travas de teste do tema CLARO (--d-bg/--d-navy/--d-teal e o
+   gradiente da sidebar) permanecem intactas no bloco original;
+   aqui apenas sobrescrevemos o que era literal claro.
+   ============================================================ */
+[data-theme="dark"] .dashboard-page{
+  --d-bg:#081C25;
+  --d-navy:var(--sy-brand);
+  --d-navy-deep:var(--sy-brand);
+  --d-teal:var(--sy-accent);
+  --d-surface-soft:var(--sy-surface-soft);
+  --d-surface-muted:var(--sy-surface-muted);
+  --d-shadow-lg:0 30px 60px rgba(0,0,0,.5);
+}
+[data-theme="dark"] .dashboard-sidebar{background:radial-gradient(520px 260px at 12% 4%,rgba(47,227,211,.06),transparent 62%),linear-gradient(180deg,var(--sy-surface) 0%,var(--sy-surface-soft) 100%);border-right-color:var(--sy-border)}
+[data-theme="dark"] .dashboard-sidebar__toggle{background:var(--sy-surface);border-color:var(--sy-border);color:var(--sy-text-muted)}
+[data-theme="dark"] .dashboard-topbar{background:rgba(15,42,54,.92);border-bottom-color:var(--sy-border)}
+[data-theme="dark"] .dashboard-nav-link:hover{background:var(--sy-surface-muted)}
+[data-theme="dark"] .dashboard-nav-link[aria-current="page"]{background:linear-gradient(120deg,var(--sy-accent-soft) 0%,var(--sy-surface-soft) 100%)}
+[data-theme="dark"] .dashboard-nav-link[aria-current="page"]:hover{background:linear-gradient(120deg,var(--sy-surface-muted) 0%,var(--sy-accent-soft) 100%)}
+[data-theme="dark"] .dashboard-sidebar__note{background:linear-gradient(150deg,var(--sy-success-soft) 0%,var(--sy-surface-soft) 62%)}
+[data-theme="dark"] .dashboard-icon-btn:hover,[data-theme="dark"] .dashboard-account__trigger:hover,[data-theme="dark"] .d-btn--ghost:hover:not(:disabled),[data-theme="dark"] .d-choice:hover,[data-theme="dark"] .d-item:hover,[data-theme="dark"] .d-msg__tool:hover{border-color:var(--sy-border-strong)}
+[data-theme="dark"] .d-mentor{background:linear-gradient(180deg,var(--sy-surface) 0%,var(--sy-surface-soft) 100%)}
+[data-theme="dark"] .d-btn--primary{background:linear-gradient(120deg,var(--sy-brand-deep) 0%,#0E7FA6 100%);box-shadow:0 12px 24px rgba(0,0,0,.4)}
+[data-theme="dark"] .d-card{box-shadow:0 6px 18px rgba(0,0,0,.28)}
+[data-theme="dark"] .d-badge--navy{background:rgba(79,168,204,.18);color:#BFE3F2}
+[data-theme="dark"] .d-modal__backdrop{background:rgba(2,12,18,.72)}
+/* O toast usa --d-navy-deep como FUNDO com texto branco; no escuro esse
+   token vira cor de texto (petróleo claro), então o fundo é fixado aqui. */
+[data-theme="dark"] .d-toast{background:var(--sy-brand-deep);color:#fff}
+
+/* Textos literais escuros da sidebar que não passam por tokens */
+[data-theme="dark"] .dashboard-sidebar{color:var(--sy-text-muted)}
+[data-theme="dark"] .dashboard-nav-link[aria-current="page"],[data-theme="dark"] .dashboard-nav-link[aria-current="page"]:hover{color:var(--sy-accent-ink)}
+[data-theme="dark"] .dashboard-sidebar__note{color:var(--sy-text-muted);border-color:var(--sy-border)}
+[data-theme="dark"] .dashboard-sidebar__note strong{color:var(--sy-success)}
+
+/* Preenchimentos de marca com glifo branco: no escuro, --d-navy é cor de
+   TEXTO (petróleo claro), então os avatares recebem o gradiente profundo. */
+[data-theme="dark"] .dashboard-avatar,[data-theme="dark"] .d-mentor__avatar,[data-theme="dark"] .d-msg__avatar,[data-theme="dark"] .d-mentor__welcome-mark{background:linear-gradient(135deg,var(--sy-brand-deep) 0%,#0E7FA6 100%);color:#fff}
+[data-theme="dark"] .d-msg--user .d-msg__bubble{background:linear-gradient(120deg,var(--sy-brand-deep) 0%,#0E7FA6 100%);color:#fff}
+/* Barras translúcidas e botão de perigo (texto branco exige fundo profundo) */
+[data-theme="dark"] .d-mentor__context{background:rgba(18,51,65,.62)}
+[data-theme="dark"] .d-mentor__composer{background:rgba(15,42,54,.94)}
+[data-theme="dark"] .d-btn--danger{background:#A63B35;color:#fff}
+
+/* Textos com cor literal clara: no escuro recebem o token correspondente.
+   (O item ativo já é tratado acima; aqui ficam navegação comum, rótulos de
+   grupo, badge âmbar e o estado "pausado" do Pomodoro.) */
+[data-theme="dark"] .dashboard-nav-link{color:var(--sy-text-muted)}
+[data-theme="dark"] .dashboard-nav-link:hover{color:var(--sy-brand);background:var(--sy-surface-muted)}
+[data-theme="dark"] .dashboard-nav-group__label{color:var(--sy-text-muted)}
+[data-theme="dark"] .d-badge--warm{color:var(--sy-warn)}
+[data-theme="dark"] .d-pomodoro[data-state="paused"] .d-pomodoro__center span{color:var(--sy-warn)}
