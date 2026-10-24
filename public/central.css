@@ -36,8 +36,8 @@
   --d-sidebar-w: 270px;
   --d-sidebar-collapsed: 82px;
   --d-topbar-h: 74px;
-  --d-fw: 'DM Sans', system-ui, sans-serif;
-  --d-fh: 'Plus Jakarta Sans', 'DM Sans', system-ui, sans-serif;
+  --d-fw: var(--sy-font-body);
+  --d-fh: var(--sy-font-heading);
 
   margin: 0;
   min-height: 100vh;
@@ -130,13 +130,13 @@
 /* Icone oficial transparente: integrado ao fundo claro, sem caixa branca. */
 .dashboard-sidebar__brand img {
   position: relative;
-  width: 42px;
+  width: 38px;
   height: auto;
   flex: 0 0 auto;
   filter: drop-shadow(0 4px 10px rgba(0, 91, 127, .14));
 }
 .dashboard-sidebar__brand .brand-copy { position: relative; display: grid; gap: .1rem; line-height: 1.15; min-width: 0; }
-.dashboard-sidebar__brand strong { font-family: var(--d-fh); font-size: 1.04rem; letter-spacing: .12em; color: var(--d-navy-deep); }
+.dashboard-sidebar__brand strong { font-family: var(--d-fh); font-size: 1rem; letter-spacing: .1em; color: var(--d-navy-deep); }
 .dashboard-sidebar__brand small { color: var(--d-muted); font-size: .66rem; letter-spacing: .035em; white-space: nowrap; }
 
 .dashboard-sidebar__nav {
@@ -216,8 +216,8 @@
 .dashboard-sidebar__footer { display: grid; gap: .5rem; }
 .dashboard-sidebar__note {
   position: relative;
-  padding: .85rem .9rem;
-  border-radius: 14px;
+  padding: .8rem .85rem;
+  border-radius: 12px;
   background: linear-gradient(150deg, var(--d-success-soft) 0%, #f8fbf8 62%);
   border: 1px solid #d7e8dd;
   font-size: .75rem;
@@ -897,6 +897,253 @@
 .d-exercise__feedback { font-size: .86rem; padding: .75rem .9rem; border-radius: var(--d-radius-sm); background: var(--d-surface-soft); border: 1px solid var(--d-line); }
 
 /* ============================================================
+   FASE 3.6 — MENTORA (escopo exclusivo desta view)
+   ------------------------------------------------------------
+   Só apresentação. A auditoria confirmou os componentes e os
+   estados realmente gerados por dashboard.js:
+     • cabeçalho (.d-mentor__head): avatar, identidade, status e 2 ações;
+     • contexto (.d-mentor__context): 4 campos (matéria, conteúdo, nível,
+       estratégia);
+     • conversa (.d-mentor__log#mentorLog, aria-live="polite");
+     • mensagens .d-msg--bot / .d-msg--user com .d-msg__bubble e
+       .d-msg__tools/.d-msg__tool;
+     • indicador de digitação (.d-mentor__typing);
+     • estado vazio = boas-vindas (.d-mentor__welcome + .d-mentor__quick);
+     • exercício (.d-exercise) e composer com :focus-within e :disabled.
+
+   NÃO existe estado de erro dedicado nesta view: uma falha da IA chega
+   como mensagem bot normal (texto fixo em dashboard.js). Por isso nada
+   de erro é estilizado aqui — seria inventar um estado inexistente.
+
+   Esta página continua a ser a área principal de conversa: o bloco
+   .d-mentor mantém o grid (cabeçalho / contexto / conversa / composer) e
+   o log continua a ser a faixa flexível. Nada é convertido em cartão-resumo.
+
+   Colocação na cascata: este bloco fica ANTES das media queries, como o
+   resto do CSS base. As regras mobile desta fase entram depois, dentro do
+   bloco de 620px (max-width), com a MESMA especificidade — e por isso
+   prevalecem por ordem, sem !important.
+
+   Valores via tokens existentes; sem IDs e sem !important.
+   ============================================================ */
+
+/* Cabeçalho: identidade com leitura mais firme e status sem comprimir */
+[data-view="mentora"] .d-mentor__identity h1 { line-height: 1.2; letter-spacing: -.01em; }
+[data-view="mentora"] .d-mentor__identity p { line-height: 1.45; max-width: 52ch; }
+[data-view="mentora"] .d-mentor__status { flex: 0 0 auto; }
+[data-view="mentora"] .d-mentor__head-actions { margin-left: auto; }
+
+/* Contexto: os campos cedem espaço em vez de estourar o contentor */
+[data-view="mentora"] .d-mentor__context .d-field { min-width: 0; }
+[data-view="mentora"] .d-mentor__context .d-select,
+[data-view="mentora"] .d-mentor__context .d-input { max-width: 100%; }
+
+/* Conversa: rolagem estável (sem salto quando a barra aparece) e sem
+   "scroll chaining" para a página ao chegar ao fim do histórico */
+[data-view="mentora"] .d-mentor__log { scrollbar-gutter: stable; overscroll-behavior: contain; }
+
+/* Mensagens: bolha do bot limitada a uma medida confortável de leitura.
+   .d-msg já limita a 760px, o que a .92rem passa de ~95 caracteres por
+   linha; 68ch mantém a conversa legível sem transformar a área em cartão. */
+[data-view="mentora"] .d-msg { gap: .75rem; }
+[data-view="mentora"] .d-msg__bubble { line-height: 1.62; }
+[data-view="mentora"] .d-msg--bot .d-msg__bubble { max-width: 68ch; }
+
+/* Composer: o anel de foco já vem do :focus-within; aqui só se acrescenta
+   resposta ao ponteiro no botão de envio (que não tinha hover) */
+[data-view="mentora"] .d-mentor__send { transition: transform .16s, box-shadow .16s; }
+[data-view="mentora"] .d-mentor__send:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 14px 26px rgba(0, 207, 200, .32); }
+[data-view="mentora"] .d-mentor__send:active:not(:disabled) { transform: translateY(0); }
+[data-view="mentora"] .d-mentor__hint { line-height: 1.5; }
+
+/* Boas-vindas e opções: alvo de toque mínimo de 44px nos controles */
+[data-view="mentora"] .d-mentor__welcome p { line-height: 1.6; }
+[data-view="mentora"] .d-mentor__quick-btn { min-height: 44px; }
+[data-view="mentora"] .d-exercise__option { min-height: 44px; }
+
+/* ============================================================
+   FASE 3.7 — BEM-ESTAR (escopo exclusivo desta view)
+   ------------------------------------------------------------
+   Só apresentação. A auditoria confirmou os componentes e os
+   estados realmente gerados por dashboard.js:
+     • cabeçalho (.dashboard-view__head): eyebrow "Equilíbrio",
+       h1 "Bem-estar" e p descritivo;
+     • check-in de humor (.d-switch-grid#wellbeingMoods): 3 botões
+       .d-choice[data-mood] com toggle .is-selected via JS;
+     • orientação de equilíbrio (#wellbeingOrientation): ul.d-stack
+       com li.d-muted renderizada por JS;
+     • Pomodoro (.d-card.d-pomodoro#pomodoro[data-state]):
+       - ring SVG com .d-pomodoro__progress animado;
+       - panel com campos, ciclos (.d-pomodoro__cycles), botões
+         (Start/Pause/Resume/Skip/Reset/Stop) e hint;
+       - stats (.d-pomodoro__stats) com 6 .d-pomodoro__stat;
+       - config (details.d-pomodoro__config) com form inline;
+       - estados: idle, focus, paused, shortBreak, longBreak, done;
+     • dicas (.d-grid.d-grid--3#wellbeingTips): cards .d-card com
+       .d-card__head + mark renderizados por JS.
+
+   NÃO existe estado de erro dedicado nesta view: falhas de config
+   do Pomodoro resultam em toast (não em elemento de erro). Por isso
+   nada de erro é estilizado aqui — seria inventar um estado inexistente.
+
+   Esta página mantém a estrutura vertical (.d-stack) com cards
+   empilhados: check-in + orientação (2 colunas), Pomodoro (card grande),
+   dicas (3 colunas). Nada é transformado em painel genérico.
+
+   Colocação na cascata: este bloco fica ANTES das media queries, como o
+   resto do CSS base. As regras mobile desta fase entram depois, dentro do
+   bloco de 620px (max-width), com a MESMA especificidade — e por isso
+   prevalecem por ordem, sem !important.
+
+   Valores via tokens existentes; sem IDs e sem !important.
+   ============================================================ */
+
+/* Cabeçalho: medida de leitura confortável */
+[data-view="bem-estar"] .dashboard-view__head p { line-height: 1.5; max-width: 52ch; }
+
+/* Check-in de humor: alvo de toque mínimo de 44px nos botões de escolha */
+[data-view="bem-estar"] .d-switch-grid .d-choice { min-height: 44px; }
+
+/* Orientação de equilíbrio: legibilidade das notas */
+[data-view="bem-estar"] .d-card .d-stack li { line-height: 1.5; }
+
+/* Pomodoro: campos do panel não estouram o contentor */
+[data-view="bem-estar"] .d-pomodoro__panel .d-field { min-width: 0; }
+
+/* Pomodoro: respiro entre seções do panel e dos stats */
+[data-view="bem-estar"] .d-pomodoro__panel { gap: 1rem; }
+[data-view="bem-estar"] .d-pomodoro__stats { gap: .85rem; }
+
+/* Pomodoro: config com alvo de toque e resposta ao ponteiro */
+[data-view="bem-estar"] .d-pomodoro__config summary { padding: .5rem 0; transition: color .18s; }
+[data-view="bem-estar"] .d-pomodoro__config summary:hover { color: var(--d-navy-deep); }
+
+/* Pomodoro: hint com legibilidade */
+[data-view="bem-estar"] .d-help { line-height: 1.5; }
+
+/* Dicas: legibilidade dos textos nos cards */
+[data-view="bem-estar"] .d-grid--3 .d-card__head p { line-height: 1.45; }
+
+/* ============================================================
+   FASE 3.8 — PRIVACIDADE E DADOS (escopo exclusivo desta view)
+   ------------------------------------------------------------
+   Só apresentação. A auditoria confirmou os componentes e os
+   estados realmente gerados por dashboard.js:
+     • cabeçalho (.dashboard-view__head): eyebrow "Controle da sua conta",
+       h1 "Privacidade e dados", p e link de política;
+     • dados da conta: 4 linhas .d-info-row (Nome, E-mail, Criada em,
+       Tipo de conta);
+     • armazenamento (#privacyStorage): .d-info-row gerados por JS
+       com estatísticas (Matérias, Metas, Sessões, Exercícios,
+       Check-in) e feedback de estratégias (ul.d-stack + li.d-info-row);
+     • gerenciar conta (.d-form-actions): 2 botões ghost e 1 danger
+       (Excluir minha conta) com texto de permanência;
+     • painéis de edição (nome, senha) com botões submit/ghost
+       e mensagens .d-error/.d-success;
+     • transparência: preferências e configurações de aprendizagem,
+       com .d-help e .d-muted;
+     • estados de foco/ hover/ disabled geridos pelos tokens
+       existentes (foco via :focus-visible global; hover e disabled
+       via .d-btn global).
+
+   NÃO existem botões de exportação ou exclusão de dados condicionais
+   nesta view além dos 3 ações já existentes. Nenhuma mensagem
+   adicional foi criada — não foram inventadas novas funcionalidades.
+
+   Esta página mantém a estrutura vertical (.d-stack) com cards
+   empilhados: Dados da conta + Armazenamento (2 colunas), Gerenciar
+   conta (card com painéis e botões), Transparência. Nada é transformado
+   em painel genérico.
+
+   Colocação na cascata: este bloco fica ANTES das media queries, como o
+   resto do CSS base. As regras mobile desta fase entram depois, dentro
+   do bloco de 620px (max-width), com a MESMA especificidade — e por
+   isso prevalecem por ordem, sem !important.
+
+   Valores via tokens existentes; sem IDs e sem !important.
+   ============================================================ */
+
+/* Cabeçalho: medida de leitura confortável */
+[data-view="privacidade"] .dashboard-view__head p { line-height: 1.5; max-width: 52ch; }
+
+/* Dados da conta: espaçamento e tarefa entre label e valor */
+[data-view="privacidade"] .d-info-row { padding: .85rem 0; }
+
+
+
+/* Gerenciar conta: botões destrutivos mais nítidos e o alerta de permanência */
+[data-view="privacidade"] .d-btn--danger { padding: .8rem 1rem; }
+[data-view="privacidade"] .d-btn--danger:hover:not(:disabled) { transform: translateY(-1px) scale(1.02); }
+[data-view="privacidade"] .d-muted[style] { margin-top: 1.1rem; }
+
+/* Painéis de edição: confirmações e erros sempre visíveis */
+[data-view="privacidade"] .d-form-actions > .d-btn { min-height: 44px; }
+[data-view="privacidade"] .d-error { display: flex; gap: .5rem; align-items: center; }
+[data-view="privacidade"] .d-error::before { content: '!'; font-weight: 700; color: var(--d-danger); }
+
+/* Transparência: espaçamento sólido entre blocos de preferências */
+[data-view="privacidade"] .d-form-actions { margin-top: 1.1rem; }
+[data-view="privacidade"] .d-help { margin-top: .7rem; }
+
+/* ============================================================
+/* ============================================================
+   FASE 3.9 — CONFIGURAÇÕES (escopo exclusivo desta view)
+   ------------------------------------------------------------
+   Só apresentação. A auditoria confirmou os componentes e os
+   estados realmente gerados por dashboard.js:
+     • cabeçalho (.dashboard-view__head): eyebrow "Preferências e sessão",
+       h1 e p;
+     • sessão ativa: card .d-card com badge d-badge--success
+       "Sessão ativa" e 3 ações (Gerenciar conta, Sair da conta e
+       link de política de privacidade externo);
+     • preferências de aprendizagem (.form#learningPrefsForm):
+       - 2 selects .d-select (Formatos de explicação, Ritmo preferido);
+       - .d-switch-grid #prefFormats com checkboxes .d-choice
+         (is-selected controlado por JS);
+       - botões submit/ghost + .d-success#prefsSuccess e
+         .d-error#prefsError (controlados por JS);
+     • estado vazio de preferências: .d-success/.d-error (JS inibia
+       ambos e mostra a mensagem adequada).
+
+   Estados existentes que são usados sem modificação:
+     • botões :disabled e :focus-visible (global, tokens);
+     • .d-choice.is-selected, :hover e accent-color d-teal-dark;
+     • .d-success / .d-error (display:none quando [hidden]).
+
+   Esta página mantém a estrutura vertical (.d-stack) com cards
+   empilhados. Nada é transformado em painel genérico.
+
+   Colocação na cascata: este bloco fica ANTES das media queries, como o
+   resto do CSS base. As regras mobile desta fase entram depois, dentro
+   do bloco de 620px (max-width), com a MESMA especificidade — e por
+   isso prevalecem por ordem, sem !important.
+
+   Valores via tokens existentes; sem IDs e sem !important.
+   ============================================================ */
+
+/* Cabeçalho: medida de leitura confortável */
+[data-view="configuracoes"] .dashboard-view__head p { line-height: 1.5; max-width: 52ch; }
+
+/* Sessão ativa: respiro entre o cabeçalho e o card de sessão */
+[data-view="configuracoes"] .d-card { margin-top: .2rem; }
+
+/* Formulários de preferências: alinhamento de rótulos e campos */
+[data-view="configuracoes"] .d-field { min-width: 0; }
+
+/* Switch de formatos: alvo de toque mínimo nos rótulos de opção */
+[data-view="configuracoes"] .d-switch-grid .d-choice { min-height: 44px; }
+
+/* Botões de ação: alinhamento e densidade no formulário de preferências */
+[data-view="configuracoes"] .d-form-actions > .d-btn { min-height: 44px; }
+
+/* Mensagens de feedback de preferências: visibilidade e leitura */
+[data-view="configuracoes"] .d-success { font-size: .84rem; }
+[data-view="configuracoes"] .d-error { font-size: .84rem; }
+
+/* Resultado: espaçamento entre blocos de preferências salvadas */
+[data-view="configuracoes"] .d-form-actions { margin-top: 1.1rem; }
+
+
    POMODORO (Bem-estar)
    ============================================================ */
 .d-pomodoro { display: grid; gap: 1.2rem; }
@@ -983,7 +1230,7 @@
   .dashboard-shell.is-collapsed .dashboard-sidebar__note { display: revert; }
   .dashboard-shell.is-collapsed .dashboard-sidebar__brand { justify-content: flex-start; padding: .5rem .5rem 1rem; }
   .dashboard-shell.is-collapsed .dashboard-sidebar__brand::before { left: -.5rem; width: 168px; transform: none; }
-  .dashboard-shell.is-collapsed .dashboard-sidebar__brand img { width: 42px; }
+  .dashboard-shell.is-collapsed .dashboard-sidebar__brand img { width: 38px; }
   .dashboard-shell.is-collapsed .dashboard-nav-link { justify-content: flex-start; gap: .78rem; padding: .72rem .75rem; }
   .dashboard-backdrop { display: block; position: fixed; inset: 0; z-index: 65; background: rgba(16, 40, 44, .32); border: 0; }
   .dashboard-backdrop[hidden] { display: none; }
@@ -1008,6 +1255,87 @@
   .d-msg { max-width: 96%; }
   .d-mentor__context { padding: .6rem .9rem; }
   .d-mentor__strategy { margin-left: 0; width: 100%; }
+  /* Fase 3.6 — Mentora em telas estreitas.
+     Mesma especificidade do bloco desktop desta fase ([data-view] + classe)
+     e declarado depois dele: prevalece por ordem, sem !important. */
+  [data-view="mentora"] .d-mentor__head { gap: .7rem; padding: .85rem .9rem; }
+  [data-view="mentora"] .d-mentor__identity p { max-width: none; line-height: 1.4; }
+  [data-view="mentora"] .d-mentor__head-actions { width: 100%; margin-left: 0; justify-content: flex-end; }
+  [data-view="mentora"] .d-mentor__head-actions .d-btn { flex: 1 1 auto; justify-content: center; }
+  /* Contexto em duas colunas: os campos podem encolher até 0 (o min-width
+     de 150px dos selects estourava a linha em ecrãs de 320px). */
+  [data-view="mentora"] .d-mentor__context .d-field { flex: 1 1 45%; min-width: 0; }
+  /* .d-mentor__strategy é também .d-field: ocupa a linha inteira e o select
+     fica com a largura restante (o rótulo é longo). */
+  [data-view="mentora"] .d-mentor__context .d-mentor__strategy { flex: 1 1 100%; }
+  [data-view="mentora"] .d-mentor__context .d-mentor__strategy .d-select { width: auto; flex: 1 1 auto; }
+  [data-view="mentora"] .d-mentor__context .d-select,
+  [data-view="mentora"] .d-mentor__context .d-input { width: 100%; min-width: 0; }
+  [data-view="mentora"] .d-mentor__log { padding: .9rem; gap: .95rem; }
+  [data-view="mentora"] .d-msg { gap: .55rem; }
+  [data-view="mentora"] .d-msg__avatar { width: 32px; height: 32px; border-radius: 10px; }
+  [data-view="mentora"] .d-mentor__welcome { gap: .9rem; }
+  [data-view="mentora"] .d-mentor__welcome-mark { width: 62px; height: 62px; border-radius: 20px; }
+  [data-view="mentora"] .d-mentor__welcome h2 { font-size: 1.18rem; }
+  [data-view="mentora"] .d-mentor__welcome p { font-size: .88rem; }
+  [data-view="mentora"] .d-mentor__quick { grid-template-columns: minmax(0, 1fr); gap: .5rem; }
+  [data-view="mentora"] .d-mentor__composer { padding: .7rem .8rem .8rem; }
+  [data-view="mentora"] .d-mentor__hint { font-size: .68rem; }
+  /* Fase 3.1 — Início em telas estreitas: indicadores e estados vazios
+     proporcionais ao espaço disponível (sem alterar conteúdo). */
+  [data-view="inicio"] .d-grid--stats > .d-stat { min-height: 0; padding: .9rem; }
+  [data-view="inicio"] .d-stat__value { font-size: 1.5rem; }
+  [data-view="inicio"] .d-stat__value small { font-size: .78rem; }
+  [data-view="inicio"] .d-card--pad-lg { padding: 1.15rem; }
+  [data-view="inicio"] .d-card .d-empty { padding: 1.25rem 1rem; }
+  [data-view="inicio"] .dashboard-view__head-actions { width: 100%; }
+  [data-view="inicio"] .dashboard-view__head-actions .d-btn { flex: 1 1 auto; justify-content: center; }
+  /* Fase 3.2 — Matérias em telas estreitas: cartões e ações utilizáveis,
+     sem alterar conteúdo, ordem ou funcionalidade. */
+  [data-view="materias"] .d-stack > .d-card--soft { padding: 1rem; }
+  [data-view="materias"] .d-stack .d-empty { padding: 1.5rem 1rem; }
+  [data-view="materias"] .dashboard-view__head-actions { width: 100%; }
+  [data-view="materias"] .dashboard-view__head-actions .d-btn { flex: 1 1 auto; justify-content: center; }
+  [data-view="materias"] .d-card .d-form-actions > .d-btn--primary,
+  [data-view="materias"] .d-card .d-form-actions > .d-btn--ghost { flex: 1 1 auto; justify-content: center; }
+  /* Fase 3.3 — Cronograma em telas estreitas: formulário, grupos e itens
+     utilizáveis, sem alterar conteúdo, ordem ou funcionalidade. */
+  [data-view="cronograma"] .d-stack > .d-card--soft { padding: 1rem; }
+  [data-view="cronograma"] .d-stack > .d-empty { padding: 1.5rem 1rem; }
+  [data-view="cronograma"] .dashboard-view__head-actions { width: 100%; }
+  [data-view="cronograma"] .dashboard-view__head-actions .d-btn { flex: 1 1 auto; justify-content: center; }
+  [data-view="cronograma"] .d-list > .d-item { gap: .7rem; padding: .7rem .75rem; }
+  /* Fase 3.4 — Metas em telas estreitas: formulário, cartões e as quatro
+     ações utilizáveis. Os blocos de desktop das fases 3.x vêm DEPOIS desta
+     media query na fonte, por isso estas regras usam seletores um nível
+     mais específicos do que os de desktop desta fase: assim prevalecem de
+     facto em telas estreitas, sem !important e sem reordenar nada. */
+  [data-view="metas"] .d-stack > .d-card--soft { padding: 1rem; }
+  [data-view="metas"] .d-grid--2 .d-card { padding: 1rem; }
+  [data-view="metas"] .d-grid--2 .d-empty { padding: 1.5rem 1rem; }
+  [data-view="metas"] .dashboard-view__head-actions { width: 100%; }
+  [data-view="metas"] .dashboard-view__head-actions .d-btn { flex: 1 1 auto; justify-content: center; }
+  [data-view="metas"] .d-grid--2 .d-form-actions > .d-btn--ghost,
+  [data-view="metas"] .d-grid--2 .d-form-actions > .d-btn--primary { flex: 1 1 auto; justify-content: center; }
+  /* Fase 3.5 — Progresso em telas estreitas. Tal como na Fase 3.4, os blocos
+     de desktop das fases 3.x vêm DEPOIS desta media query na fonte, por isso
+     cada regra mobile usa um seletor um nível mais específico do que a sua
+     correspondente de desktop: prevalece de facto sem !important e sem
+     reordenar nada. */
+  [data-view="progresso"] .d-grid--stats > .d-stat { min-height: 0; padding: .9rem; }
+  /* "Tempo estudado" chega a "100h 5min"; a 1,85rem não caberia numa coluna
+     de ~144px (320px de viewport, 2 colunas). */
+  [data-view="progresso"] .d-grid--stats > .d-stat .d-stat__value { font-size: 1.45rem; }
+  /* São sempre 5 indicadores: em 2 colunas o 5.º ficava sozinho, deixando uma
+     célula vazia. Se a contagem mudar para um número par, a regra não casa. */
+  [data-view="progresso"] .d-grid--stats > .d-stat:last-child:nth-child(odd) { grid-column: 1 / -1; }
+  /* 7 barras + 6 intervalos: intervalo menor dá mais largura a cada barra.
+     A altura do .d-chart NÃO é tocada — ver nota no bloco de desktop. */
+  [data-view="progresso"] .d-chart { gap: .35rem; }
+  [data-view="progresso"] .d-stack > .d-achievement { gap: .6rem; padding: .68rem .72rem; }
+  [data-view="progresso"] .d-card .d-empty { padding: 1.5rem 1rem; }
+  [data-view="progresso"] .d-card .d-empty__mark { width: 46px; height: 46px; border-radius: 14px; }
+  [data-view="progresso"] .d-stack > .d-progress-row .d-progress-row__head { gap: .6rem; font-size: .82rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1019,6 +1347,315 @@
     transition-duration: .01ms !important;
   }
 }
+
+/* ============================================================
+   FASE 3.1 — PÁGINA INÍCIO (escopo exclusivo desta view)
+   ------------------------------------------------------------
+   Refinos de ritmo, hierarquia e densidade dos componentes que JÁ
+   existem. Nenhum dado, texto, ação, ID ou contrato é alterado, e
+   todos os valores usam tokens existentes — os temas claro e escuro
+   continuam válidos sem regra nova no bloco escuro.
+   O escopo por atributo ([data-view="inicio"]) evita afetar as
+   demais páginas que reutilizam as mesmas classes (.d-card, .d-item,
+   .d-empty, .d-stat…). Nada aqui usa seletor de ID, para não vencer
+   por especificidade as regras do tema escuro.
+   ============================================================ */
+
+/* Ritmo vertical da página: um pouco mais de respiro entre blocos */
+[data-view="inicio"] .d-stack { gap: 1.15rem; }
+
+/* Cabeçalho: ações alinhadas à base do título, sem quebra de rótulo */
+[data-view="inicio"] .dashboard-view__head { align-items: flex-end; }
+[data-view="inicio"] .dashboard-view__head-actions .d-btn { white-space: nowrap; }
+
+/* Cartão de destaque ("O que fazer agora"): realce de marca discreto */
+[data-view="inicio"] .d-card--pad-lg { position: relative; overflow: hidden; }
+[data-view="inicio"] .d-card--pad-lg::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: linear-gradient(180deg, var(--d-teal) 0%, var(--d-navy) 100%);
+}
+[data-view="inicio"] .d-card--pad-lg .d-row { margin-top: .2rem; }
+
+/* Indicadores: mesma altura, números alinhados e leitura mais rápida */
+[data-view="inicio"] .d-grid--stats { gap: .85rem; }
+[data-view="inicio"] .d-stat { align-content: start; gap: .45rem; min-height: 112px; padding: 1.1rem 1.15rem; }
+[data-view="inicio"] .d-stat__label { letter-spacing: .02em; }
+[data-view="inicio"] .d-stat__value { font-variant-numeric: tabular-nums; line-height: 1.05; }
+
+/* Linha de resumo: ajuda e atalho alinhados pela linha de base */
+[data-view="inicio"] .d-inline-row { align-items: baseline; gap: .5rem 1rem; }
+
+/* Listas: itens mais compactos e alinhados ao topo (conteúdo de 2 linhas) */
+[data-view="inicio"] .d-list { gap: .6rem; }
+[data-view="inicio"] .d-item { align-items: flex-start; gap: .8rem; padding: .8rem .9rem; }
+[data-view="inicio"] .d-item__mark { width: 36px; height: 36px; border-radius: 10px; }
+[data-view="inicio"] .d-item__mark .dashboard-icon { width: 1.1rem; height: 1.1rem; }
+[data-view="inicio"] .d-item .d-badge { align-self: center; }
+
+/* Estados vazios dentro dos cartões: mais leves, mantendo a borda tracejada */
+[data-view="inicio"] .d-empty { gap: .65rem; padding: 1.6rem 1.1rem; }
+[data-view="inicio"] .d-empty__mark { width: 48px; height: 48px; border-radius: 14px; }
+[data-view="inicio"] .d-empty__mark .dashboard-icon { width: 1.45rem; height: 1.45rem; }
+[data-view="inicio"] .d-empty h3 { font-size: 1rem; }
+
+/* Rodapé dos cartões: separador mais próximo do atalho */
+[data-view="inicio"] .d-card__foot { margin-top: .8rem; padding-top: .7rem; }
+
+/* ============================================================
+   FASE 3.2 — PÁGINA MATÉRIAS (escopo exclusivo desta view)
+   ------------------------------------------------------------
+   Só apresentação: cabeçalho, cartão do formulário, cartões de
+   matéria, barra de progresso, linhas de contexto, ações e estado
+   vazio — todos já existentes. Nenhum dado, texto, ID, ação ou
+   cálculo é alterado, e nada é removido.
+   Valores via tokens; sem seletor de ID e sem !important (o JS usa
+   estilos inline para as margens do progresso/recomendação e para a
+   largura da barra — esses permanecem exatamente como estão).
+   ============================================================ */
+
+/* Cabeçalho da view: mesma base das demais páginas refinadas */
+[data-view="materias"] .dashboard-view__head { align-items: flex-end; }
+[data-view="materias"] .dashboard-view__head-actions .d-btn { white-space: nowrap; }
+
+/* Cartão do formulário (nova matéria): mais enxuto, erro junto dos campos */
+[data-view="materias"] .d-card--soft { padding: 1.15rem 1.25rem; }
+[data-view="materias"] .d-card--soft .d-form--inline { gap: 1rem; }
+[data-view="materias"] .d-card--soft .d-error { margin-top: .7rem; }
+
+/* Grade de matérias: um pouco mais de respiro entre os cartões */
+[data-view="materias"] .d-grid--cards { gap: 1.15rem; }
+
+/* Cabeçalho do cartão: marca alinhada ao centro e menos espaço até a barra */
+[data-view="materias"] .d-card__head { align-items: center; margin-bottom: .9rem; }
+
+/* Barra de progresso mais legível (a largura continua vindo do JS) */
+[data-view="materias"] .d-card .d-progress { height: 10px; }
+
+/* Linhas de contexto (próxima atividade, domínio, recomendação) */
+[data-view="materias"] .d-card .d-help { line-height: 1.45; }
+[data-view="materias"] .d-card .d-muted { font-size: .82rem; }
+
+/* Ações: rótulos à esquerda e gestão (editar/remover) à direita */
+[data-view="materias"] .d-card .d-form-actions { gap: .5rem; }
+[data-view="materias"] .d-card .d-form-actions > .d-btn--quiet:nth-last-child(2) { margin-left: auto; }
+
+/* Estado vazio: mesma linguagem das demais páginas (borda tracejada intacta) */
+[data-view="materias"] .d-empty { gap: .65rem; padding: 2rem 1.2rem; }
+[data-view="materias"] .d-empty__mark { width: 52px; height: 52px; border-radius: 16px; }
+[data-view="materias"] .d-empty h3 { font-size: 1.02rem; }
+
+/* ============================================================
+   FASE 3.3 — PÁGINA CRONOGRAMA (escopo exclusivo desta view)
+   ------------------------------------------------------------
+   A view mostra grupos reais calculados pelo JS ("Hoje", "Próximos
+   dias", "Depois", "Concluídas") como cartões, cada um com uma lista
+   .d-list de itens .d-item: marca (relógio/check), título/assunto,
+   linha "Matéria · data horário · duração" e duas ações de ícone
+   (alternar conclusão / remover). Grupos, ordenação, textos, ações,
+   filtros e estados continuam vindo do JS — nada é alterado, criado
+   ou removido aqui.
+   Só apresentação: tokens existentes, sem seletor de ID, sem
+   !important e sem tocar os estilos inline que o JS aplica.
+   ============================================================ */
+
+/* Cabeçalho da view: mesma base das páginas já refinadas */
+[data-view="cronograma"] .dashboard-view__head { align-items: flex-end; }
+[data-view="cronograma"] .dashboard-view__head-actions .d-btn { white-space: nowrap; }
+
+/* Cartão do formulário (novo item): mais enxuto, erro junto dos campos */
+[data-view="cronograma"] .d-card--soft { padding: 1.15rem 1.25rem; }
+[data-view="cronograma"] .d-card--soft .d-form--inline { gap: 1rem; }
+[data-view="cronograma"] .d-card--soft .d-error { margin-top: .7rem; }
+
+/* Grupos: respiro entre cartões e cabeçalho do grupo em duas linhas */
+[data-view="cronograma"] .d-stack { gap: 1.15rem; }
+[data-view="cronograma"] .d-card__head { margin-bottom: .8rem; }
+[data-view="cronograma"] .d-card__head .d-eyebrow { display: block; margin-bottom: .25rem; }
+
+/* Lista de itens: ritmo constante entre as linhas */
+[data-view="cronograma"] .d-list { gap: .65rem; }
+
+/* Item do cronograma: marca um pouco menor, texto e ações mais legíveis */
+[data-view="cronograma"] .d-item { gap: .8rem; padding: .78rem .9rem; }
+[data-view="cronograma"] .d-item__mark { width: 38px; height: 38px; border-radius: 11px; }
+[data-view="cronograma"] .d-item__mark .dashboard-icon { width: 1.15rem; height: 1.15rem; }
+[data-view="cronograma"] .d-item__body strong { font-size: .9rem; }
+[data-view="cronograma"] .d-item__body small { font-size: .76rem; letter-spacing: .01em; }
+[data-view="cronograma"] .d-item__actions { gap: .3rem; }
+
+/* Itens concluídos: superfície suave, reforçando o estado já existente */
+[data-view="cronograma"] .d-item.is-done { background: var(--d-surface-soft); }
+
+/* Estado vazio: mesma linguagem das demais páginas (borda tracejada intacta) */
+[data-view="cronograma"] .d-empty { gap: .65rem; padding: 2rem 1.2rem; }
+[data-view="cronograma"] .d-empty__mark { width: 52px; height: 52px; border-radius: 16px; }
+[data-view="cronograma"] .d-empty h3 { font-size: 1.02rem; }
+
+/* ============================================================
+   FASE 3.4 — PÁGINA METAS (escopo exclusivo desta view)
+   ------------------------------------------------------------
+   O que existe de facto aqui: cabeçalho com a ação "Nova meta"; o
+   cartão de formulário (#goalFormCard, o único .d-card--soft da
+   view) com três campos reais — texto, matéria e prazo —, ações
+   Adicionar/Cancelar e a mensagem .d-error; e a grelha .d-grid--2
+   (#goalGroups) com os cartões de meta gerados por goalItem():
+   cabeçalho com título, linha "Matéria · prazo" e badge de estado
+   (Em andamento / Atrasada / Concluída), barra .d-progress cuja
+   largura é definida inline pelo JS, contagem .d-muted "X de Y
+   etapas", lista .d-list de etapas clicáveis (.d-item, com
+   .is-done) e quatro ações .d-btn--sm — concluir ou reabrir,
+   dividir em etapa, ajuda da Mentora e remover.
+   Metas, ordenação (ativas antes das concluídas), percentuais,
+   textos, etapas e estados continuam a vir do JS: nada aqui é
+   criado, removido, recalculado ou reordenado.
+   Só apresentação: tokens existentes, sem seletor de ID, sem
+   !important e sem tocar os estilos inline que o JS aplica
+   (width:%, margin-top, width:100%, text-align).
+   Os cartões de meta distinguem-se do cartão de formulário sem
+   usar IDs: o formulário é o único .d-card--soft e as metas vivem
+   dentro de .d-grid--2.
+   ============================================================ */
+
+/* Cabeçalho da view: mesma base das páginas já refinadas */
+[data-view="metas"] .dashboard-view__head { align-items: flex-end; }
+[data-view="metas"] .dashboard-view__head-actions .d-btn { white-space: nowrap; }
+
+/* Ritmo da página: formulário e grelha de metas separados com folga */
+[data-view="metas"] .d-stack { gap: 1.15rem; }
+
+/* Cartão do formulário (nova meta): campos com respiro, erro junto deles */
+[data-view="metas"] .d-card--soft { padding: 1.15rem 1.25rem; }
+[data-view="metas"] .d-card--soft .d-form--inline { gap: 1rem; }
+[data-view="metas"] .d-card--soft .d-form-actions { gap: .5rem; }
+[data-view="metas"] .d-card--soft .d-error { margin-top: .7rem; }
+
+/* Grelha de metas: mesmo respiro dos cartões das outras páginas */
+[data-view="metas"] .d-grid--2 { gap: 1.15rem; }
+
+/* Cabeçalho do cartão: o título aceita até 160 caracteres, por isso ganha
+   entrelinha; a badge de estado deixa de encolher e de partir em duas
+   linhas (dentro do flex ela encolhe por omissão quando o título é longo) */
+[data-view="metas"] .d-grid--2 .d-card__head { gap: .8rem; margin-bottom: .85rem; }
+[data-view="metas"] .d-grid--2 .d-card__head h2 { font-size: 1rem; line-height: 1.35; }
+[data-view="metas"] .d-grid--2 .d-card__head p { font-size: .8rem; }
+[data-view="metas"] .d-grid--2 .d-card__head .d-badge { flex: 0 0 auto; white-space: nowrap; }
+
+/* Progresso das etapas: barra um pouco mais presente e contagem ligeiramente
+   menor, para ficar claramente abaixo do título na hierarquia. A largura da
+   barra continua a ser o valor inline calculado pelo JS. */
+[data-view="metas"] .d-grid--2 .d-progress { height: 10px; }
+[data-view="metas"] .d-grid--2 .d-muted { font-size: .82rem; }
+
+/* Etapas: são subordinadas à meta, por isso linhas mais densas e marca menor
+   do que as do Cronograma. O line-through e a marca verde do .is-done já
+   existem nas regras partilhadas e permanecem intactos. */
+[data-view="metas"] .d-grid--2 .d-list { gap: .55rem; }
+[data-view="metas"] .d-grid--2 .d-item { gap: .7rem; padding: .62rem .78rem; }
+[data-view="metas"] .d-grid--2 .d-item__mark { width: 30px; height: 30px; border-radius: 9px; }
+[data-view="metas"] .d-grid--2 .d-item__mark .dashboard-icon { width: 1rem; height: 1rem; }
+[data-view="metas"] .d-grid--2 .d-item__body strong { font-size: .86rem; }
+[data-view="metas"] .d-grid--2 .d-item.is-done { background: var(--d-surface-soft); }
+
+/* Ações do cartão: rótulos inteiros, sem partir a meio, e a ação de remover
+   encostada à direita — separada das três ações construtivas. O margin-top
+   inline definido pelo JS não é tocado. */
+[data-view="metas"] .d-grid--2 .d-form-actions { gap: .45rem; }
+[data-view="metas"] .d-grid--2 .d-form-actions > .d-btn { white-space: nowrap; }
+[data-view="metas"] .d-grid--2 .d-form-actions > .d-btn--quiet:last-child { margin-left: auto; }
+
+/* Estado vazio: mesma linguagem das demais páginas (borda tracejada intacta) */
+[data-view="metas"] .d-empty { gap: .65rem; padding: 2rem 1.2rem; }
+[data-view="metas"] .d-empty__mark { width: 52px; height: 52px; border-radius: 16px; }
+[data-view="metas"] .d-empty h3 { font-size: 1.02rem; }
+
+/* ============================================================
+   FASE 3.5 — PÁGINA PROGRESSO (escopo exclusivo desta view)
+   ------------------------------------------------------------
+   Só apresentação. Tudo o que aqui é refinado já existe e é gerado
+   por renderProgress(): os 5 indicadores (.d-card.d-stat), o gráfico
+   semanal de barras (.d-chart), as conquistas (.d-achievement) e o
+   domínio por conteúdo (.d-progress-row), além dos dois estados
+   vazios (.d-empty). Nenhum dado, texto, ID, ação, cálculo,
+   ordenação ou contrato é alterado, e nada é removido.
+
+   Os estilos inline dinâmicos do JS são respeitados na íntegra:
+     • height:px de cada coluna do gráfico (Math.max(4, …160));
+     • width:% do preenchimento de cada barra de domínio;
+     • gap dos .d-stack internos (.6rem nas conquistas, .9rem no
+       domínio) — prevalecem sempre, porque estilo inline vence
+       qualquer declaração CSS sem !important. A regra de .d-stack
+       abaixo só atinge o .d-stack externo da página, que não tem
+       gap inline.
+
+   A altura do .d-chart (190px) NÃO é alterada de propósito: o JS
+   calcula colunas de até 160px e o contêiner dispõe de 182px úteis
+   (190px menos o padding-top de .5rem) para coluna + intervalo +
+   rótulo. Reduzir a altura faria o flex encolher as colunas mais
+   altas e distorceria a leitura dos dados reais.
+
+   Cabeçalho da view: a auditoria confirmou que Progresso é a única
+   view das fases 3.x SEM .dashboard-view__head-actions, e que a
+   regra partilhada já define align-items:flex-end e max-width:62ch
+   no parágrafo. Não havia, portanto, nada a refinar ali — e não se
+   acrescentou regra redundante.
+
+   Valores via tokens existentes; sem seletor de ID e sem !important,
+   para não vencer por especificidade as regras do tema escuro.
+   ============================================================ */
+
+/* Ritmo da página: indicadores, gráfico e grelha separados com folga */
+[data-view="progresso"] .d-stack { gap: 1.15rem; }
+
+/* Indicadores: mesma altura na linha, números tabulares e leitura mais
+   rápida. .d-stat é partilhado com a página Início, por isso o escopo por
+   atributo é obrigatório. O line-height 1 da regra partilhada fazia linhas
+   colarem-se quando um valor longo ("100h 5min") quebrava. */
+[data-view="progresso"] .d-grid--stats { gap: .85rem; }
+[data-view="progresso"] .d-stat { align-content: start; gap: .45rem; min-height: 112px; padding: 1.1rem 1.15rem; }
+[data-view="progresso"] .d-stat__label { letter-spacing: .02em; }
+[data-view="progresso"] .d-stat__value { font-variant-numeric: tabular-nums; line-height: 1.1; }
+
+/* Grelha inferior (Conquistas + Domínio): mesmo respiro das outras páginas */
+[data-view="progresso"] .d-grid--2 { gap: 1.15rem; }
+
+/* Gráfico semanal: apenas o eixo dos dias, para legibilidade a .72rem.
+   Altura do contêiner, altura inline das colunas e gradientes intactos. */
+[data-view="progresso"] .d-chart__label { font-weight: 600; letter-spacing: .01em; }
+
+/* Conquistas: linhas um pouco mais densas e ícone ligeiramente maior.
+   O corpo recebe min-width:0, tal como a regra partilhada já faz em
+   .d-item__body. O estado bloqueado deixa de usar opacity global — que
+   derrubava o texto "Ainda não desbloqueada" para ~2,5:1 no tema claro e
+   ~3,7:1 no escuro, abaixo de AA — e passa a sinalizar-se por borda
+   tracejada, fundo suave e texto silenciado, tudo via tokens e válido nos
+   dois temas. A distinção bloqueada/desbloqueada mantém-se, e o ícone
+   continua silenciado pela regra partilhada .is-locked .dashboard-icon. */
+[data-view="progresso"] .d-achievement { gap: .75rem; padding: .72rem .85rem; }
+[data-view="progresso"] .d-achievement > div { min-width: 0; }
+[data-view="progresso"] .d-achievement .dashboard-icon { width: 1.35rem; height: 1.35rem; }
+[data-view="progresso"] .d-achievement.is-locked { opacity: 1; border-style: dashed; background: var(--d-surface-soft); }
+[data-view="progresso"] .d-achievement.is-locked strong { color: var(--d-muted); }
+
+/* Domínio por conteúdo: o título é "Matéria · Tópico", dado do usuário, e
+   pode ser longo — sem min-width:0 ele empurrava o percentual para fora do
+   cartão. O percentual nunca encolhe nem parte, e os números tabulares
+   alinham a coluna de % entre as linhas. A largura da barra continua a ser
+   o width:% inline calculado pelo JS e a ordenação ascendente por domínio
+   não é tocada. */
+[data-view="progresso"] .d-progress-row__head { gap: .8rem; }
+[data-view="progresso"] .d-progress-row__head strong { min-width: 0; overflow-wrap: anywhere; }
+[data-view="progresso"] .d-progress-row__head b { flex: 0 0 auto; font-variant-numeric: tabular-nums; }
+[data-view="progresso"] .d-progress { height: 10px; }
+
+/* Estados vazios (gráfico sem sessões e domínio sem exercícios): mesma
+   linguagem das demais páginas; a borda tracejada partilhada fica intacta.
+   O único seletor cobre os dois, pois ambos vivem dentro de um .d-card. */
+[data-view="progresso"] .d-empty { gap: .65rem; padding: 2rem 1.2rem; }
+[data-view="progresso"] .d-empty__mark { width: 52px; height: 52px; border-radius: 16px; }
+[data-view="progresso"] .d-empty h3 { font-size: 1.02rem; }
 
 /* ============================================================
    TEMA ESCURO — Central de Estudos

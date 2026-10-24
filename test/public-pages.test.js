@@ -17,6 +17,7 @@ const login = read('login.html');
 const reset = read('reset-password.html');
 const privacy = read('privacy.html');
 const style = read('style.css');
+const tokens = read('tokens.css');
 
 // Recorta da marca até o fim da seção que a contém.
 function sectionSlice(html, marker) {
@@ -198,7 +199,34 @@ test('fontes: nenhuma página pede fontes externas (CSP inalterada)', () => {
     assert.equal(/href="https?:\/\/fonts\./.test(html), false, page + ': sem <link> para fonts externas');
     assert.equal(/<link[^>]*preconnect/.test(html), false, page + ': sem preconnect externo');
   }
-  // A pilha local continua definida no CSS compartilhado.
-  assert.match(style, /font-family:'DM Sans',sans-serif/);
-  assert.match(style, /font-family:'Plus Jakarta Sans',sans-serif/);
+  // Fase 1 — Inter auto-hospedada: a pilha local vive nos tokens e o CSS
+  // compartilhado apenas a referencia (nenhuma requisição a terceiros).
+  assert.match(tokens, /--sy-font-body:\s*'Inter'/, 'token do corpo usa Inter');
+  assert.match(tokens, /--sy-font-heading:\s*'Inter'/, 'token de títulos usa Inter');
+  assert.match(style, /font-family:var\(--sy-font-body\)/, 'style.css usa o token do corpo');
+  assert.match(style, /font-family:var\(--sy-font-heading\)/, 'style.css usa o token de títulos');
+
+  // Todo @font-face aponta para arquivo LOCAL e existente.
+  const faces = tokens.match(/@font-face\s*\{[^}]*\}/g) || [];
+  assert.ok(faces.length >= 2, 'tokens.css declara os @font-face da família');
+  const arquivos = [];
+  for (const face of faces) {
+    const src = face.match(/src:\s*url\("([^"]+)"\)\s*format\("woff2"\)/);
+    assert.ok(src, '@font-face com src woff2 declarado');
+    assert.equal(/^https?:/i.test(src[1]), false, 'fonte não pode ser remota: ' + src[1]);
+    assert.equal(src[1].startsWith('assets/fonts/'), true, 'caminho relativo esperado: ' + src[1]);
+    arquivos.push(src[1]);
+  }
+  for (const arquivo of arquivos) {
+    const caminho = new URL('../public/' + arquivo, import.meta.url);
+    assert.equal(fs.existsSync(caminho), true, 'arquivo de fonte ausente: ' + arquivo);
+    assert.ok(fs.statSync(caminho).size > 10000, 'arquivo de fonte suspeito (vazio?): ' + arquivo);
+  }
+
+  // A licença da fonte (SIL OFL) permanece versionada junto dos arquivos.
+  const licenca = new URL('../public/assets/fonts/LICENSE.txt', import.meta.url);
+  assert.equal(fs.existsSync(licenca), true, 'LICENSE.txt da fonte ausente');
+  const textoLicenca = fs.readFileSync(licenca, 'utf8');
+  assert.match(textoLicenca, /SIL OPEN FONT LICENSE/i, 'licença OFL preservada');
+  assert.match(textoLicenca, /Inter Project Authors/, 'aviso de copyright preservado');
 });
