@@ -27,6 +27,35 @@
    do teste for revisada de forma explícita.
    ============================================================ */
 
+/* ============================================================
+   FONTES — Fase 1 (Inter auto-hospedada)
+   ------------------------------------------------------------
+   Origem: Google Fonts (fonts.gstatic.com), distribuição oficial da
+   família Inter — projeto https://github.com/rsms/inter.
+   Licença: SIL Open Font License 1.1; texto integral preservado em
+   public/assets/fonts/LICENSE.txt (aviso de copyright mantido).
+   Arquivos: fonte VARIÁVEL (tabelas fvar + gvar confirmadas na
+   inspeção dos binários), subsets `latin` e `latin-ext`.
+   Servidas localmente: compatível com a CSP (font-src 'self' data:)
+   e sem requisição a terceiros em runtime.
+   ============================================================ */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("assets/fonts/inter-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("assets/fonts/inter-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
 :root {
   /* ---------- Marca (identidade oficial) ---------- */
   --sy-brand: #005B7F;         /* azul-petróleo institucional */
@@ -104,9 +133,9 @@
   --sy-container: 1200px;
   --sy-measure: 68ch;
 
-  /* ---------- Tipografia (referência; famílias não alteradas nesta fase) ---------- */
-  --sy-font-body: 'DM Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --sy-font-heading: 'Plus Jakarta Sans', 'DM Sans', system-ui, -apple-system, sans-serif;
+  /* ---------- Tipografia (Fase 1: Inter auto-hospedada; ver @font-face acima) ---------- */
+  --sy-font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --sy-font-heading: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
   /* Escala tipográfica (8 degraus). Auditoria da Fase 2 encontrou forte
      dispersão: só em style.css há .6/.65/.72/.78/.8/.82/.85/.9/.95/1/1.2/1.5rem
