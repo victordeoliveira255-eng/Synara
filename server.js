@@ -274,22 +274,6 @@ app.get('/healthz', (_req, res) => {
   res.status(200).type('text/plain').send('ok');
 });
 
-// Somente a pasta public/ e exposta. Middleware registrado DEPOIS das rotas
-// protegidas acima, para que /dashboard.html e /admin.html continuem passando
-// por autenticacao/autorizacao antes de qualquer acesso ao arquivo.
-app.use(express.static(PUBLIC_DIR, {
-  dotfiles: 'deny',
-  setHeaders: (res, filePath) => {
-    if (/\.(css|js|mjs)(\?|$)/.test(filePath)) {
-      res.setHeader('Cache-Control', 'no-store');
-    } else if (/\.(woff2|woff|ttf|otf)(\?|$)/.test(filePath)) {
-      res.setHeader('Cache-Control', 'no-store');
-    } else if (/\.html?(\?|$)/.test(filePath)) {
-      res.setHeader('Cache-Control', 'no-store');
-    }
-  }
-}));
-
 // Security headers via Helmet
 app.use(helmet({
   contentSecurityPolicy: {
@@ -497,7 +481,15 @@ app.get('/admin.html', requireAuth, requireRole(USER_ROLE.ADMIN), (req, res) => 
 // Somente a pasta public/ e exposta. Middleware registrado DEPOIS das rotas
 // protegidas acima, para que /dashboard.html e /admin.html continuem passando
 // por autenticacao/autorizacao antes de qualquer acesso ao arquivo.
-app.use(express.static(PUBLIC_DIR, { dotfiles: 'deny' }));
+// Os cabeçalhos de cache evitam servir arquivos antigos após um deploy.
+app.use(express.static(PUBLIC_DIR, {
+  dotfiles: 'deny',
+  setHeaders: (res, filePath) => {
+    if (/\.(css|js|mjs|woff2|woff|ttf|otf|html?)(\?|$)/i.test(filePath)) {
+      res.setHeader('Cache-Control', 'no-store');
+    }
+  }
+}));
 
 // FASE 1 — Provedores de IA isolados em aiProvider.js (ver resolucao preguicosa
 // e fallbacks em server.js). O cliente OpenAI continua ativo quando ha
