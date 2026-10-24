@@ -1,3 +1,4 @@
+
 /* ============================================================
    SYNARA — Central de Estudos (dashboard.js)
    Reconstruido por responsabilidades:
