@@ -248,6 +248,48 @@ const USER_ROLE = { USER: 'user', ADMIN: 'admin' };
 // ---------------------------------------------------------------------------
 const PUBLIC_DIR = path.resolve('./public');
 
+// ---------------------------------------------------------------------------
+// Cache-control dos arquivos estaticos.
+// Os cabecalhos abaixo nao afetam a logica funcional: so impedem que o
+// navegador (e o CDN que possa estar a frente do Render) sirva versoes
+// desatualizadas de CSS/JS/fonts apos um deploy. Como o Render usa Express em
+// um unico processo e nao ha build step que renomeie style.css -> style.[hash].css,
+// precisamos invalidar o cache manualmente a cada deploy.
+// - HTML (index, dashboard, admin, login, privacy, reset-password): max-age=0
+//   para garantir revalidacao por ETag em cada visita (recarregar a pagina
+//   baixa o HTML de novo e, com ele, o link para o CSS).
+// - CSS / JS / fonts (.woff2): Cache-Control: no-store -> o navegador nunca
+//   usa copia em cache; sempre baixa a versao atual. Penalidade: 1 request
+//   extra por assets a cada load, compativel com o tamanho do projeto
+//   (cada CSS tem menos de 200KB). Equivale a ter um cache-busting ?v=hash em
+//   cada <link>, sem precisar editar o HTML.
+// ---------------------------------------------------------------------------
+app.get('/', (_req, res) => res.sendFile(path.join(PUBLIC_DIR, 'index.html')));
+
+app.get('/healthz', (_req, res) => {
+  // healthz simples: 200 OK enquanto o processo chegou ate o app.listen. O
+  // Render usa este endpoint como readiness probe opcional (configuravel
+  // no painel do servico). Nao verifica JWT_SECRET porque o servidor nem
+  // chegaria aqui se ele estivesse faltando (process.exit(1) logo no boot).
+  res.status(200).type('text/plain').send('ok');
+});
+
+// Somente a pasta public/ e exposta. Middleware registrado DEPOIS das rotas
+// protegidas acima, para que /dashboard.html e /admin.html continuem passando
+// por autenticacao/autorizacao antes de qualquer acesso ao arquivo.
+app.use(express.static(PUBLIC_DIR, {
+  dotfiles: 'deny',
+  setHeaders: (res, filePath) => {
+    if (/\.(css|js|mjs)(\?|$)/.test(filePath)) {
+      res.setHeader('Cache-Control', 'no-store');
+    } else if (/\.(woff2|woff|ttf|otf)(\?|$)/.test(filePath)) {
+      res.setHeader('Cache-Control', 'no-store');
+    } else if (/\.html?(\?|$)/.test(filePath)) {
+      res.setHeader('Cache-Control', 'no-store');
+    }
+  }
+}));
+
 // Security headers via Helmet
 app.use(helmet({
   contentSecurityPolicy: {
@@ -2194,7 +2236,7 @@ function cosine(a, b) {
 
 app.post('/api/embeddings/index', requireAuth, embeddingsLimiter, async (req, res) => {
   const { userEmail, content, metadata } = req.body;
-  
+
   // Verify user owns this email (prevent users from indexing data for other users)
   if (userEmail !== req.user.email) {
     return res.status(403).json({ error: 'Acesso não autorizado' });
@@ -2239,7 +2281,7 @@ app.post('/api/embeddings/index', requireAuth, embeddingsLimiter, async (req, re
 
 app.post('/api/embeddings/query', requireAuth, embeddingsLimiter, async (req, res) => {
   const { userEmail, query, topK = 3 } = req.body;
-  
+
   // Verify user owns this email
   if (userEmail !== req.user.email) {
     return res.status(403).json({ error: 'Acesso não autorizado' });
@@ -4191,7 +4233,7 @@ app.post('/api/generate-exercise', requireAuth, exerciseLimiter, async (req, res
 app.delete('/api/account', requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
-    
+
     if (pgPool) {
       // Delete all associated data
       await pgPool.query('DELETE FROM password_reset_tokens WHERE user_id = $1', [userId]);
@@ -4202,23 +4244,23 @@ app.delete('/api/account', requireAuth, async (req, res) => {
       await new Promise((resolve, reject) => {
         sqliteDb.run('DELETE FROM password_reset_tokens WHERE user_id = ?', [userId], (error) => error ? reject(error) : resolve());
       });
-      
+
       // Remove embeddings for this user
       if (memoryStore[req.user.email]) {
         delete memoryStore[req.user.email];
         persistStore();
       }
-      
+
       await new Promise((resolve, reject) => {
         sqliteDb.run('DELETE FROM users WHERE id = ?', [userId], (error) => error ? reject(error) : resolve());
       });
     }
-    
+
     // FASE 3D — usuario removido: tokens deixam de validar (fetchUserById retorna nulo)
-    
+
     // Clear the auth cookie
     clearAuthCookie(res);
-    
+
     return res.json({ success: true, message: 'Conta excluída com sucesso. Seus dados foram removidos.' });
   } catch (error) {
     console.error('Account deletion error:', error);
