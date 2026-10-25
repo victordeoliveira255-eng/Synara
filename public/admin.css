@@ -55,6 +55,54 @@
 /* `hidden` vence qualquer `display` de componente (botões, campos, cards). */
 .admin-page [hidden] { display: none !important; }
 
+/* Focus states refinados para interativos dentro de cards */
+.admin-page .a-card :focus-visible {
+  outline: 2px solid var(--sy-focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+  background: var(--a-surface-soft);
+}
+
+/* Hover aprimorado para nav links */
+.admin-sidebar__nav .admin-nav-link:hover {
+  color: var(--a-navy);
+  background: var(--a-surface-soft);
+  transition: all var(--sy-transition-fast);
+}
+
+/* Estados ativos com pista completa */
+.admin-sidebar__nav .admin-nav-link[aria-current="page"] {
+  font-weight: 800;
+  box-shadow: inset 0 -4px 0 var(--a-navy);
+  background: var(--a-surface-soft);
+  transition: all var(--sy-transition-fast);
+}
+
+/* Cards com elevação no hover - usando var para compatibilidade */
+.a-card:hover {
+  --a-shadow: var(--sy-shadow-md);
+  transition: var(--sy-transition-fast);
+}
+
+/* Empty state hover */
+.a-empty:hover {
+  border-color: var(--a-navy);
+  transition: border-color var(--sy-transition-fast);
+}
+
+/* Badges com lift sutil */
+.a-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,.08);
+  transition: all var(--sy-transition-fast);
+}
+
+/* Tabela rows hover (já existente - mantemos consistência) */
+.a-table tbody tr:hover {
+  background: var(--a-surface-soft);
+  transition: background var(--sy-transition-fast);
+}
+
 .admin-page h1,
 .admin-page h2,
 .admin-page h3 { margin: 0; font-family: var(--a-fh); color: var(--a-navy-deep); line-height: 1.2; font-weight: 700; }
