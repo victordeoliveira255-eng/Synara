@@ -481,9 +481,7 @@ app.get('/admin.html', requireAuth, requireRole(USER_ROLE.ADMIN), (req, res) => 
 // Somente a pasta public/ e exposta. Middleware registrado DEPOIS das rotas
 // protegidas acima, para que /dashboard.html e /admin.html continuem passando
 // por autenticacao/autorizacao antes de qualquer acesso ao arquivo.
-// Os cabeçalhos de cache garantem que, após cada deploy, o navegador sempre
-// baixe a versão atual de CSS/JS/fonts/HTML (equivalente a ?v=<hash> em cada
-// <link>, sem precisar editar o HTML).
+// Os cabeçalhos de cache evitam servir arquivos antigos após um deploy.
 app.use(express.static(PUBLIC_DIR, {
   dotfiles: 'deny',
   setHeaders: (res, filePath) => {
