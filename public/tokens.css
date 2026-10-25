@@ -154,6 +154,89 @@
   /* ---------- Movimento ---------- */
   --sy-transition-fast: 150ms ease;
   --sy-transition: 200ms ease;
+  --sy-transition-smooth: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ---------- Espaçamentos (escala de 8px) ---------- */
+  --sy-space-0: 0;
+  --sy-space-1: 0.25rem;   /* 4px */
+  --sy-space-2: 0.5rem;    /* 8px */
+  --sy-space-3: 0.75rem;   /* 12px */
+  --sy-space-4: 1rem;      /* 16px */
+  --sy-space-5: 1.25rem;   /* 20px */
+  --sy-space-6: 1.5rem;    /* 24px */
+  --sy-space-8: 2rem;      /* 32px */
+  --sy-space-10: 2.5rem;   /* 40px */
+  --sy-space-12: 3rem;     /* 48px */
+  --sy-space-16: 4rem;     /* 64px */
+
+  /* ---------- Raios de borda ---------- */
+  --sy-radius-none: 0;
+  --sy-radius-xs: 0.25rem;   /* 4px */
+  --sy-radius-sm: 0.375rem;  /* 6px */
+  --sy-radius-md: 0.5rem;    /* 8px */
+  --sy-radius-lg: 0.75rem;   /* 12px */
+  --sy-radius-xl: 1rem;      /* 16px */
+  --sy-radius-full: 9999px;
+
+  /* ---------- Sombras (suaves, sutis) ---------- */
+  --sy-shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --sy-shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.04);
+  --sy-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.04);
+  --sy-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.04);
+  --sy-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.08), 0 8px 10px -6px rgb(0 0 0 / 0.04);
+
+  /* ---------- Larguras de borda ---------- */
+  --sy-border-width: 1px;
+  --sy-border-width-thick: 2px;
+
+  /* ---------- Opacidade ---------- */
+  --sy-opacity-disabled: 0.5;
+  --sy-opacity-overlay: 0.6;
+
+  /* ---------- Z-index ---------- */
+  --sy-z-dropdown: 100;
+  --sy-z-sticky: 200;
+  --sy-z-modal-backdrop: 300;
+  --sy-z-modal: 400;
+  --sy-z-toast: 500;
+
+  /* ---------- Componentes: Botões ---------- */
+  --sy-btn-height: 2.75rem;        /* 44px — alvo de toque mínimo */
+  --sy-btn-height-sm: 2.25rem;     /* 36px */
+  --sy-btn-height-lg: 3.25rem;     /* 52px */
+  --sy-btn-padding-x: 1.25rem;
+  --sy-btn-padding-x-sm: 0.875rem;
+  --sy-btn-padding-x-lg: 1.75rem;
+  --sy-btn-font-weight: 600;
+  --sy-btn-radius: var(--sy-radius-md);
+  --sy-btn-transition: background 150ms ease, color 150ms ease, box-shadow 150ms ease, transform 120ms ease;
+
+  /* ---------- Componentes: Campos de formulário ---------- */
+  --sy-field-height: 2.75rem;      /* 44px */
+  --sy-field-padding-x: 0.875rem;
+  --sy-field-radius: var(--sy-radius-md);
+  --sy-field-border-width: var(--sy-border-width);
+  --sy-field-focus-ring: 0 0 0 3px rgba(0, 91, 127, 0.25);
+
+  /* ---------- Componentes: Cartões ---------- */
+  --sy-card-radius: var(--sy-radius-lg);
+  --sy-card-padding: 1.5rem;
+  --sy-card-padding-sm: 1rem;
+
+  /* ---------- Componentes: Modais ---------- */
+  --sy-modal-radius: var(--sy-radius-xl);
+  --sy-modal-padding: 2rem;
+  --sy-modal-max-width: 48rem;
+
+  /* ---------- Componentes: Alertas ---------- */
+  --sy-alert-radius: var(--sy-radius-md);
+  --sy-alert-padding: 1rem 1.25rem;
+
+  /* ---------- Layout ---------- */
+  --sy-sidebar-width: 260px;
+  --sy-sidebar-collapsed: 80px;
+  --sy-header-height: 64px;
+  --sy-content-max-width: 1200px;
 
   /* ---------- Esquema de cores nativo (inputs, scrollbar) ---------- */
   color-scheme: light;
@@ -227,4 +310,7 @@
   --sy-shadow-sm: 0 4px 14px rgba(0, 0, 0, .30);
   --sy-shadow-md: 0 16px 38px rgba(0, 0, 0, .38);
   --sy-shadow-lg: 0 24px 65px rgba(0, 0, 0, .45);
+
+  /* ---------- Componentes (tema escuro) ---------- */
+  --sy-field-focus-ring: 0 0 0 3px rgba(127, 240, 228, 0.35);
 }

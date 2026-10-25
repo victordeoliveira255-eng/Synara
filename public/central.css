@@ -4,6 +4,8 @@
    Todo o CSS e escopado em .dashboard-page para nunca afetar
    outras paginas (admin.html usa dashboard.css).
    ============================================================ */
+@import url("../tokens.css");
+@import url("../components.css");
 
 .dashboard-page {
   /* Trava de teste: test/dashboard-structure.test.js exige estes três

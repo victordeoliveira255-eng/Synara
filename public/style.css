@@ -2,6 +2,7 @@
    regra do arquivo; é o único ponto que carrega os tokens em todas
    as 6 páginas (todas carregam style.css), sem tocar no HTML. */
 @import url("tokens.css");
+@import url("components.css");
 
 /* Aliases legados -> camada semântica (--sy-* em tokens.css).
    DOIS valores ficam literais nesta fase, por segurança:

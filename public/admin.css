@@ -4,6 +4,8 @@
    Nao interfere na Central de Estudos (central.css) nem
    depende de dashboard.css.
    ============================================================ */
+@import url("../tokens.css");
+@import url("../components.css");
 
 .admin-page {
   /* Trava de teste: test/dashboard-structure.test.js exige --a-bg/--a-navy
